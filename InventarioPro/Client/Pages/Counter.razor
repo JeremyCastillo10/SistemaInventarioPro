@@ -1,0 +1,50 @@
+﻿@page "/counter"
+@inject SweetAlertService Swal;
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="@(Alert1)">Prueba Alerta</button>
+
+@code {
+    private int currentCount = 0;
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+    public void Alert1()
+    {
+        Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Are you sure?",
+                Text = "You will not be able to recover this imaginary file!",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Yes, delete it!",
+                CancelButtonText = "No, keep it"
+            }).ContinueWith(swalTask =>
+        {
+            SweetAlertResult result = swalTask.Result;
+            if (!string.IsNullOrEmpty(result.Value))
+            {
+                Swal.FireAsync(
+       "Deleted",
+       "Your imaginary file has been deleted.",
+       SweetAlertIcon.Success
+       );
+            }
+            else if (result.Dismiss == DismissReason.Cancel)
+            {
+                Swal.FireAsync(
+       "Cancelled",
+       "Your imaginary file is safe :)",
+       SweetAlertIcon.Error
+       );
+            }
+        });
+    }
+}
