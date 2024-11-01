@@ -1,0 +1,100 @@
+﻿@page "/inventory-dashboard"
+@using System.Collections.Generic
+@using Radzen.Blazor
+
+<PageTitle>Dashboard de Inventario</PageTitle>
+
+<RadzenText TextStyle="TextStyle.H2" TagName="TagName.H1" class="rz-pt-8">
+    Dashboard de Inventario
+</RadzenText>
+
+<RadzenStack Gap="1rem">
+    <RadzenCard class="rz-my-12">
+        <RadzenText TextStyle="TextStyle.H6">Resumen del Inventario</RadzenText>
+        <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween">
+            <RadzenColumn Size="4">
+                <RadzenCard Variant="Radzen.Variant.Outlined" Style="height: 100%;">
+                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
+                        <RadzenText TextStyle="TextStyle.H6">Total de Productos</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H2">@totalProducts</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="4">
+                <RadzenCard Variant="Radzen.Variant.Outlined" Style="height: 100%;">
+                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
+                        <RadzenText TextStyle="TextStyle.H6">Productos en Stock</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H2">@inStock</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="4">
+                <RadzenCard Variant="Radzen.Variant.Outlined" Style="height: 100%;">
+                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
+                        <RadzenText TextStyle="TextStyle.H6">Productos Agotados</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H2">@outOfStock</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenCard>
+
+    <RadzenCard>
+        <RadzenText TextStyle="TextStyle.H6">Gráfico de Productos por Categoría</RadzenText>
+        <RadzenChart Style="width: 100%; height: 400px;">
+            <RadzenColumnSeries Data=@productsByCategory ValueProperty="Count" CategoryProperty="Category" />
+            <RadzenValueAxis>
+                <RadzenGridLines Visible="true" />
+            </RadzenValueAxis>
+            <RadzenCategoryAxis />
+            <RadzenLegend Visible="true" />
+        </RadzenChart>
+    </RadzenCard>
+
+    <RadzenCard>
+        <RadzenDataGrid Data=@inventoryItems AllowSorting="true" AllowFiltering="true" Style="height: 400px;">
+            <Columns>
+                <RadzenDataGridColumn Property="Name" Title="Nombre" />
+                <RadzenDataGridColumn Property="Category" Title="Categoría" />
+                <RadzenDataGridColumn Property="Quantity" Title="Cantidad" />
+                <RadzenDataGridColumn Property="Price" Title="Precio" />
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenCard>
+</RadzenStack>
+
+@code {
+    int totalProducts = 100; // Ejemplo
+    int inStock = 75; // Ejemplo
+    int outOfStock = 25; // Ejemplo
+
+    // Ejemplo de datos para el gráfico
+    IEnumerable<CategoryCount> productsByCategory = new List<CategoryCount>
+    {
+        new CategoryCount { Category = "Electrónica", Count = 40 },
+        new CategoryCount { Category = "Ropa", Count = 30 },
+        new CategoryCount { Category = "Hogar", Count = 30 },
+    };
+
+    // Ejemplo de datos para el DataGrid
+    IEnumerable<InventoryItem> inventoryItems = new List<InventoryItem>
+    {
+        new InventoryItem { Name = "Laptop", Category = "Electrónica", Quantity = 10, Price = 800 },
+        new InventoryItem { Name = "Camiseta", Category = "Ropa", Quantity = 20, Price = 25 },
+        new InventoryItem { Name = "Sofá", Category = "Hogar", Quantity = 5, Price = 500 },
+    };
+
+    public class CategoryCount
+    {
+        public string Category { get; set; }
+        public int Count { get; set; }
+    }
+
+    public class InventoryItem
+    {
+        public string Name { get; set; }
+        public string Category { get; set; }
+        public int Quantity { get; set; }
+        public decimal Price { get; set; }
+    }
+}

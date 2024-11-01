@@ -1,30 +1,40 @@
 ﻿@inherits LayoutComponentBase
-
+@inject NavigationManager nav
 <MudThemeProvider />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+<RadzenComponents />
 
-<MudLayout Class="page">
-    <MudAppBar Style="background-color:#002050">
-        <!-- Cambia el color aquí -->
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        My Application
-    </MudAppBar>
-    <MudDrawer @bind-Open="@_drawerOpen" Style="background-color:#002050" Class="sidebar">
-        <!-- Cambia el color aquí también si deseas -->
-        <NavMenu />
-    </MudDrawer>
-    <MudMainContent Class="content px-4">
-        @Body
-    </MudMainContent>
-</MudLayout>
+<RadzenLayout Style="grid-template-columns: auto 1fr; grid-template-areas: 'rz-header rz-header' 'rz-sidebar rz-body'; ">
+    <RadzenHeader Style="background-color:#002050; color:white">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0">
+            <RadzenSidebarToggle Click="@(() => leftSidebarExpanded = !leftSidebarExpanded)" />
+            <RadzenLabel Text="Control de Inventario" />
+        </RadzenStack>
+    </RadzenHeader>
+
+    <RadzenSidebar @bind-Expanded="@leftSidebarExpanded" Style="grid-area: rz-sidebar; height: 100vh; background-color:#002050; color:white;">
+        <RadzenPanelMenu Style="background-color: transparent; color:white;">
+            <RadzenPanelMenuItem Text="Home" Icon="home" Path="/" />
+            <RadzenPanelMenuItem Text="Users" Icon="account_box" Path="/Counter"  />
+            <RadzenPanelMenuItem Text="Products" Icon="inventory" />
+            <RadzenPanelMenuItem Text="Suppliers" Icon="business" />
+            <RadzenPanelMenuItem Text="Orders" Icon="assignment" />
+            <RadzenPanelMenuItem Text="Reports" Icon="assessment" />
+        </RadzenPanelMenu>
+    </RadzenSidebar>
+
+    <RadzenBody Style="grid-area: rz-body">
+       @Body
+    </RadzenBody>
+</RadzenLayout>
 
 @code {
-    bool _drawerOpen = true;
+    bool leftSidebarExpanded = true;
 
-    void DrawerToggle()
+    public void IrDash()
     {
-        _drawerOpen = !_drawerOpen;
+        nav.NavigateTo("/Dashboard");
     }
 }
