@@ -1,0 +1,136 @@
+﻿@page "/ListProductos"
+@using Microsoft.AspNetCore.Components
+@using Radzen
+@using System.Collections.Generic
+@using System.Linq
+@using System.Threading.Tasks
+@using InventarioPro.Shared.DTOS.Producto
+
+@inject Radzen.DialogService DialogService
+
+<PageTitle>Inventario de Productos</PageTitle>
+
+<div class="header">
+    <h2>Inventario de Productos</h2>
+    <RadzenButton Text="Agregar Producto" Click="OpenAddProductDialog" Style="margin-bottom: 10px;" />
+</div>
+
+<div class="filters">
+    <RadzenDropDown @bind-Value="selectedCategory" Data="@categories" TextProperty="Name" ValueProperty="Id" Placeholder="Selecciona una categoría" Style="width: 200px; margin-right: 10px;" />
+    <RadzenDropDown @bind-Value="selectedWarehouse" Data="@warehouses" TextProperty="Name" ValueProperty="Id" Placeholder="Selecciona un almacén" Style="width: 200px; margin-right: 10px;" />
+    <RadzenButton Text="Filtrar" Click="ApplyFilters" Style="margin-right: 10px;" />
+    <RadzenButton Text="Exportar a Excel" Click="ExportToExcel" />
+</div>
+
+<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true" AllowSorting="true" PageSize="5" AllowPaging="true"
+                Data="@filteredProducts" ColumnWidth="300px" ShowPagingSummary="true" @bind-Value="@selectedProducts">
+    <Columns>
+        <RadzenDataGridColumn Property="@nameof(Producto_DTO.Id)" Title="ID" Width="80px" TextAlign="TextAlign.Center" />
+        <RadzenDataGridColumn Title="Foto" Width="80px" TextAlign="TextAlign.Center">
+            <Template Context="data">
+                <RadzenImage Path="@data.ImagenProducto" class="rz-product-image" AlternateText="@(data.Nombre)" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(Producto_DTO.Nombre)" Title="Nombre del Producto" Width="160px" />
+        <RadzenDataGridColumn Property="@nameof(Producto_DTO.Categoria)" Title="Categoría" Width="200px" />
+        <RadzenDataGridColumn Property="@nameof(Producto_DTO.Precio)" Title="Precio" FormatString="{0:C}" Width="120px" />
+        <RadzenDataGridColumn Property="@nameof(Producto_DTO.Existencia)" Title="Stock" Width="160px" />
+    </Columns>
+</RadzenDataGrid>
+
+<style>
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    h2 {
+        margin: 0;
+        font-size: 24px;
+    }
+
+    .filters {
+        margin-bottom: 20px;
+    }
+</style>
+
+@code {
+    private List<Producto_DTO> products = new List<Producto_DTO>();
+    private List<Producto_DTO> filteredProducts = new List<Producto_DTO>();
+    private IList<Producto_DTO> selectedProducts;
+
+    private int? selectedCategory;
+    private int? selectedWarehouse;
+
+    private List<Category> categories = new List<Category>
+    {
+        new Category { Id = 1, Name = "Bebidas" },
+        new Category { Id = 2, Name = "Condimentos" },
+        new Category { Id = 3, Name = "Snacks" },
+        new Category { Id = 4, Name = "Lácteos" }
+    };
+
+    private List<Warehouse> warehouses = new List<Warehouse>
+    {
+        new Warehouse { Id = 1, Name = "Almacén A" },
+        new Warehouse { Id = 2, Name = "Almacén B" },
+        new Warehouse { Id = 3, Name = "Almacén C" }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+        filteredProducts = products;
+    }
+
+    private Task LoadProducts()
+    {
+        products = new List<Producto_DTO>
+        {
+            new Producto_DTO { Id = 1, Nombre = "Producto A", Descripcion = "Descripción A", Precio = 20.50m, Existencia = 100, Categoria = "Bebidas", ImagenProducto = "data:image/png;base64,...base64_image_data..." },
+            new Producto_DTO { Id = 2, Nombre = "Producto B", Descripcion = "Descripción B", Precio = 15.75m, Existencia = 50, Categoria = "Condimentos", ImagenProducto = "data:image/png;base64,...base64_image_data..." }
+        };
+
+        return Task.CompletedTask;
+    }
+
+    private async Task OpenAddProductDialog()
+    {
+        var options = new Radzen.DialogOptions { Style = "width: 900px;" }; // Cambia 800px al tamaño deseado
+        var result = await DialogService.OpenAsync<FormProducto>("Agregar Nuevo Producto", null, options);
+
+        if (result != null)
+        {
+            products.Add(result);
+            ApplyFilters(); // Aplicar filtros para actualizar la lista
+        }
+    }
+
+
+    private void ApplyFilters()
+    {
+        filteredProducts = products
+            .Where(p => (selectedCategory == null || p.Categoria == categories.FirstOrDefault(c => c.Id == selectedCategory)?.Name) &&
+                        (selectedWarehouse == null || p.Existencia > 0)) // Aquí puedes agregar más lógica de filtrado
+            .ToList();
+    }
+
+    private void ExportToExcel()
+    {
+        // Lógica para exportar productos a Excel
+    }
+
+    public class Category
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class Warehouse
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+}
