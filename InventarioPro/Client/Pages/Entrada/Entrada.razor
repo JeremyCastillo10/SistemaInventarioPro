@@ -5,7 +5,6 @@
 @using Radzen
 @inject HttpClient Http
 @inject Radzen.DialogService DialogService
-<!-- Modal del formulario para agregar una nueva entrada -->
 
 
 <div class="modal show d-block pad" style="background-color: rgba(0, 0, 0, 0.5);">
@@ -21,18 +20,17 @@
                     <RadzenDatePicker TValue="DateTime" Change="@(e => fecha = e.Value)" Style="width: 100%;" />
                 </div>
                 
-                <!-- Fila para Entrada ID, Producto, Cantidad, Precio y Botón Agregar -->
                 <div class="row mb-3">
                     <div class="col-md-3 col-sm-6">
-                        <RadzenDropDown Placeholder="Entrada ID" Data="@entradas" @bind-Value="selectedEntradaId" Class="form-control" />
-                    </div>
-                    <div class="col-md-3 col-sm-6">
+                        <label>Producto</label>
                         <RadzenDropDown Placeholder="Producto" Data="@productos" @bind-Value="selectedProductoId" Class="form-control" />
                     </div>
                     <div class="col-md-3 col-sm-6">
+                        <label>Cantidad</label>
                         <RadzenNumeric TValue="int" Placeholder="Cantidad" @bind-Value="cantidad" Class="form-control" />
                     </div>
                     <div class="col-md-3 col-sm-6">
+                        <label>Precio</label>
                         <RadzenNumeric TValue="decimal" Placeholder="Precio" @bind-Value="precio" Class="form-control" />
                     </div>
                 </div>
@@ -43,7 +41,6 @@
                 <!-- Tabla para mostrar las entradas agregadas con datos ficticios -->
                 <RadzenDataGrid Data="@entradasAgregadas" TItem="EntradaItem" RowHeight="40" Style="width: 100%;">
                     <Columns>
-                        <RadzenDataGridColumn TItem="EntradaItem" Property="EntradaID" Title="Entrada ID" />
                         <RadzenDataGridColumn TItem="EntradaItem" Property="Producto" Title="Producto" />
                         <RadzenDataGridColumn TItem="EntradaItem" Property="Cantidad" Title="Cantidad" />
                         <RadzenDataGridColumn TItem="EntradaItem" Property="Precio" Title="Precio" />
@@ -51,7 +48,6 @@
                     </Columns>
                 </RadzenDataGrid>
                 
-                <!-- Total en la esquina inferior derecha -->
                 <div class="d-flex justify-content-end mt-2">
                     <h5>Total: @total</h5>
                 </div>
