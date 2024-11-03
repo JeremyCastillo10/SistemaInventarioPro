@@ -1,10 +1,12 @@
 ﻿@page "/ListProductos"
+@using InventarioPro.Shared.DTOS.Categoria
 @using Microsoft.AspNetCore.Components
 @using Radzen
 @using System.Collections.Generic
 @using System.Linq
 @using System.Threading.Tasks
 @using InventarioPro.Shared.DTOS.Producto
+@inject HttpClient Http;
 
 @inject Radzen.DialogService DialogService
 
@@ -16,24 +18,31 @@
 </div>
 
 <div class="filters">
-    <RadzenDropDown @bind-Value="selectedCategory" Data="@categories" TextProperty="Name" ValueProperty="Id" Placeholder="Selecciona una categoría" Style="width: 200px; margin-right: 10px;" />
+    <RadzenDropDown @bind-Value="selectedCategory" Data="@categorias" TextProperty="Nombre" ValueProperty="Id" Placeholder="Selecciona una categoría" Style="width: 200px; margin-right: 10px;" />
     <RadzenDropDown @bind-Value="selectedWarehouse" Data="@warehouses" TextProperty="Name" ValueProperty="Id" Placeholder="Selecciona un almacén" Style="width: 200px; margin-right: 10px;" />
-    <RadzenButton Text="Filtrar" Style="margin-right: 10px;" />
+    <RadzenButton Text="Filtrar" Click="FilterProducts" Style="margin-right: 10px;" />
     <RadzenButton Text="Exportar a Excel" Click="ExportToExcel" />
 </div>
 
 <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true" AllowSorting="true" PageSize="5" AllowPaging="true"
                 Data="@filteredProducts" ColumnWidth="300px" ShowPagingSummary="true" @bind-Value="@selectedProducts">
     <Columns>
-        <RadzenDataGridColumn Property="@nameof(Producto_DTO.Id)" Title="ID" Width="80px" TextAlign="TextAlign.Center" />
         <RadzenDataGridColumn Title="Foto" Width="80px" TextAlign="TextAlign.Center">
             <Template Context="data">
-                <RadzenImage Path="@data.ImagenProducto" class="rz-product-image" AlternateText="@(data.Nombre)" />
+                <RadzenImage Path="@($"data:image/jpeg;base64,{data.ImagenProducto}")"
+                             class="rz-product-image"
+                             AlternateText="@(data.Nombre)"
+                             Style="width: 80px; height: auto;" />
             </Template>
         </RadzenDataGridColumn>
         <RadzenDataGridColumn Property="@nameof(Producto_DTO.Nombre)" Title="Nombre del Producto" Width="160px" />
-        <RadzenDataGridColumn Property="@nameof(Producto_DTO.CategoriaId)" Title="Categoría" Width="200px" />
+        <RadzenDataGridColumn Title="Categoría" Width="110px">
+            <Template Context="data">
+                @((categorias.FirstOrDefault(c => c.Id == data.CategoriaId)?.Nombre) ?? "Sin Categoría")
+            </Template>
+        </RadzenDataGridColumn> 
         <RadzenDataGridColumn Property="@nameof(Producto_DTO.Precio)" Title="Precio" FormatString="{0:C}" Width="120px" />
+        <RadzenDataGridColumn Property="@nameof(Producto_DTO.Costo)" Title="Costo" FormatString="{0:C}" Width="120px" />
         <RadzenDataGridColumn Property="@nameof(Producto_DTO.Existencia)" Title="Stock" Width="160px" />
     </Columns>
 </RadzenDataGrid>
@@ -60,17 +69,16 @@
     private List<Producto_DTO> products = new List<Producto_DTO>();
     private List<Producto_DTO> filteredProducts = new List<Producto_DTO>();
     private IList<Producto_DTO> selectedProducts;
-
+    private List<Categoria_DTO> categorias = new List<Categoria_DTO>();
     private int? selectedCategory;
     private int? selectedWarehouse;
 
-    private List<Category> categories = new List<Category>
+    protected override async Task OnInitializedAsync()
     {
-        new Category { Id = 1, Name = "Bebidas" },
-        new Category { Id = 2, Name = "Condimentos" },
-        new Category { Id = 3, Name = "Snacks" },
-        new Category { Id = 4, Name = "Lácteos" }
-    };
+        categorias = await Http.GetFromJsonAsync<List<Categoria_DTO>>("api/categoria");
+        await LoadProducts();
+        filteredProducts = products;
+    }
 
     private List<Warehouse> warehouses = new List<Warehouse>
     {
@@ -79,46 +87,57 @@
         new Warehouse { Id = 3, Name = "Almacén C" }
     };
 
-    protected override async Task OnInitializedAsync()
+    private async Task LoadProducts()
     {
-        await LoadProducts();
-        filteredProducts = products;
-    }
-
-    private Task LoadProducts()
-    {
-        products = new List<Producto_DTO>
-        {
-            new Producto_DTO { Id = 1, Nombre = "Producto A", Descripcion = "Descripción A", Precio = 20.50m, Existencia = 100,  ImagenProducto = "data:image/png;base64,...base64_image_data..." },
-            new Producto_DTO { Id = 2, Nombre = "Producto B", Descripcion = "Descripción B", Precio = 15.75m, Existencia = 50,  ImagenProducto = "data:image/png;base64,...base64_image_data..." }
-        };
-
-        return Task.CompletedTask;
+        products = await Http.GetFromJsonAsync<List<Producto_DTO>>("api/producto/GetProductos");
+        filteredProducts = products; 
     }
 
     private async Task OpenAddProductDialog()
     {
-        var options = new Radzen.DialogOptions { Style = "width: 900px;" }; // Cambia 800px al tamaño deseado
+        var options = new Radzen.DialogOptions { Style = "width: 900px;" };
         var result = await DialogService.OpenAsync<FormProducto>("Agregar Nuevo Producto", null, options);
 
         if (result != null)
         {
             products.Add(result);
+            await FilterProducts(); 
+        }
+    }
+
+    private async Task FilterProducts()
+    {
+        try
+        {
+            if (selectedCategory.HasValue)
+            {
+                var result = await Http.GetFromJsonAsync<List<Producto_DTO>>($"api/producto/GetPorCategoria/{selectedCategory.Value}");
+
+                if (result == null || result.Count == 0)
+                {
+                    filteredProducts = new List<Producto_DTO>(); 
+                                                                 
+                }
+                else
+                {
+                    filteredProducts = result; 
+                }
+            }
+            else
+            {
+                filteredProducts = products; 
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            filteredProducts = new List<Producto_DTO>(); 
         }
     }
 
 
 
-
     private void ExportToExcel()
     {
-        // Lógica para exportar productos a Excel
-    }
-
-    public class Category
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
     }
 
     public class Warehouse

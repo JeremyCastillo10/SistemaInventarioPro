@@ -19,18 +19,18 @@
         <div style="display: flex; gap: 20px;">
             <div style="flex: 1;">
                 <RadzenTextBox @bind-Value="Product.Nombre" Placeholder="Nombre del Producto" Style="width: 100%; margin-bottom: 10px;" />
-                <ValidationMessage For="@(() => Product.Nombre)" />
+                <valid For="@(() => Product.Nombre)" />
 
                 <RadzenTextBox @bind-Value="Product.Descripcion" Placeholder="Descripción" Style="width: 100%; margin-bottom: 10px;" TextMode="TextMode.MultiLine" Rows="3" />
-                <ValidationMessage For="@(() => Product.Descripcion)" />
+                <RadzenRequiredValidator Component="Descripcion" Text="Descripcion es requerido." DefaultValue="0" />
 
                 <RadzenDropDown @bind-Value="Product.CategoriaId" Data="@categories" TextProperty="Nombre" ValueProperty="Id" Placeholder="Selecciona una Categoría" Style="width: 100%; margin-bottom: 10px;" />
 
                 <RadzenNumeric @bind-Value="Product.Precio" Placeholder="Precio" Style="width: 100%; margin-bottom: 10px;" />
-                <ValidationMessage For="@(() => Product.Precio)" />
+                <RadzenRequiredValidator Component="Precio" Text="Precio es requerido." DefaultValue="0" />
 
                 <RadzenNumeric @bind-Value="Product.Costo" Placeholder="Costo" Style="width: 100%; margin-bottom: 10px;" />
-                <ValidationMessage For="@(() => Product.Costo)" />
+                <RadzenRequiredValidator Component="Descripcion" Text="Descripcion es requerido." DefaultValue="0" />
 
                 <RadzenTextBox @bind-Value="Product.Codigo" Placeholder="Código del Producto" Style="width: 100%; margin-bottom: 10px;" />
                 <ValidationMessage For="@(() => Product.Codigo)" />

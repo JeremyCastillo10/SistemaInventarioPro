@@ -3,6 +3,8 @@ using InventarioPro.Server.Models;
 using InventarioPro.Shared.DTOS.Producto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace InventarioPro.Server.Controllers
 {
@@ -85,5 +87,59 @@ namespace InventarioPro.Server.Controllers
                 }
             }
         }
+        [HttpGet("GetProductos")]
+        public async Task<ActionResult> getProductos()
+        {
+            var productos = await _db.Productos
+                .Where(p => p.Eliminado != true)
+                .Select(p => new Producto_DTO
+                {
+                    Nombre = p.Nombre,
+                    Descripcion = p.Descripcion,
+                    Precio = (Convert.ToDecimal(p.Precio)),
+                    Costo = (Convert.ToDecimal(p.Precio)),
+                    CategoriaId = p.CategoriaId ?? 0,
+                    Existencia = p.Existencia ?? 0,
+                    Codigo = p.Codigo,
+                    ImagenProducto = p.ImagenProducto != null ? Convert.ToBase64String(p.ImagenProducto) : null,
+                    FechaCreacion = p.FechaCreacion,
+                    FechaActulizacion = p.FechaActualizacion,
+                }).ToListAsync();
+            if (productos != null)
+                return Ok(productos);
+            return BadRequest("Error al obtener");
+        }
+
+        [HttpGet("GetPorCategoria/{idCategoria}")]
+        public async Task<ActionResult> GetPorCategoria(int idCategoria)
+        {
+            var pro = await (from listaproductos in _db.Productos
+                             join cate in _db.Categorias on listaproductos.CategoriaId equals cate.Id
+                             where listaproductos.CategoriaId == idCategoria && listaproductos.Eliminado != true
+                             select new Producto_DTO
+                             {
+                                 Id = listaproductos.Id,
+                                 Nombre = listaproductos.Nombre,
+                                 Descripcion = listaproductos.Descripcion,
+                                 Precio = Convert.ToDecimal(listaproductos.Precio),
+                                 Costo = Convert.ToDecimal(listaproductos.Precio),
+                                 CategoriaId = listaproductos.CategoriaId ?? 0,
+                                 CategoriaNombre = cate.Nombre, // Obtener el nombre de la categoría
+                                 Existencia = listaproductos.Existencia ?? 0,
+                                 Codigo = listaproductos.Codigo,
+                                 ImagenProducto = listaproductos.ImagenProducto != null ?
+                                     Convert.ToBase64String(listaproductos.ImagenProducto) : null,
+                                 FechaCreacion = listaproductos.FechaCreacion,
+                                 FechaActulizacion = listaproductos.FechaActualizacion,
+                             }).ToListAsync();
+
+            if (pro != null && pro.Count > 0)
+                return Ok(pro);
+
+            return NotFound("No se encontraron productos en esta categoría.");
+        }
+
+
+
     }
 }

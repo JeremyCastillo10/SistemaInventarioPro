@@ -15,7 +15,6 @@ namespace InventarioPro.Server.Controllers
         {
             _db = db;
         }
-        // GET: api/Articulos
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Categoria_DTO>>> GetAllArticulos()
         {
