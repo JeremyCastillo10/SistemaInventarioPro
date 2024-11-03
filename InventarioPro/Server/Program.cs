@@ -9,6 +9,14 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<Contexto>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+builder.Services.AddCors(o => o.AddPolicy("AllowAnyOrigin",
+                      builder =>
+                      {
+                          builder.AllowAnyOrigin()
+                                 .AllowAnyMethod()
+                                 .AllowAnyHeader();
+                      }));
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -20,7 +28,8 @@ else
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
-app.UseSwagger();
+app.UseSwaggerUI();
+app.UseCors("AllowAllOrigins");
 app.UseHttpsRedirection();
 
 app.UseBlazorFrameworkFiles();
@@ -30,7 +39,8 @@ app.UseRouting();
 
 
 app.MapRazorPages();
-app.UseSwaggerUI();
+app.UseSwagger();
+
 
 app.MapControllers();
 app.MapFallbackToFile("index.html");

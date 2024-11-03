@@ -1,0 +1,103 @@
+@page "/ListaEntrada"
+@using Microsoft.AspNetCore.Components
+@using Radzen
+@using System.Collections.Generic
+@using System.Linq
+@using System.Threading.Tasks
+@inject Radzen.DialogService DialogService
+<PageTitle>Inventario de Entrada</PageTitle>
+
+<div class="header">
+    <h2>Inventario de Entrada</h2>
+    <RadzenButton Text="Agregar Producto"  Click="OpenAddProductDialog"  Style="margin-bottom: 10px;" />
+</div>
+<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true" AllowSorting="true"
+                PageSize="5" AllowPaging="true" Data="@Entradas" ColumnWidth="300px" ShowPagingSummary="true">
+    <Columns>
+        <RadzenDataGridColumn Property="@nameof(Entradass.NombreProducto)" Title="Nombre del Producto" Width="160px" />
+        <RadzenDataGridColumn Property="@nameof(Entradass.NombreProveedor)" Title="Categoría" Width="200px" />
+        <RadzenDataGridColumn Property="@nameof(Entradass.Precio)" Title="Precio" FormatString="{0:C}" Width="120px" />
+        <RadzenDataGridColumn Property="@nameof(Entradass.Stock)" Title="Stock" Width="160px" />
+        <RadzenDataGridColumn TItem="Entradass" Property="Actions" Width="100px" Title="Acciones">
+            <Template>
+                <button class="btn btn-danger" @onclick="() => EliminarEntrada(context)">Eliminar</button>
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+<style>
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    h2 {
+        margin: 0;
+        font-size: 24px;
+    }
+
+    .filters {
+        margin-bottom: 20px;
+    }
+</style>
+
+@code {
+    private async Task OpenAddProductDialog()
+    {
+         var options = new Radzen.DialogOptions { Style = "width: 900px;" };
+    var result = await DialogService.OpenAsync<Entrada>("Agregar Nuevo Producto", null, options);
+
+    if (result != null)
+    {
+        Entradas.Add(result);
+        // Si tienes un método ApplyFilters() para actualizar la vista, lo llamas aquí
+        // ApplyFilters(); // Descomenta esto si lo tienes
+    }
+  
+        
+    }
+    private bool MostrarFormulario = false;
+
+    // Modelo de entrada
+    private List<Entradass> Entradas = new List<Entradass>();
+
+    private Entradass NuevaEntrada = new Entradass();
+
+    // Método para abrir el formulario
+    private void AbrirFormulario()
+    {
+        NuevaEntrada = new Entradass();
+        MostrarFormulario = true;
+    }
+
+    // Método para cerrar el formulario
+    private void CerrarFormulario()
+    {
+        MostrarFormulario = false;
+    }
+
+    // Método para guardar la nueva entrada
+    private void GuardarEntrada()
+    {
+        Entradas.Add(NuevaEntrada);
+        CerrarFormulario();
+    }
+
+    // Método para eliminar una entrada
+    private void EliminarEntrada(Entradass entrada)
+    {
+        Entradas.Remove(entrada);
+    }
+
+    // Clase modelo para una entrada
+    private class Entradass
+    {
+        public DateTime Fecha { get; set; } = DateTime.Today;
+        public string NombreProveedor { get; set; } = string.Empty;
+        public string NombreProducto { get; set; } = string.Empty;
+        public decimal Precio { get; set; } // Añadido para el precio
+        public int Stock { get; set; } // Añadido para el stock
+    }
+}

@@ -1,26 +1,41 @@
 ﻿@inherits LayoutComponentBase
-
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
-@* Required *@
+@inject NavigationManager nav
 <MudThemeProvider />
 <MudPopoverProvider />
-
-@* Needed for dialogs *@
 <MudDialogProvider />
-
-@* Needed for snackbars *@
 <MudSnackbarProvider />
+<RadzenComponents />
+
+<RadzenLayout Style="grid-template-columns: auto 1fr; grid-template-areas: 'rz-header rz-header' 'rz-sidebar rz-body'; ">
+    <RadzenHeader Style="background-color:#002050; color:white">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0">
+            <RadzenSidebarToggle Click="@(() => leftSidebarExpanded = !leftSidebarExpanded)" />
+            <RadzenLabel Text="Control de Inventario" />
+        </RadzenStack>
+    </RadzenHeader>
+
+    <RadzenSidebar @bind-Expanded="@leftSidebarExpanded" Style="grid-area: rz-sidebar; height: 100vh; background-color:#002050; color:white;">
+        <RadzenPanelMenu Style="background-color: transparent; color:white;">
+            <RadzenPanelMenuItem Text="Home" Icon="home" Path="/" />
+            <RadzenPanelMenuItem Text="Users" Icon="account_box" Path="/Counter"  />
+            <RadzenPanelMenuItem Text="Products" Icon="inventory" Path="/ListProductos" />
+             <RadzenPanelMenuItem Text="ListaEntrada" Icon="inventory" Path="/ListaEntrada" />
+            <RadzenPanelMenuItem Text="Suppliers" Icon="business" />
+            <RadzenPanelMenuItem Text="Orders" Icon="assignment" />
+            <RadzenPanelMenuItem Text="Reports" Icon="assessment" />
+        </RadzenPanelMenu>
+    </RadzenSidebar>
+
+    <RadzenBody Style="grid-area: rz-body">
+       @Body
+    </RadzenBody>
+</RadzenLayout>
+
+@code {
+    bool leftSidebarExpanded = true;
+
+    public void IrDash()
+    {
+        nav.NavigateTo("/Dashboard");
+    }
+}
