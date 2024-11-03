@@ -25,7 +25,6 @@ namespace InventarioPro.Server.Controllers
                 return BadRequest("El objeto Producto es nulo.");
             }
 
-            // Log para verificar el contenido del DTO
             Console.WriteLine($"Producto recibido: {productoDto.Nombre}");
 
             var existingProducto = await _db.Productos

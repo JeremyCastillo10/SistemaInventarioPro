@@ -9,13 +9,14 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<Contexto>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAllOrigins",
-        builder => builder.AllowAnyOrigin()
-                          .AllowAnyMethod()
-                          .AllowAnyHeader());
-});
+builder.Services.AddCors(o => o.AddPolicy("AllowAnyOrigin",
+                      builder =>
+                      {
+                          builder.AllowAnyOrigin()
+                                 .AllowAnyMethod()
+                                 .AllowAnyHeader();
+                      }));
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -28,6 +29,7 @@ else
     app.UseHsts();
 }
 app.UseSwaggerUI();
+app.UseCors("AllowAllOrigins");
 app.UseHttpsRedirection();
 
 app.UseBlazorFrameworkFiles();
