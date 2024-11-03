@@ -29,7 +29,6 @@ namespace InventarioPro.Shared.DTOS.Producto
         [Display(Name = "Categoría")]
         [Required(ErrorMessage = "El campo {0} es requerido.")]
         public int CategoriaId { get; set; }
-        public string CategoriaNombre { get; set; }
 
 
         [Display(Name = "Precio")]

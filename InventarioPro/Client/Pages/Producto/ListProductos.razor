@@ -16,36 +16,46 @@
     <h2>Inventario de Productos</h2>
     <RadzenButton Text="Agregar Producto" Click="OpenAddProductDialog" Style="margin-bottom: 10px;" />
 </div>
-
-<div class="filters">
-    <RadzenDropDown @bind-Value="selectedCategory" Data="@categorias" TextProperty="Nombre" ValueProperty="Id" Placeholder="Selecciona una categoría" Style="width: 200px; margin-right: 10px;" />
-    <RadzenDropDown @bind-Value="selectedWarehouse" Data="@warehouses" TextProperty="Name" ValueProperty="Id" Placeholder="Selecciona un almacén" Style="width: 200px; margin-right: 10px;" />
-    <RadzenButton Text="Filtrar" Click="FilterProducts" Style="margin-right: 10px;" />
-    <RadzenButton Text="Exportar a Excel" Click="ExportToExcel" />
+<div class="filters" style="display: flex; flex-wrap: wrap; margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; flex-wrap: wrap; width: 100%; margin-bottom: 10px;">
+        <RadzenDropDown @bind-Value="selectedCategory" Data="@categorias" TextProperty="Nombre" ValueProperty="Id" Placeholder="Categoría" Style="margin-right: 10px; flex: 1 1 150px;" />
+        <RadzenDropDown @bind-Value="selectedWarehouse" Data="@warehouses" TextProperty="Name" ValueProperty="Id" Placeholder="Almacén" Style="margin-right: 10px; flex: 1 1 150px;" />
+        <label style="margin-right: 5px;">Fecha Inicio:</label>
+        <RadzenDatePicker @bind-Value=@value1 DateFormat="dd/MM/yyyy" Style="margin-right: 10px; flex: 1 1 150px;" />
+        <label style="margin-right: 5px;">Fecha Fin:</label>
+        <RadzenDatePicker @bind-Value=@value2 DateFormat="dd/MM/yyyy" Style="margin-right: 10px; flex: 1 1 150px;" />
+        <RadzenTextBox @bind-Value="searchTerm" Placeholder="Buscar Producto" Style="flex: 2; min-width: 150px; margin-right: 10px;" />
+        <RadzenButton Text="Filtrar" Click="FilterProducts" Style="margin-right: 10px;" />
+    </div>
+    <div style="display: flex; align-items: center; width: 100%;">
+        <RadzenButton Text="Exportar a Excel" />
+    </div>
 </div>
-
-<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true" AllowSorting="true" PageSize="5" AllowPaging="true"
-                Data="@filteredProducts" ColumnWidth="300px" ShowPagingSummary="true" @bind-Value="@selectedProducts">
-    <Columns>
-        <RadzenDataGridColumn Title="Foto" Width="80px" TextAlign="TextAlign.Center">
-            <Template Context="data">
-                <RadzenImage Path="@($"data:image/jpeg;base64,{data.ImagenProducto}")"
-                             class="rz-product-image"
-                             AlternateText="@(data.Nombre)"
-                             Style="width: 80px; height: auto;" />
-            </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn Property="@nameof(Producto_DTO.Nombre)" Title="Nombre del Producto" Width="160px" />
-        <RadzenDataGridColumn Title="Categoría" Width="110px">
-            <Template Context="data">
-                @((categorias.FirstOrDefault(c => c.Id == data.CategoriaId)?.Nombre) ?? "Sin Categoría")
-            </Template>
-        </RadzenDataGridColumn> 
-        <RadzenDataGridColumn Property="@nameof(Producto_DTO.Precio)" Title="Precio" FormatString="{0:C}" Width="120px" />
-        <RadzenDataGridColumn Property="@nameof(Producto_DTO.Costo)" Title="Costo" FormatString="{0:C}" Width="120px" />
-        <RadzenDataGridColumn Property="@nameof(Producto_DTO.Existencia)" Title="Stock" Width="160px" />
-    </Columns>
-</RadzenDataGrid>
+<div style="max-height: 450px; overflow-y: auto;">
+    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true" AllowSorting="true" PageSize="8" AllowPaging="true"
+                    Data="@filteredProducts" ColumnWidth="300px" ShowPagingSummary="true" @bind-Value="@selectedProducts">
+        <Columns>
+            <RadzenDataGridColumn Title="Foto" Width="180px" TextAlign="TextAlign.Center">
+                <Template Context="data">
+                    <RadzenImage Path="@($"data:image/jpeg;base64,{data.ImagenProducto}")"
+                                 class="rz-product-image"
+                                 AlternateText="@(data.Nombre)"
+                                 Style="width: 60px; height: auto;" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Property="@nameof(Producto_DTO.Nombre)" Title="Nombre del Producto" Width="190px" />
+            <RadzenDataGridColumn Title="Categoría" Width="110px">
+                <Template Context="data">
+                    @((categorias.FirstOrDefault(c => c.Id == data.CategoriaId)?.Nombre) ?? "Sin Categoría")
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Property="@nameof(Producto_DTO.FechaCreacion)" Filterable="false" Title="Fecha" Width="120px" FormatString="{0:dd/MM/yyyy}" />
+            <RadzenDataGridColumn Property="@nameof(Producto_DTO.Precio)" Title="Precio" FormatString="{0:C}" Width="120px" />
+            <RadzenDataGridColumn Property="@nameof(Producto_DTO.Costo)" Title="Costo" FormatString="{0:C}" Width="120px" />
+            <RadzenDataGridColumn Property="@nameof(Producto_DTO.Existencia)" Title="Stock" Width="120px" />
+        </Columns>
+    </RadzenDataGrid>
+</div>
 
 <style>
     .header {
@@ -72,6 +82,10 @@
     private List<Categoria_DTO> categorias = new List<Categoria_DTO>();
     private int? selectedCategory;
     private int? selectedWarehouse;
+    DateTime? value1 { get; set; } = DateTime.Today;
+    DateTime? value2 { get; set; } = DateTime.Today;
+    private string searchTerm;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -105,32 +119,46 @@
         }
     }
 
+    
     private async Task FilterProducts()
     {
         try
         {
+            List<Producto_DTO> allProducts = new List<Producto_DTO>();
+
             if (selectedCategory.HasValue)
             {
-                var result = await Http.GetFromJsonAsync<List<Producto_DTO>>($"api/producto/GetPorCategoria/{selectedCategory.Value}");
-
-                if (result == null || result.Count == 0)
-                {
-                    filteredProducts = new List<Producto_DTO>(); 
-                                                                 
-                }
-                else
-                {
-                    filteredProducts = result; 
-                }
+                allProducts = await Http.GetFromJsonAsync<List<Producto_DTO>>($"api/producto/GetPorCategoria/{selectedCategory.Value}");
             }
             else
             {
-                filteredProducts = products; 
+                allProducts = await Http.GetFromJsonAsync<List<Producto_DTO>>("api/producto/GetProductos");
             }
+
+            if (value1.HasValue && value2.HasValue)
+            {
+                var filteredByDate = await Http.GetFromJsonAsync<List<Producto_DTO>>($"api/producto/FiltrarPorFechas/{value1.Value:yyyy-MM-dd}/{value2.Value:yyyy-MM-dd}");
+
+                filteredProducts = allProducts
+                    .Where(p => filteredByDate.Any(fd => fd.Id == p.Id))
+                    .ToList();
+            }
+            else
+            {
+                filteredProducts = allProducts;
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                filteredProducts = filteredProducts
+                    .Where(p => p.Nombre.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
         }
         catch (HttpRequestException ex)
         {
-            filteredProducts = new List<Producto_DTO>(); 
+            filteredProducts = new List<Producto_DTO>();
         }
     }
 
