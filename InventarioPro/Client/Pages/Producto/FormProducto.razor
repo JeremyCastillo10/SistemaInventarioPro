@@ -1,18 +1,18 @@
 ﻿@using CurrieTechnologies.Razor.SweetAlert2
+@using InventarioPro.Shared.DTOS.Categoria
 @using InventarioPro.Shared.DTOS.Producto
 @inject SweetAlertService swal
-@using Radzen
 @inject HttpClient Http
 @inject Radzen.DialogService DialogService
+
 <style>
     .custom-dialog {
-        max-width: 900px; /* Ancho del diálogo */
-        width: 100%; /* Asegura que use el 100% del contenedor */
+        max-width: 900px;
+        width: 100%;
     }
 </style>
 
 <EditForm Model="@Product" OnValidSubmit="HandleValidSubmit">
-    <DataAnnotationsValidator />
     <div class="custom-dialog" style="margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;">
         <h3 class="text-center">Agregar Nuevo Producto</h3>
 
@@ -24,8 +24,7 @@
                 <RadzenTextBox @bind-Value="Product.Descripcion" Placeholder="Descripción" Style="width: 100%; margin-bottom: 10px;" TextMode="TextMode.MultiLine" Rows="3" />
                 <ValidationMessage For="@(() => Product.Descripcion)" />
 
-                <RadzenTextBox @bind-Value="Product.Categoria" Placeholder="Categoría" Style="width: 100%; margin-bottom: 10px;" />
-                <ValidationMessage For="@(() => Product.Categoria)" />
+                <RadzenDropDown @bind-Value="Product.CategoriaId" Data="@categories" TextProperty="Nombre" ValueProperty="Id" Placeholder="Selecciona una Categoría" Style="width: 100%; margin-bottom: 10px;" />
 
                 <RadzenNumeric @bind-Value="Product.Precio" Placeholder="Precio" Style="width: 100%; margin-bottom: 10px;" />
                 <ValidationMessage For="@(() => Product.Precio)" />
@@ -41,11 +40,11 @@
                 @if (string.IsNullOrEmpty(base64Image))
                 {
                     <MudIcon Icon=@Icons.Material.Filled.Inventory
-                             Style="font-size: 250px; color: #4a4848; margin-bottom: 8px;" /> <!-- Icono predeterminado -->
+                             Style="font-size: 250px; color: #4a4848; margin-bottom: 8px;" />
                 }
                 else
                 {
-                    <img src="data:image/jpeg;base64,@base64Image" alt="Imagen del Producto" style="max-width: 250px; margin-bottom: 8px;" /> <!-- Mostrar la imagen -->
+                    <img src="data:image/jpeg;base64,@base64Image" alt="Imagen del Producto" style="max-width: 250px; margin-bottom: 8px;" />
                 }
 
                 <InputFile OnChange="HandleFileSelected" accept="image/*" style="width: 100%;" />
@@ -58,8 +57,8 @@
         </div>
 
         <div class="d-flex justify-content-between mt-4">
-            <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Guardar Producto" Style="width: 48%;" />
-            <RadzenButton Text="Cancelar" Click="Cancel" Style="width: 48%;" />
+            <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Style="width: 48%;">Guardar Producto</MudButton>
+            <MudButton Color="Color.Secondary" OnClick="Cancel" Style="width: 48%;">Cancelar</MudButton>
         </div>
     </div>
 </EditForm>
@@ -68,12 +67,32 @@
     private Producto_DTO Product { get; set; } = new Producto_DTO();
     private string base64Image;
     private string invalidFileMessage;
+    private List<Categoria_DTO> categories;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategories();
+    }
+
+    private async Task LoadCategories()
+    {
+        var response = await Http.GetAsync("api/categoria");
+        if (response.IsSuccessStatusCode)
+        {
+            categories = await response.Content.ReadFromJsonAsync<List<Categoria_DTO>>();
+        }
+        else
+        {
+            await ShowAlert("Error", "No se pudieron cargar las categorías.", SweetAlertIcon.Error);
+        }
+    }
 
     private async Task HandleValidSubmit()
     {
         Product.ImagenProducto = base64Image;
 
-        HttpResponseMessage response = await Http.PostAsJsonAsync("api/productos", Product);
+        var response = await Http.PostAsJsonAsync("api/producto", Product);
+
         if (response.IsSuccessStatusCode)
         {
             await ShowAlert("Éxito", "Producto creado con éxito!", SweetAlertIcon.Success);
@@ -104,9 +123,9 @@
 
     private async Task<string> ConvertFileToBase64(IBrowserFile file)
     {
-        var buffer = new byte[file.Size];
-        await file.OpenReadStream().ReadAsync(buffer);
-        return Convert.ToBase64String(buffer);
+        using var stream = new MemoryStream();
+        await file.OpenReadStream(maxAllowedSize: 1_000_000).CopyToAsync(stream);
+        return Convert.ToBase64String(stream.ToArray());
     }
 
     private (bool IsValid, string ErrorMessage) ValidateFile(IBrowserFile file)

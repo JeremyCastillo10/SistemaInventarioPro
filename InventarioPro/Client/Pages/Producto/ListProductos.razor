@@ -18,7 +18,7 @@
 <div class="filters">
     <RadzenDropDown @bind-Value="selectedCategory" Data="@categories" TextProperty="Name" ValueProperty="Id" Placeholder="Selecciona una categoría" Style="width: 200px; margin-right: 10px;" />
     <RadzenDropDown @bind-Value="selectedWarehouse" Data="@warehouses" TextProperty="Name" ValueProperty="Id" Placeholder="Selecciona un almacén" Style="width: 200px; margin-right: 10px;" />
-    <RadzenButton Text="Filtrar" Click="ApplyFilters" Style="margin-right: 10px;" />
+    <RadzenButton Text="Filtrar" Style="margin-right: 10px;" />
     <RadzenButton Text="Exportar a Excel" Click="ExportToExcel" />
 </div>
 
@@ -32,7 +32,7 @@
             </Template>
         </RadzenDataGridColumn>
         <RadzenDataGridColumn Property="@nameof(Producto_DTO.Nombre)" Title="Nombre del Producto" Width="160px" />
-        <RadzenDataGridColumn Property="@nameof(Producto_DTO.Categoria)" Title="Categoría" Width="200px" />
+        <RadzenDataGridColumn Property="@nameof(Producto_DTO.CategoriaId)" Title="Categoría" Width="200px" />
         <RadzenDataGridColumn Property="@nameof(Producto_DTO.Precio)" Title="Precio" FormatString="{0:C}" Width="120px" />
         <RadzenDataGridColumn Property="@nameof(Producto_DTO.Existencia)" Title="Stock" Width="160px" />
     </Columns>
@@ -89,8 +89,8 @@
     {
         products = new List<Producto_DTO>
         {
-            new Producto_DTO { Id = 1, Nombre = "Producto A", Descripcion = "Descripción A", Precio = 20.50m, Existencia = 100, Categoria = "Bebidas", ImagenProducto = "data:image/png;base64,...base64_image_data..." },
-            new Producto_DTO { Id = 2, Nombre = "Producto B", Descripcion = "Descripción B", Precio = 15.75m, Existencia = 50, Categoria = "Condimentos", ImagenProducto = "data:image/png;base64,...base64_image_data..." }
+            new Producto_DTO { Id = 1, Nombre = "Producto A", Descripcion = "Descripción A", Precio = 20.50m, Existencia = 100,  ImagenProducto = "data:image/png;base64,...base64_image_data..." },
+            new Producto_DTO { Id = 2, Nombre = "Producto B", Descripcion = "Descripción B", Precio = 15.75m, Existencia = 50,  ImagenProducto = "data:image/png;base64,...base64_image_data..." }
         };
 
         return Task.CompletedTask;
@@ -104,18 +104,11 @@
         if (result != null)
         {
             products.Add(result);
-            ApplyFilters(); // Aplicar filtros para actualizar la lista
         }
     }
 
 
-    private void ApplyFilters()
-    {
-        filteredProducts = products
-            .Where(p => (selectedCategory == null || p.Categoria == categories.FirstOrDefault(c => c.Id == selectedCategory)?.Name) &&
-                        (selectedWarehouse == null || p.Existencia > 0)) // Aquí puedes agregar más lógica de filtrado
-            .ToList();
-    }
+
 
     private void ExportToExcel()
     {

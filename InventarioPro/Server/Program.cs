@@ -20,7 +20,7 @@ else
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
-app.UseSwagger();
+app.UseSwaggerUI();
 app.UseHttpsRedirection();
 
 app.UseBlazorFrameworkFiles();
@@ -30,7 +30,8 @@ app.UseRouting();
 
 
 app.MapRazorPages();
-app.UseSwaggerUI();
+app.UseSwagger();
+
 
 app.MapControllers();
 app.MapFallbackToFile("index.html");
