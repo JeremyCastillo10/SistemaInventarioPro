@@ -1,0 +1,126 @@
+@page "/Entrada"
+@using CurrieTechnologies.Razor.SweetAlert2
+@* @using InventarioPro.Shared.DTOS.Entrada *@
+@inject SweetAlertService swal
+@using Radzen
+@inject HttpClient Http
+@inject Radzen.DialogService DialogService
+
+
+<div class="modal show d-block pad" style="background-color: rgba(0, 0, 0, 0.5);">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content p-3">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva Entrada</h5>
+                <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Click=" Cancel" />
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label>Fecha</label>
+                    <RadzenDatePicker TValue="DateTime" Change="@(e => fecha = e.Value)" Style="width: 100%;" />
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3 col-sm-6">
+                        <label>Producto</label>
+                        <RadzenDropDown Placeholder="Producto" Data="@productos" @bind-Value="selectedProductoId" Class="form-control" />
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <label>Cantidad</label>
+                        <RadzenNumeric TValue="int" Placeholder="Cantidad" @bind-Value="cantidad" Class="form-control" />
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <label>Precio</label>
+                        <RadzenNumeric TValue="decimal" Placeholder="Precio" @bind-Value="precio" Class="form-control" />
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end mb-3">
+                    <RadzenButton Text="Agregar" ButtonStyle="ButtonStyle.Primary" Click="AgregarEntrada" />
+                </div>
+                
+                <!-- Tabla para mostrar las entradas agregadas con datos ficticios -->
+                <RadzenDataGrid Data="@entradasAgregadas" TItem="EntradaItem" RowHeight="40" Style="width: 100%;">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="EntradaItem" Property="Producto" Title="Producto" />
+                        <RadzenDataGridColumn TItem="EntradaItem" Property="Cantidad" Title="Cantidad" />
+                        <RadzenDataGridColumn TItem="EntradaItem" Property="Precio" Title="Precio" />
+                        <RadzenDataGridColumn TItem="EntradaItem" Property="Subtotal" Title="Subtotal" />
+                    </Columns>
+                </RadzenDataGrid>
+                
+                <div class="d-flex justify-content-end mt-2">
+                    <h5>Total: @total</h5>
+                </div>
+            </div>
+            <div class="d-flex justify-content-center gap-2 mt-4 mb-2">
+                <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Secondary" Click=" Cancel" />
+                <RadzenButton Text="Guardar" ButtonStyle="ButtonStyle.Primary" Click="GuardarFormulario" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private DateTime fecha = DateTime.Now; // Valor de prueba para la fecha
+    private int selectedEntradaId;
+    private int selectedProductoId;
+    private int cantidad = 1; // Cantidad predeterminada
+    private decimal precio = 10.00m; // Precio predeterminado
+    private decimal total;
+
+    private List<int> entradas = new List<int> { 101, 102, 103 };
+    private List<string> productos = new List<string> { "Producto A", "Producto B", "Producto C" };
+    
+    // Datos de prueba
+    private List<EntradaItem> entradasAgregadas = new List<EntradaItem>
+    {
+        new EntradaItem { EntradaID = 101, Producto = "Producto A", Cantidad = 2, Precio = 10.00m, Subtotal = 20.00m },
+        new EntradaItem { EntradaID = 102, Producto = "Producto B", Cantidad = 1, Precio = 15.00m, Subtotal = 15.00m },
+        new EntradaItem { EntradaID = 103, Producto = "Producto C", Cantidad = 3, Precio = 5.00m, Subtotal = 15.00m },
+    };
+
+    // Calcular el total basado en las entradas agregadas
+    protected override void OnInitialized()
+    {
+        total = entradasAgregadas.Sum(e => e.Subtotal);
+    }
+
+    private void AgregarEntrada()
+    {
+        var subtotal = cantidad * precio;
+        entradasAgregadas.Add(new EntradaItem
+        {
+            EntradaID = selectedEntradaId,
+            Producto = productos[selectedProductoId],
+            Cantidad = cantidad,
+            Precio = precio,
+            Subtotal = subtotal
+        });
+        
+        total += subtotal;
+    }
+
+    private void CerrarFormulario()
+    {
+        // Lógica para cerrar el formulario
+    }
+
+    private void GuardarFormulario()
+    {
+        // Lógica para guardar el formulario
+    }
+    
+    
+    private void Cancel()
+    {
+        DialogService.Close(null);
+    }
+    public class EntradaItem
+    {
+        public int EntradaID { get; set; }
+        public string Producto { get; set; }
+        public int Cantidad { get; set; }
+        public decimal Precio { get; set; }
+        public decimal Subtotal { get; set; }
+    }
+}
