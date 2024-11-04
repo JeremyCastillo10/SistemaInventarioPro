@@ -118,9 +118,9 @@
     private IEnumerable<CuentaCategoriaDTO> productsByCategory = Enumerable.Empty<CuentaCategoriaDTO>();
     private IEnumerable<Producto_DTO> inventoryItems = Enumerable.Empty<Producto_DTO>();
     private Dictionary<int, string> categoryNames = new();
-    private decimal ?totalInventoryValue; // Valor total del inventario
-    private decimal ?averagePrice; // Precio promedio de los productos
-    private int totalCategories; // Total de categorías
+    private decimal ?totalInventoryValue; 
+    private decimal ?averagePrice; 
+    private int totalCategories; 
     private string ?ultimoProductoNombre;
     protected override async Task OnInitializedAsync()
     {
@@ -131,10 +131,8 @@
     {
         try
         {
-            // Obtener todos los productos
             var productosResponse = await Http.GetFromJsonAsync<IEnumerable<Producto_DTO>>("api/producto/GetProductos");
 
-            // Obtener resumen del inventario
             var resumenResponse = await Http.GetFromJsonAsync<ResumenInventarioDTO>("api/producto/GetResumenInventario");
 
             if (resumenResponse != null)
@@ -142,37 +140,32 @@
                 totalProducts = resumenResponse.TotalProducts;
                 inStock = resumenResponse.InStock;
                 outOfStock = resumenResponse.OutOfStock;
-                totalInventoryValue = resumenResponse.TotalInventoryValue; // Valor total del inventario
-                averagePrice = resumenResponse.AveragePrice; // Precio promedio
-                totalCategories = resumenResponse.TotalCategories; // Total de categorías
+                totalInventoryValue = resumenResponse.TotalInventoryValue; 
+                averagePrice = resumenResponse.AveragePrice; 
+                totalCategories = resumenResponse.TotalCategories; 
                 ultimoProductoNombre = resumenResponse.UltimoProducto;
 
             }
 
-            // Calcular el valor total del inventario y el precio promedio
             if (productosResponse != null)
             {
                 totalProducts = resumenResponse.TotalProducts;
                 inStock = resumenResponse.InStock;
                 outOfStock = resumenResponse.OutOfStock;
-                totalInventoryValue = resumenResponse.TotalInventoryValue; // Valor total del inventario
-                averagePrice = resumenResponse.AveragePrice; // Precio promedio
-                totalCategories = resumenResponse.TotalCategories; // Total de categorías
+                totalInventoryValue = resumenResponse.TotalInventoryValue; 
+                averagePrice = resumenResponse.AveragePrice;
+                totalCategories = resumenResponse.TotalCategories; 
             }
 
-            // Obtener todas las categorías
             var categoriasResponse = await Http.GetFromJsonAsync<IEnumerable<Categoria_DTO>>("api/categoria");
 
-            // Construir el mapeo de nombres de categorías
             if (categoriasResponse != null)
             {
                 categoryNames = categoriasResponse.ToDictionary(c => c.Id, c => c.Nombre);
             }
 
-            // Obtener productos por categoría
             var productosPorCategoriaResponse = await Http.GetFromJsonAsync<IEnumerable<CuentaCategoriaDTO>>("api/producto/GetProductosPorCategoria");
 
-            // Mapear los datos al gráfico
             if (productosPorCategoriaResponse != null)
             {
                 productsByCategory = productosPorCategoriaResponse
@@ -181,11 +174,11 @@
                             CategoryName = categoryNames.TryGetValue(g.Category, out var name) ? name : "Desconocido", // Nombre de la categoría
                             Count = g.Count
                         })
-                    .Where(x => x.Count > 0) // Asegúrate de filtrar los que tienen recuento > 0
-                    .ToList(); // Materializa la lista
+                    .Where(x => x.Count > 0) 
+                    .ToList(); 
             }
 
-            inventoryItems = productosResponse.ToList(); // Cargar elementos del inventario para el DataGrid
+            inventoryItems = productosResponse.ToList(); 
         }
         catch (Exception ex)
         {

@@ -11,9 +11,9 @@ namespace InventarioPro.Shared.DTOS.Producto
         public int TotalProducts { get; set; }
         public int InStock { get; set; }
         public int OutOfStock { get; set; }
-        public decimal ?TotalInventoryValue { get; set; } // Valor total del inventario
-        public decimal ?AveragePrice { get; set; } // Precio promedio
-        public int TotalCategories { get; set; } // Total de categorías
+        public decimal ?TotalInventoryValue { get; set; } 
+        public decimal ?AveragePrice { get; set; } 
+        public int TotalCategories { get; set; } 
         public string ?UltimoProducto { get; set; } 
     }
 }

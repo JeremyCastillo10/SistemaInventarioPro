@@ -228,7 +228,6 @@ namespace InventarioPro.Server.Controllers
         [HttpGet("GetResumenInventario")]
         public async Task<ActionResult<ResumenInventarioDTO>> GetResumenInventario()
         {
-            // Suponiendo que tienes acceso a _db (tu contexto de base de datos)
             var totalProducts = await _db.Productos.CountAsync(p => p.Eliminado != true);
             var inStock = await _db.Productos.CountAsync(p => p.Eliminado != true && p.Existencia > 0);
             var outOfStock = totalProducts - inStock;
@@ -243,7 +242,7 @@ namespace InventarioPro.Server.Controllers
                     .AverageAsync(p => p.Precio)
                 : 0;
             var ultimoProducto = await _db.Productos
-                .OrderByDescending(p => p.FechaCreacion) // Asegúrate de que tengas esta propiedad
+                .OrderByDescending(p => p.FechaCreacion) 
                 .Select(p => p.Nombre)
                 .FirstOrDefaultAsync();
 
@@ -271,7 +270,7 @@ namespace InventarioPro.Server.Controllers
                 .GroupBy(p => p.CategoriaId)
                 .Select(g => new CuentaCategoriaDTO
                 {
-                    Category = g.Key ?? 0, // Manejo de categorías nulas
+                    Category = g.Key ?? 0, 
                     Count = g.Count()
                 }).ToListAsync();
 
