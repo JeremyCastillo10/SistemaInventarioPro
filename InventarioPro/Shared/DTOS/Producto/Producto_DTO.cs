@@ -15,20 +15,18 @@ namespace InventarioPro.Shared.DTOS.Producto
         [Display(Name = "Nombre")]
         [Required(ErrorMessage = "El campo {0} es requerido.")]
         [StringLength(100, ErrorMessage = "El campo {0} no puede exceder {1} caracteres.")]
-        public string Nombre { get; set; }
+        public string Nombre { get; set; } = string.Empty;
 
         [Display(Name = "Descripción")]
         [Required(ErrorMessage = "El campo {0} es requerido.")]
         [StringLength(500, ErrorMessage = "El campo {0} no puede exceder {1} caracteres.")]
-        public string Descripcion { get; set; }
+        public string Descripcion { get; set; } = string.Empty;
 
-        [Display(Name = "Imagen del Producto")]
-        [Required(ErrorMessage = "El campo {0} es requerido.")]
-        public string? ImagenProducto { get; set; }
+        public string? ImagenProducto { get; set; } = string.Empty;
 
         [Display(Name = "Categoría")]
         [Required(ErrorMessage = "El campo {0} es requerido.")]
-        public int CategoriaId { get; set; }
+        public int CategoriaId { get; set; } = 0;
 
 
         [Display(Name = "Precio")]

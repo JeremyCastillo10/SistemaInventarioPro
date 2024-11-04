@@ -53,6 +53,11 @@
             <RadzenDataGridColumn Property="@nameof(Producto_DTO.Precio)" Title="Precio" FormatString="{0:C}" Width="120px" />
             <RadzenDataGridColumn Property="@nameof(Producto_DTO.Costo)" Title="Costo" FormatString="{0:C}" Width="120px" />
             <RadzenDataGridColumn Property="@nameof(Producto_DTO.Existencia)" Title="Stock" Width="120px" />
+            <RadzenDataGridColumn Title="Acciones" Width="120px">
+                <Template Context="data">
+                    <RadzenButton Text="Editar" Click="() => OpenEditProductDialog(data.Id)" />
+                </Template>
+            </RadzenDataGridColumn>
         </Columns>
     </RadzenDataGrid>
 </div>
@@ -109,13 +114,14 @@
 
     private async Task OpenAddProductDialog()
     {
+        var newProduct = new Producto_DTO(); // Crear una nueva instancia para agregar
         var options = new Radzen.DialogOptions { Style = "width: 900px;" };
-        var result = await DialogService.OpenAsync<FormProducto>("Agregar Nuevo Producto", null, options);
+        var result = await DialogService.OpenAsync<FormProducto>("Agregar Nuevo Producto", new Dictionary<string, object> { { "Product", newProduct } }, options);
 
         if (result != null)
         {
             products.Add(result);
-            await FilterProducts(); 
+            await LoadProducts(); // Cargar productos nuevamente para reflejar la adición
         }
     }
 
@@ -159,6 +165,24 @@
         catch (HttpRequestException ex)
         {
             filteredProducts = new List<Producto_DTO>();
+        }
+    }
+
+    private async Task OpenEditProductDialog(int productId)
+    {
+        // Obtén el producto que deseas editar desde la API
+        var response = await Http.GetAsync($"api/producto/GetProductoId/{productId}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            var productToEdit = await response.Content.ReadFromJsonAsync<Producto_DTO>();
+
+            var options = new Radzen.DialogOptions { Style = "width: 900px;" };
+            await DialogService.OpenAsync<FormProducto>("Editar Producto", new Dictionary<string, object> { { "Product", productToEdit } }, options);
+        }
+        else
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
         }
     }
 

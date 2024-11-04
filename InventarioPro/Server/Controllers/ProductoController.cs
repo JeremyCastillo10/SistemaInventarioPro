@@ -20,6 +20,7 @@ namespace InventarioPro.Server.Controllers
             _db = db;
         }
 
+
         [HttpPost]
         public async Task<ActionResult<int>> GuardarProducto([FromBody] Producto_DTO productoDto)
         {
@@ -30,10 +31,7 @@ namespace InventarioPro.Server.Controllers
 
             Console.WriteLine($"Producto recibido: {productoDto.Nombre}");
 
-            var existingProducto = await _db.Productos
-                .FirstOrDefaultAsync(p => p.Codigo == productoDto.Codigo);
-
-            if (existingProducto == null)
+            if (productoDto.Id == 0) // Creación de nuevo producto
             {
                 var producto = new Producto
                 {
@@ -63,20 +61,26 @@ namespace InventarioPro.Server.Controllers
                     return BadRequest(new { error = errorMessage });
                 }
             }
-            else
+            else // Actualización de producto existente
             {
-                // Actualización de producto existente
-                existingProducto.Nombre = productoDto.Nombre;
-                existingProducto.Descripcion = productoDto.Descripcion;
-                existingProducto.CategoriaId = productoDto.CategoriaId;
-                existingProducto.Precio = productoDto.Precio;
-                existingProducto.Costo = productoDto.Costo;
-                existingProducto.ImagenProducto = productoDto.ImagenProducto != null ? Convert.FromBase64String(productoDto.ImagenProducto) : null;
-                existingProducto.FechaActualizacion = DateTime.Now;
+                var productoExistente = await _db.Productos.FirstOrDefaultAsync(p => p.Id == productoDto.Id);
+                if (productoExistente == null)
+                {
+                    return NotFound("Producto no encontrado.");
+                }
+
+                // Actualizar los campos del producto existente
+                productoExistente.FechaActualizacion = DateTime.Now;
+                productoExistente.Nombre = productoDto.Nombre;
+                productoExistente.Existencia = productoDto.Existencia;
+                productoExistente.Descripcion = productoDto.Descripcion;
+                productoExistente.CategoriaId = productoDto.CategoriaId;
+                productoExistente.Precio = productoDto.Precio;
+                productoExistente.Costo = productoDto.Costo;
+                productoExistente.ImagenProducto = productoDto.ImagenProducto != null ? Convert.FromBase64String(productoDto.ImagenProducto) : null;
 
                 try
                 {
-                    _db.Productos.Update(existingProducto);
                     await _db.SaveChangesAsync();
                     return Ok("Producto modificado con éxito.");
                 }
@@ -88,6 +92,8 @@ namespace InventarioPro.Server.Controllers
                 }
             }
         }
+
+
         [HttpGet("GetProductos")]
         public async Task<ActionResult> getProductos()
         {
@@ -95,6 +101,7 @@ namespace InventarioPro.Server.Controllers
                 .Where(p => p.Eliminado != true)
                 .Select(p => new Producto_DTO
                 {
+                    Id = p.Id,
                     Nombre = p.Nombre,
                     Descripcion = p.Descripcion,
                     Precio = (Convert.ToDecimal(p.Precio)),
@@ -190,6 +197,33 @@ namespace InventarioPro.Server.Controllers
                 return Ok(productos);
 
             return NotFound("No se encontraron productos en este rango de fechas.");
+        }
+        [HttpGet("GetProductoId/{id}")]
+        public async Task<ActionResult> GetPorId(int id)
+        {
+            var pro = await (from listaproductos in _db.Productos
+                             join cate in _db.Categorias on listaproductos.CategoriaId equals cate.Id
+                             where listaproductos.Id== id && listaproductos.Eliminado != true
+                             select new Producto_DTO
+                             {
+                                 Id = listaproductos.Id,
+                                 Nombre = listaproductos.Nombre,
+                                 Descripcion = listaproductos.Descripcion,
+                                 Precio = Convert.ToDecimal(listaproductos.Precio),
+                                 Costo = Convert.ToDecimal(listaproductos.Precio),
+                                 CategoriaId = listaproductos.CategoriaId ?? 0,
+                                 Existencia = listaproductos.Existencia ?? 0,
+                                 Codigo = listaproductos.Codigo,
+                                 ImagenProducto = listaproductos.ImagenProducto != null ?
+                                     Convert.ToBase64String(listaproductos.ImagenProducto) : null,
+                                 FechaCreacion = listaproductos.FechaCreacion,
+                                 FechaActulizacion = listaproductos.FechaActualizacion,
+                             }).FirstOrDefaultAsync();
+
+            if (pro != null )
+                return Ok(pro);
+
+            return NotFound("No se encontraron productos en esta categoría.");
         }
 
 
