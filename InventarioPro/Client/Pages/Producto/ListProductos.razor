@@ -1,11 +1,14 @@
 ﻿@page "/ListProductos"
 @using InventarioPro.Shared.DTOS.Categoria
 @using Microsoft.AspNetCore.Components
+@using OfficeOpenXml
 @using Radzen
 @using System.Collections.Generic
 @using System.Linq
 @using System.Threading.Tasks
 @using InventarioPro.Shared.DTOS.Producto
+@using System.IO
+@inject IJSRuntime jsruntime;
 @inject HttpClient Http;
 
 @inject Radzen.DialogService DialogService
@@ -28,7 +31,7 @@
         <RadzenButton Text="Filtrar" Click="FilterProducts" Style="margin-right: 10px;" />
     </div>
     <div style="display: flex; align-items: center; width: 100%;">
-        <RadzenButton Text="Exportar a Excel" />
+        <RadzenButton Text="Exportar a Excel" Click="exportarExcel" />
     </div>
 </div>
 <div style="max-height: 450px; overflow-y: auto;">
@@ -90,6 +93,8 @@
     DateTime? value1 { get; set; } = DateTime.Today;
     DateTime? value2 { get; set; } = DateTime.Today;
     private string searchTerm;
+    public string excel = "";
+
 
 
     protected override async Task OnInitializedAsync()
@@ -114,18 +119,18 @@
 
     private async Task OpenAddProductDialog()
     {
-        var newProduct = new Producto_DTO(); // Crear una nueva instancia para agregar
+        var newProduct = new Producto_DTO(); 
         var options = new Radzen.DialogOptions { Style = "width: 900px;" };
         var result = await DialogService.OpenAsync<FormProducto>("Agregar Nuevo Producto", new Dictionary<string, object> { { "Product", newProduct } }, options);
 
         if (result != null)
         {
             products.Add(result);
-            await LoadProducts(); // Cargar productos nuevamente para reflejar la adición
+            await LoadProducts(); 
         }
     }
 
-    
+
     private async Task FilterProducts()
     {
         try
@@ -188,9 +193,55 @@
 
 
 
-    private void ExportToExcel()
+    public void exportarExcel()
     {
+        // Verifica si hay productos para exportar
+        if (products == null || !products.Any())
+        {
+            // Manejar el caso cuando no hay productos (por ejemplo, mostrar un mensaje)
+            Console.WriteLine("No hay productos para exportar.");
+            return;
+        }
+
+        string[] cabecerasTabla = { "Id", "Nombre", "Cantidad", "Fecha", "FechaEjecucion" };
+        string[] propiedadesMostrar = { "Id", "Nombre", "Cantidad", "Fecha", "FechaEjecucion" };
+
+        using (MemoryStream ms = new MemoryStream())
+        {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+            using (ExcelPackage ep = new ExcelPackage())
+            {
+                var worksheet = ep.Workbook.Worksheets.Add("Hoja");
+                // Añade las cabeceras
+                for (int i = 0; i < cabecerasTabla.Length; i++)
+                {
+                    worksheet.Column(i + 1).Width = 15;
+                    worksheet.Cells[1, i + 1].Value = cabecerasTabla[i];
+                }
+
+                // Inicializa valores
+                int fila = 2;
+                foreach (var item in products)
+                {
+                    int col = 1;
+                    foreach (string propiedad in propiedadesMostrar)
+                    {
+                        worksheet.Cells[fila, col].Value = item.GetType().GetProperty(propiedad)?.GetValue(item)?.ToString() ?? "N/A";
+                        col++;
+                    }
+                    fila++;
+                }
+
+                ep.SaveAs(ms);
+                byte[] buffer = ms.ToArray();
+                string base64 = Convert.ToBase64String(buffer);
+                excel = "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64," + base64;
+                jsruntime.InvokeVoidAsync("descargarExcel", excel);
+            }
+        }
     }
+
 
     public class Warehouse
     {
