@@ -83,7 +83,7 @@
         await LoadCategories();
         if (Product.Id != 0)
         {
-            base64Image = Product.ImagenProducto; // Directly use the base64 string
+            base64Image = Product.ImagenProducto; 
         }
     }
 
@@ -108,7 +108,7 @@
             Product = await response.Content.ReadFromJsonAsync<Producto_DTO>();
             if (!string.IsNullOrEmpty(Product.ImagenProducto))
             {
-                base64Image = Product.ImagenProducto; // Directly use the base64 string
+                base64Image = Product.ImagenProducto; 
             }
         }
         else
@@ -120,7 +120,7 @@
 
     private async Task HandleValidSubmit()
     {
-        // Verifica si hay una imagen seleccionada
+
         if (string.IsNullOrEmpty(base64Image))
         {
             await ShowAlert("Error", "La imagen del producto es requerida.", SweetAlertIcon.Error);
@@ -129,7 +129,6 @@
 
         Product.ImagenProducto = base64Image;
 
-        // Envía el producto
         var response = await Http.PostAsJsonAsync("api/producto", Product);
 
         if (response.IsSuccessStatusCode)

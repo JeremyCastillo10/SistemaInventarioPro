@@ -31,7 +31,7 @@ namespace InventarioPro.Server.Controllers
 
             Console.WriteLine($"Producto recibido: {productoDto.Nombre}");
 
-            if (productoDto.Id == 0) // Creación de nuevo producto
+            if (productoDto.Id == 0) 
             {
                 var producto = new Producto
                 {
@@ -61,7 +61,7 @@ namespace InventarioPro.Server.Controllers
                     return BadRequest(new { error = errorMessage });
                 }
             }
-            else // Actualización de producto existente
+            else 
             {
                 var productoExistente = await _db.Productos.FirstOrDefaultAsync(p => p.Id == productoDto.Id);
                 if (productoExistente == null)
@@ -69,7 +69,6 @@ namespace InventarioPro.Server.Controllers
                     return NotFound("Producto no encontrado.");
                 }
 
-                // Actualizar los campos del producto existente
                 productoExistente.FechaActualizacion = DateTime.Now;
                 productoExistente.Nombre = productoDto.Nombre;
                 productoExistente.Existencia = productoDto.Existencia;
