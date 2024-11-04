@@ -1,5 +1,6 @@
 ﻿using InventarioPro.Server.DAL;
 using InventarioPro.Server.Models;
+using InventarioPro.Shared.DTOS.Categoria;
 using InventarioPro.Shared.DTOS.Producto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -224,7 +225,58 @@ namespace InventarioPro.Server.Controllers
 
             return NotFound("No se encontraron productos en esta categoría.");
         }
+        [HttpGet("GetResumenInventario")]
+        public async Task<ActionResult<ResumenInventarioDTO>> GetResumenInventario()
+        {
+            // Suponiendo que tienes acceso a _db (tu contexto de base de datos)
+            var totalProducts = await _db.Productos.CountAsync(p => p.Eliminado != true);
+            var inStock = await _db.Productos.CountAsync(p => p.Eliminado != true && p.Existencia > 0);
+            var outOfStock = totalProducts - inStock;
 
+            var totalValue = await _db.Productos
+                .Where(p => p.Eliminado != true)
+                .SumAsync(p => p.Costo * p.Existencia);
+
+            var averagePrice = totalProducts > 0
+                ? await _db.Productos
+                    .Where(p => p.Eliminado != true)
+                    .AverageAsync(p => p.Precio)
+                : 0;
+            var ultimoProducto = await _db.Productos
+                .OrderByDescending(p => p.FechaCreacion) // Asegúrate de que tengas esta propiedad
+                .Select(p => p.Nombre)
+                .FirstOrDefaultAsync();
+
+            var totalCategories = await _db.Categorias.CountAsync();
+
+            var resumen = new ResumenInventarioDTO
+            {
+                TotalProducts = totalProducts,
+                InStock = inStock,
+                OutOfStock = outOfStock,
+                TotalInventoryValue = totalValue,
+                AveragePrice = averagePrice,
+                TotalCategories = totalCategories,
+                UltimoProducto = ultimoProducto     
+            };
+
+            return Ok(resumen);
+        }
+
+        [HttpGet("GetProductosPorCategoria")]
+        public async Task<ActionResult<IEnumerable<CuentaCategoriaDTO>>> GetProductosPorCategoria()
+        {
+            var productosPorCategoria = await _db.Productos
+                .Where(p => p.Eliminado != true)
+                .GroupBy(p => p.CategoriaId)
+                .Select(g => new CuentaCategoriaDTO
+                {
+                    Category = g.Key ?? 0, // Manejo de categorías nulas
+                    Count = g.Count()
+                }).ToListAsync();
+
+            return Ok(productosPorCategoria);
+        }
 
     }
 }

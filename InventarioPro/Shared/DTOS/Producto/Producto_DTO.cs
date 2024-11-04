@@ -49,6 +49,7 @@ namespace InventarioPro.Shared.DTOS.Producto
         public DateTime FechaActulizacion { get; set; }
 
         public bool Eliminado { get; set; } = false;
+
     }
 
 }

@@ -97,6 +97,8 @@
 
 
 
+
+
     protected override async Task OnInitializedAsync()
     {
         categorias = await Http.GetFromJsonAsync<List<Categoria_DTO>>("api/categoria");
@@ -196,14 +198,13 @@
     public void exportarExcel()
     {
         // Verifica si hay productos para exportar
-        if (products == null || !products.Any())
+        if (filteredProducts == null || !filteredProducts.Any())
         {
-            // Manejar el caso cuando no hay productos (por ejemplo, mostrar un mensaje)
             Console.WriteLine("No hay productos para exportar.");
             return;
         }
 
-        string[] cabecerasTabla = { "Nombre", "Existencia", "FechaCreacion", "Costo", "Precio" };
+        string[] cabecerasTabla = { "Nombre", "Stock", "Fecha Creacion", "Costo", "Precio", "Categoría" };
         string[] propiedadesMostrar = { "Nombre", "Existencia", "FechaCreacion", "Costo", "Precio" };
 
         using (MemoryStream ms = new MemoryStream())
@@ -213,6 +214,7 @@
             using (ExcelPackage ep = new ExcelPackage())
             {
                 var worksheet = ep.Workbook.Worksheets.Add("Hoja");
+
                 // Añade las cabeceras
                 for (int i = 0; i < cabecerasTabla.Length; i++)
                 {
@@ -222,14 +224,21 @@
 
                 // Inicializa valores
                 int fila = 2;
-                foreach (var item in products)
+                foreach (var item in filteredProducts)
                 {
                     int col = 1;
+
+                    // Rellenar las propiedades del producto
                     foreach (string propiedad in propiedadesMostrar)
                     {
                         worksheet.Cells[fila, col].Value = item.GetType().GetProperty(propiedad)?.GetValue(item)?.ToString() ?? "N/A";
                         col++;
                     }
+
+                    // Obtener el nombre de la categoría
+                    var categoria = categorias.FirstOrDefault(c => c.Id == item.CategoriaId);
+                    worksheet.Cells[fila, col].Value = categoria?.Nombre ?? "Sin Categoría";
+
                     fila++;
                 }
 
@@ -241,6 +250,7 @@
             }
         }
     }
+
 
 
     public class Warehouse
