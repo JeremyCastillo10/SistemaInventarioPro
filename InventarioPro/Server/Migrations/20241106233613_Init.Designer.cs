@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventarioPro.Server.Migrations
 {
     [DbContext(typeof(Contexto))]
-    [Migration("20241106184135_Init")]
+    [Migration("20241106233613_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -128,6 +128,8 @@ namespace InventarioPro.Server.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("EntradaId");
 
                     b.ToTable("EntradaDetalles");
                 });
@@ -444,6 +446,15 @@ namespace InventarioPro.Server.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("InventarioPro.Server.Models.EntradaDetalle", b =>
+                {
+                    b.HasOne("InventarioPro.Server.Models.Entrada", null)
+                        .WithMany("entradaDetalle")
+                        .HasForeignKey("EntradaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -493,6 +504,11 @@ namespace InventarioPro.Server.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("InventarioPro.Server.Models.Entrada", b =>
+                {
+                    b.Navigation("entradaDetalle");
                 });
 #pragma warning restore 612, 618
         }

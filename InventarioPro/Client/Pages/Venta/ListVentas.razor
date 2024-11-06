@@ -34,19 +34,35 @@
 </div>
 
 <div style="max-height: 450px; overflow-y: auto;">
-    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowSorting="true" PageSize="8" AllowPaging="true"
-                    Data="@filteredVentas" ColumnWidth="300px" ShowPagingSummary="true" @bind-Value="@selectedVentas">
-        <Columns>
-            <RadzenDataGridColumn Property="@nameof(Venta_DTO.Fecha)" Title="Fecha" FormatString="{0:dd/MM/yyyy}" />
-            <RadzenDataGridColumn Property="@nameof(Venta_DTO.MontoTotal)" Title="Monto Total" FormatString="{0:C}" />
-            <RadzenDataGridColumn Property="@nameof(Venta_DTO.Nombre)" Title="Cliente" />
-            <RadzenDataGridColumn Title="Acciones">
-                <Template Context="data">
-                    <RadzenButton Text="Detalles" Click="() => OpenDetailDialog(data.Id)" />
-                </Template>
-            </RadzenDataGridColumn>
-        </Columns>
-    </RadzenDataGrid>
+    @if (isLoading)
+    {
+        <div style="text-align: center; padding: 20px; font-size: 18px; font-style: italic; color: gray;">
+            Cargando ventas...
+        </div>
+    }
+    else
+    {
+        <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowSorting="true" PageSize="8" AllowPaging="true"
+                        Data="@filteredVentas" ColumnWidth="300px" ShowPagingSummary="true" @bind-Value="@selectedVentas">
+            <Columns>
+                <RadzenDataGridColumn Property="@nameof(Venta_DTO.Fecha)" Title="Fecha" FormatString="{0:dd/MM/yyyy}" />
+                <RadzenDataGridColumn Property="@nameof(Venta_DTO.MontoTotal)" Title="Monto Total" FormatString="{0:C}" />
+                <RadzenDataGridColumn Property="@nameof(Venta_DTO.Nombre)" Title="Cliente" />
+                <RadzenDataGridColumn Title="Acciones">
+                    <Template Context="data">
+                        <RadzenButton Text="Detalles" Click="() => OpenDetailDialog(data.Id)" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+
+        @if (!filteredVentas.Any())
+        {
+            <div style="text-align: center; padding: 10px; font-style: italic; color: gray;">
+                No hay ventas disponibles para mostrar.
+            </div>
+        }
+    }
 </div>
 
 @code {
@@ -56,18 +72,27 @@
     private DateTime? value1 { get; set; } = DateTime.Today;
     private DateTime? value2 { get; set; } = DateTime.Today;
     private string searchTerm;
+    private bool isLoading = true; // Variable para indicar que los datos están cargando
 
     protected override async Task OnInitializedAsync()
     {
         await LoadVentas();
-
-        filteredVentas = ventas;
+        filteredVentas = ventas;  // Start with all the products
+        isLoading = false;  // Se setea a false cuando se hayan cargado los datos
     }
 
     private async Task LoadVentas()
     {
-        ventas = await Http.GetFromJsonAsync<List<Venta_DTO>>("api/venta/GetVentas");
-        filteredVentas = ventas;  // Start with all the products
+        try
+        {
+            ventas = await Http.GetFromJsonAsync<List<Venta_DTO>>("api/venta/GetVentas");
+            filteredVentas = ventas;
+        }
+        catch (HttpRequestException ex)
+        {
+            filteredVentas = new List<Venta_DTO>();
+            Console.WriteLine("Error al cargar las ventas: " + ex.Message);
+        }
     }
 
     private async Task FilterVentas()
