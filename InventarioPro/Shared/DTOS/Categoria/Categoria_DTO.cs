@@ -11,6 +11,8 @@ namespace InventarioPro.Shared.DTOS.Categoria
         public int Id { get; set; }
         public string? Nombre { get; set; }
         public bool Eliminado { get; set; } = false;
- 
+        public DateTime FechaCreacion { get; set; }
+        public DateTime FechaActualizacion { get; set; }
+
     }
 }

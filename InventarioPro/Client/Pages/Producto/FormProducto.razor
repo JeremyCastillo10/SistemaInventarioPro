@@ -13,34 +13,38 @@
 </style>
 
 <EditForm Model="@Product" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
     <div class="custom-dialog" style="margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;">
-        <h3 class="text-center">Agregar Nuevo Producto</h3>
+        <h3 class="text-center">@((Product.Id == 0) ? "Agregar Nuevo Producto" : "Modificar Producto")</h3>
 
         <div style="display: flex; gap: 20px;">
             <div style="flex: 1;">
-                <RadzenTextBox @bind-Value="Product.Nombre" Placeholder="Nombre del Producto" Style="width: 100%; margin-bottom: 10px;" />
+                <RadzenTextBox @bind-Value="Product.Nombre" Id="nombre" Placeholder="Nombre del Producto" Style="width: 100%; margin-bottom: 10px;" />
                 <ValidationMessage For="@(() => Product.Nombre)" />
 
-                <RadzenTextBox @bind-Value="Product.Descripcion" Placeholder="Descripción" Style="width: 100%; margin-bottom: 10px;" TextMode="TextMode.MultiLine" Rows="3" />
+                <RadzenTextBox @bind-Value="Product.Descripcion" Id="descripcion" Placeholder="Descripción" Style="width: 100%; margin-bottom: 10px;" TextMode="TextMode.MultiLine" Rows="3" />
                 <ValidationMessage For="@(() => Product.Descripcion)" />
 
-                <RadzenDropDown @bind-Value="Product.CategoriaId" Data="@categories" TextProperty="Nombre" ValueProperty="Id" Placeholder="Selecciona una Categoría" Style="width: 100%; margin-bottom: 10px;" />
+                <RadzenDropDown @bind-Value="Product.CategoriaId" Id="categoria" Data="@categories" TextProperty="Nombre" ValueProperty="Id" Placeholder="Selecciona una Categoría" Style="width: 100%; margin-bottom: 10px;" />
+                <ValidationMessage For="@(() => Product.CategoriaId)" />
 
-                <RadzenNumeric @bind-Value="Product.Precio" Placeholder="Precio" Style="width: 100%; margin-bottom: 10px;" />
+                <label for="precio">Precio</label>
+                <RadzenNumeric @bind-Value="Product.Precio" Id="precio" Placeholder="Precio" Style="width: 100%; margin-bottom: 10px;" />
                 <ValidationMessage For="@(() => Product.Precio)" />
 
-                <RadzenNumeric @bind-Value="Product.Costo" Placeholder="Costo" Style="width: 100%; margin-bottom: 10px;" />
+                <label for="costo">Costo</label>
+                <RadzenNumeric @bind-Value="Product.Costo" Id="costo" Placeholder="Costo" Style="width: 100%; margin-bottom: 10px;" />
                 <ValidationMessage For="@(() => Product.Costo)" />
 
-                <RadzenTextBox @bind-Value="Product.Codigo" Placeholder="Código del Producto" Style="width: 100%; margin-bottom: 10px;" />
+                <RadzenTextBox @bind-Value="Product.Codigo" Id="codigo" Placeholder="Código del Producto" Style="width: 100%; margin-bottom: 10px;" />
                 <ValidationMessage For="@(() => Product.Codigo)" />
+                     <ValidationSummary></ValidationSummary>
             </div>
 
             <div style="flex: 0 0 300px; display: flex; flex-direction: column; align-items: center;">
                 @if (string.IsNullOrEmpty(base64Image))
                 {
-                    <MudIcon Icon=@Icons.Material.Filled.Inventory
-                             Style="font-size: 250px; color: #4a4848; margin-bottom: 8px;" />
+                    <MudIcon Icon=@Icons.Material.Filled.Inventory Style="font-size: 250px; color: #4a4848; margin-bottom: 8px;" />
                 }
                 else
                 {
@@ -57,14 +61,19 @@
         </div>
 
         <div class="d-flex justify-content-between mt-4">
-            <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Style="width: 48%;">Guardar Producto</MudButton>
+            <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Style="width: 48%;">@((Product.Id == 0) ? "Guardar Producto" : "Actualizar Producto")</MudButton>
             <MudButton Color="Color.Secondary" OnClick="Cancel" Style="width: 48%;">Cancelar</MudButton>
         </div>
     </div>
 </EditForm>
 
 @code {
-    private Producto_DTO Product { get; set; } = new Producto_DTO();
+    [Parameter]
+    public Producto_DTO Product { get; set; } = new Producto_DTO();
+
+    [Parameter]
+    public string id { get; set; }
+
     private string base64Image;
     private string invalidFileMessage;
     private List<Categoria_DTO> categories;
@@ -72,6 +81,10 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadCategories();
+        if (Product.Id != 0)
+        {
+            base64Image = Product.ImagenProducto; 
+        }
     }
 
     private async Task LoadCategories()
@@ -87,23 +100,49 @@
         }
     }
 
+    private async Task LoadProduct(int productId)
+    {
+        var response = await Http.GetAsync($"api/producto/{productId}");
+        if (response.IsSuccessStatusCode)
+        {
+            Product = await response.Content.ReadFromJsonAsync<Producto_DTO>();
+            if (!string.IsNullOrEmpty(Product.ImagenProducto))
+            {
+                base64Image = Product.ImagenProducto; 
+            }
+        }
+        else
+        {
+            await ShowAlert("Error", "No se pudo cargar el producto.", SweetAlertIcon.Error);
+        }
+    }
+
+
     private async Task HandleValidSubmit()
     {
+
+        if (string.IsNullOrEmpty(base64Image))
+        {
+            await ShowAlert("Error", "La imagen del producto es requerida.", SweetAlertIcon.Error);
+            return;
+        }
+
         Product.ImagenProducto = base64Image;
 
         var response = await Http.PostAsJsonAsync("api/producto", Product);
 
         if (response.IsSuccessStatusCode)
         {
-            await ShowAlert("Éxito", "Producto creado con éxito!", SweetAlertIcon.Success);
+            await ShowAlert("Éxito", (Product.Id == 0) ? "Producto creado con éxito!" : "Producto actualizado con éxito!", SweetAlertIcon.Success);
             DialogService.Close(Product);
         }
         else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
-            await ShowAlert("Error", $"No se pudo crear el producto: {errorMessage}", SweetAlertIcon.Error);
+            await ShowAlert("Error", $"No se pudo {(Product.Id == 0 ? "crear" : "actualizar")} el producto: {errorMessage}", SweetAlertIcon.Error);
         }
     }
+
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {

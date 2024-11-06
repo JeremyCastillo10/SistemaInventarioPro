@@ -1,5 +1,8 @@
-﻿@using System.Collections.Generic
-@using Radzen.Blazor
+@page "/dashboard"
+@using System.Net.Http.Json
+@using InventarioPro.Shared.DTOS.Categoria
+@using InventarioPro.Shared.DTOS.Producto
+@inject HttpClient Http
 
 <PageTitle>Dashboard de Inventario</PageTitle>
 
@@ -8,100 +11,254 @@
 </RadzenText>
 
 <RadzenStack Gap="0.5rem">
-    <!-- Reducir el gap -->
+
     <RadzenCard class="rz-my-8">
-        <!-- Ajustar el margen -->
         <RadzenText TextStyle="TextStyle.H5">Resumen del Inventario</RadzenText>
         <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween">
-            <RadzenColumn Size="4">
-                <RadzenCard Variant="Radzen.Variant.Outlined" Style="height: 100%; padding: 10px; background-color: #e0f7fa;">
-                    <!-- Color de fondo personalizado -->
+            <RadzenColumn Size="3">
+                <RadzenCard Variant="Radzen.Variant.Outlined"
+                    Style="height: 100%; padding: 10px; background-color: #e0f7fa;">
                     <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
-                        <RadzenText TextStyle="TextStyle.H6" Style="color: #00796b;">Total de Productos</RadzenText> <!-- Color del texto -->
-                        <RadzenText TextStyle="TextStyle.H4" Style="color: #004d40;">@totalProducts</RadzenText> <!-- Color del texto -->
+                        <RadzenText TextStyle="TextStyle.H6" Style="color: #00796b;">Total de Productos</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4" Style="color: #004d40;">@totalProducts</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="4">
-                <RadzenCard Variant="Radzen.Variant.Outlined" Style="height: 100%; padding: 10px; background-color: #ffe0b2;">
-                    <!-- Color de fondo -->
+            <RadzenColumn Size="3">
+                <RadzenCard Variant="Radzen.Variant.Outlined"
+                    Style="height: 100%; padding: 10px; background-color: #ffe0b2;">
                     <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
-                        <RadzenText TextStyle="TextStyle.H6" Style="color: #e65100;">Productos en Stock</RadzenText> <!-- Color del texto -->
-                        <RadzenText TextStyle="TextStyle.H4" Style="color: #e65100;">@inStock</RadzenText> <!-- Color del texto -->
+                        <RadzenText TextStyle="TextStyle.H6" Style="color: #e65100;">Productos en Stock</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4" Style="color: #e65100;">@inStock</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="4">
-                <RadzenCard Variant="Radzen.Variant.Outlined" Style="height: 100%; padding: 10px; background-color: #ffccbc;">
-                    <!-- Color de fondo -->
+            <RadzenColumn Size="3">
+                <RadzenCard Variant="Radzen.Variant.Outlined"
+                    Style="height: 100%; padding: 10px; background-color: #ffccbc;">
                     <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
-                        <RadzenText TextStyle="TextStyle.H6" Style="color: #c62828;">Productos Agotados</RadzenText> <!-- Color del texto -->
-                        <RadzenText TextStyle="TextStyle.H4" Style="color: #c62828;">@outOfStock</RadzenText> <!-- Color del texto -->
+                        <RadzenText TextStyle="TextStyle.H6" Style="color: #c62828;">Productos Agotados</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4" Style="color: #c62828;">@outOfStock</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
+            <RadzenColumn Size="3">
+                <RadzenCard Variant="Radzen.Variant.Outlined"
+                    Style="height: 100%; padding: 10px; background-color: #c8e6c9;">
+                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
+                        <RadzenText TextStyle="TextStyle.H6" Style="color: #388e3c;">Valor Total del Inventario
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4" Style="color: #1b5e20;">
+                            @(totalInventoryValue?.ToString("F2") ?? "0.00")</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="3">
+                <RadzenCard Variant="Radzen.Variant.Outlined"
+                    Style="height: 100%; padding: 10px; background-color: #fff9c4;">
+                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
+                        <RadzenText TextStyle="TextStyle.H6" Style="color: #f57f17;">Promedio de Precio</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4" Style="color: #f57f17;">@(averagePrice?.ToString("F2") ??
+                            "0.00")</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+                <RadzenColumn Size="3">
+                    <RadzenCard Variant="Radzen.Variant.Outlined"
+                        Style="height: 100%; padding: 10px; background-color: #ffe0b2;">
+                        <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
+                            <RadzenText TextStyle="TextStyle.H6" Style="color: #e65100;">Número de Categorías</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H4" Style="color: #e65100;">@totalCategories</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+                <RadzenColumn Size="3">
+                    <RadzenCard Variant="Radzen.Variant.Outlined"
+                        Style="height: 100%; padding: 10px; background-color: #e0e0e0;">
+                        <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
+                            <RadzenText TextStyle="TextStyle.H6" Style="color: #757575;">Número de Proveedores</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H4" Style="color: #757575;">2</RadzenText>
+                            <!-- Nueva tarjeta -->
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+                <RadzenColumn Size="3">
+                    <RadzenCard Variant="Radzen.Variant.Outlined"
+                        Style="height: 100%; padding: 10px; background-color: #e0f7fa;">
+                        <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
+                            <RadzenText TextStyle="TextStyle.H6" Style="color: #00796b;">Último Producto Agregado
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.H4" Style="color: #004d40;">@ultimoProductoNombre</RadzenText>
+                            <!-- Nueva tarjeta -->
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenCard>
+        <RadzenCard class="rz-my-8"
+            Style="background-color: #f9f9f9; border: 1px solid #ddd; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
+            <RadzenText TextStyle="TextStyle.H5">Resumen de Ventas</RadzenText>
+            <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="margin-top: 20px;">
+                <RadzenColumn Size="4">
+                    <RadzenCard Variant="Radzen.Variant.Filled"
+                        Style="padding: 20px; background-color: #a8d8ea; color: #2c3e50; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                        <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween">
+                            <RadzenText TextStyle="TextStyle.H6" Style="font-weight: bold;">Total de Ventas</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold;">133</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+                <RadzenColumn Size="4">
+                    <RadzenCard Variant="Radzen.Variant.Filled"
+                        Style="padding: 20px; background-color: #ffe0b2; color: #5d4037; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                        <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween">
+                            <RadzenText TextStyle="TextStyle.H6" Style="font-weight: bold;">Número de Transacciones
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold;">122</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+                <RadzenColumn Size="4">
+                    <RadzenCard Variant="Radzen.Variant.Filled"
+                        Style="padding: 20px; background-color: #d1c4e9; color: #4a148c; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                        <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween">
+                            <RadzenText TextStyle="TextStyle.H6" Style="font-weight: bold;">Promedio por Venta</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold;">1456</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+            </RadzenRow>
+            <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="margin-top: 20px;">
+                <RadzenColumn Size="4">
+                    <RadzenCard Variant="Radzen.Variant.Filled"
+                        Style="padding: 20px; background-color: #ef9a9a; color: #b71c1c; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                        <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween">
+                            <RadzenText TextStyle="TextStyle.H6" Style="font-weight: bold;">Ventas Canceladas</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold;">5</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+                <RadzenColumn Size="4">
+                    <RadzenCard Variant="Radzen.Variant.Filled"
+                        Style="padding: 20px; background-color: #e1bee7; color: #6a1b9a; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                        <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween">
+                            <RadzenText TextStyle="TextStyle.H6" Style="font-weight: bold;">Devoluciones</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold;">2</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+                <RadzenColumn Size="4">
+                    <RadzenCard Variant="Radzen.Variant.Filled"
+                        Style="padding: 20px; background-color: #cfd8dc; color: #37474f; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+                        <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween">
+                            <RadzenText TextStyle="TextStyle.H6" Style="font-weight: bold;">Última Venta</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold;">5000</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenCard>
 
-        </RadzenRow>
+        <RadzenCard>
+            <RadzenText TextStyle="TextStyle.H5">Gráfico de Productos por Categoría</RadzenText>
+            @if (productsByCategory != null && productsByCategory.Any())
+        {
+            <RadzenChart Style="width: 100%; height: 350px;">
+                <RadzenColumnSeries Data="@productsByCategory" ValueProperty="Count" CategoryProperty="CategoryName" />
+                <RadzenValueAxis>
+                    <RadzenGridLines Visible="true" />
+                </RadzenValueAxis>
+                <RadzenCategoryAxis>
+                    <RadzenGridLines Visible="true" />
+                </RadzenCategoryAxis>
+                <RadzenLegend Visible="true" />
+            </RadzenChart>
+        }
+        else
+        {
+            <RadzenText TextStyle="TextStyle.H6" Style="color: red;">No hay datos disponibles para mostrar el gráfico.
+            </RadzenText>
+        }
     </RadzenCard>
-
-    <RadzenCard>
-        <RadzenText TextStyle="TextStyle.H5">Gráfico de Productos por Categoría</RadzenText>
-        <RadzenChart Style="width: 100%; height: 350px;">
-            <!-- Reducir altura -->
-            <RadzenColumnSeries Data=@productsByCategory ValueProperty="Count" CategoryProperty="Category" />
-            <RadzenValueAxis>
-                <RadzenGridLines Visible="true" />
-            </RadzenValueAxis>
-            <RadzenCategoryAxis />
-            <RadzenLegend Visible="true" />
-        </RadzenChart>
-    </RadzenCard>
-
-    <RadzenCard>
-        <RadzenDataGrid Data=@inventoryItems AllowSorting="true" AllowFiltering="true" Style="height: 350px;">
-            <!-- Reducir altura -->
-            <Columns>
-                <RadzenDataGridColumn Property="Name" Title="Nombre" />
-                <RadzenDataGridColumn Property="Category" Title="Categoría" />
-                <RadzenDataGridColumn Property="Quantity" Title="Cantidad" />
-                <RadzenDataGridColumn Property="Price" Title="Precio" />
-            </Columns>
-        </RadzenDataGrid>
-    </RadzenCard>
+    <RadzenDataGrid Data="@inventoryItems" AllowSorting="true" AllowFiltering="true" Style="height: 350px;">
+        <Columns>
+            <RadzenDataGridColumn Property="Nombre" Title="Nombre" />
+            <RadzenDataGridColumn Title="Categoría">
+                <Template>
+                    @categoryNames.GetValueOrDefault(((Producto_DTO)@context).CategoriaId, "Desconocido")
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Property="Existencia" Title="Cantidad" />
+            <RadzenDataGridColumn Property="Precio" Title="Precio" />
+        </Columns>
+    </RadzenDataGrid>
 </RadzenStack>
-
 @code {
-    int totalProducts = 100; // Ejemplo
-    int inStock = 75; // Ejemplo
-    int outOfStock = 25; // Ejemplo
+    private int totalProducts;
+    private int inStock;
+    private int outOfStock;
+    private IEnumerable<CuentaCategoriaDTO> productsByCategory = Enumerable.Empty<CuentaCategoriaDTO>();
+    private IEnumerable<Producto_DTO> inventoryItems = Enumerable.Empty<Producto_DTO>();
+    private Dictionary<int, string> categoryNames = new();
+    private decimal? totalInventoryValue;
+    private decimal? averagePrice;
+    private int totalCategories;
+    private string? ultimoProductoNombre;
 
-    // Ejemplo de datos para el gráfico
-    IEnumerable<CategoryCount> productsByCategory = new List<CategoryCount>
+    protected override async Task OnInitializedAsync()
     {
-        new CategoryCount { Category = "Electrónica", Count = 40 },
-        new CategoryCount { Category = "Ropa", Count = 30 },
-        new CategoryCount { Category = "Hogar", Count = 30 },
-    };
-
-    // Ejemplo de datos para el DataGrid
-    IEnumerable<InventoryItem> inventoryItems = new List<InventoryItem>
-    {
-        new InventoryItem { Name = "Laptop", Category = "Electrónica", Quantity = 10, Price = 800 },
-        new InventoryItem { Name = "Camiseta", Category = "Ropa", Quantity = 20, Price = 25 },
-        new InventoryItem { Name = "Sofá", Category = "Hogar", Quantity = 5, Price = 500 },
-    };
-
-    public class CategoryCount
-    {
-        public string Category { get; set; }
-        public int Count { get; set; }
+        await LoadInventoryData();
     }
 
-    public class InventoryItem
+    private async Task LoadInventoryData()
     {
-        public string Name { get; set; }
-        public string Category { get; set; }
-        public int Quantity { get; set; }
-        public decimal Price { get; set; }
+        try
+        {
+            var productosResponse = await Http.GetFromJsonAsync<IEnumerable<Producto_DTO>>("api/producto/GetProductos");
+            var resumenResponse = await Http.GetFromJsonAsync<ResumenInventarioDTO>("api/producto/GetResumenInventario");
+
+            if (resumenResponse != null)
+            {
+                totalProducts = resumenResponse.TotalProducts;
+                inStock = resumenResponse.InStock;
+                outOfStock = resumenResponse.OutOfStock;
+                totalInventoryValue = resumenResponse.TotalInventoryValue;
+                averagePrice = resumenResponse.AveragePrice;
+                totalCategories = resumenResponse.TotalCategories;
+                ultimoProductoNombre = resumenResponse.UltimoProducto;
+            }
+
+            // Obtener categorías
+            var categoriasResponse = await Http.GetFromJsonAsync<IEnumerable<Categoria_DTO>>("api/categoria");
+            if (categoriasResponse != null)
+            {
+                categoryNames = categoriasResponse.ToDictionary(c => c.Id, c => c.Nombre);
+            }
+
+            // Obtener productos por categoría
+            var productosPorCategoriaResponse = await
+            Http.GetFromJsonAsync<IEnumerable<CuentaCategoriaDTO>>("api/producto/GetProductosPorCategoria");
+            if (productosPorCategoriaResponse != null)
+            {
+                productsByCategory = productosPorCategoriaResponse
+                .Select(g => new CuentaCategoriaDTO
+                    {
+                        CategoryName = categoryNames.TryGetValue(g.Category, out var name) ? name : "Desconocido",
+                        Count = g.Count
+                    })
+                .Where(x => x.Count > 0)
+                .ToList();
+            }
+
+            // Obtener productos
+            if (productosResponse != null)
+            {
+                inventoryItems = productosResponse.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar datos del inventario: {ex.Message}");
+        }
     }
 }

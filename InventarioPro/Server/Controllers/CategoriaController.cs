@@ -15,7 +15,6 @@ namespace InventarioPro.Server.Controllers
         {
             _db = db;
         }
-        // GET: api/Articulos
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Categoria_DTO>>> GetAllArticulos()
         {
@@ -24,7 +23,7 @@ namespace InventarioPro.Server.Controllers
                 .Select(a => new Categoria_DTO
                 {
                     Id = a.Id,
-                   Nombre = a.Nombre,
+                    Nombre = a.Nombre,
                 })
                 .ToListAsync();
 
