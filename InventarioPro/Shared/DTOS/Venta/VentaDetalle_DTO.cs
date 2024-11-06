@@ -12,7 +12,10 @@ namespace InventarioPro.Shared.DTOS.Venta
         public int IdProducto { get; set; }
         public int Cantidad { get; set; }
         public decimal Precio { get; set; }
-        public int IdVenta { get; set; }
+        public int ?IdVenta { get; set; }
+        public bool Eliminado { get; set; } = false;
+        public DateTime FechaCreacion { get; set; }
+        public DateTime FechaActualizacion { get; set; }
 
     }
 }

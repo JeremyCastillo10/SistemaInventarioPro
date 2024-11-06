@@ -137,28 +137,32 @@
         </RadzenRow>
     </RadzenCard>
 
-
-
     <RadzenCard>
         <RadzenText TextStyle="TextStyle.H5">Gráfico de Productos por Categoría</RadzenText>
-        <RadzenChart Style="width: 100%; height: 350px;">
-            <RadzenColumnSeries Data=@productsByCategory ValueProperty="Count" CategoryProperty="CategoryName" />
-            <RadzenValueAxis>
-                <RadzenGridLines Visible="true" />
-            </RadzenValueAxis>
-            <RadzenCategoryAxis>
-                <RadzenGridLines Visible="true" />
-            </RadzenCategoryAxis>
-            <RadzenLegend Visible="true" />
-        </RadzenChart>
+        @if (productsByCategory != null && productsByCategory.Any())
+        {
+            <RadzenChart Style="width: 100%; height: 350px;">
+                <RadzenColumnSeries Data="@productsByCategory" ValueProperty="Count" CategoryProperty="CategoryName" />
+                <RadzenValueAxis>
+                    <RadzenGridLines Visible="true" />
+                </RadzenValueAxis>
+                <RadzenCategoryAxis>
+                    <RadzenGridLines Visible="true" />
+                </RadzenCategoryAxis>
+                <RadzenLegend Visible="true" />
+            </RadzenChart>
+        }
+        else
+        {
+            <RadzenText TextStyle="TextStyle.H6" Style="color: red;">No hay datos disponibles para mostrar el gráfico.</RadzenText>
+        }
     </RadzenCard>
-
-    <RadzenDataGrid Data=@inventoryItems AllowSorting="true" AllowFiltering="true" Style="height: 350px;">
+    <RadzenDataGrid Data="@inventoryItems" AllowSorting="true" AllowFiltering="true" Style="height: 350px;">
         <Columns>
             <RadzenDataGridColumn Property="Nombre" Title="Nombre" />
             <RadzenDataGridColumn Title="Categoría">
                 <Template>
-                    @categoryNames[((Producto_DTO)@context).CategoriaId]
+                    @categoryNames.GetValueOrDefault(((Producto_DTO)@context).CategoriaId, "Desconocido")
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn Property="Existencia" Title="Cantidad" />
@@ -166,7 +170,6 @@
         </Columns>
     </RadzenDataGrid>
 </RadzenStack>
-
 @code {
     private int totalProducts;
     private int inStock;
@@ -174,10 +177,11 @@
     private IEnumerable<CuentaCategoriaDTO> productsByCategory = Enumerable.Empty<CuentaCategoriaDTO>();
     private IEnumerable<Producto_DTO> inventoryItems = Enumerable.Empty<Producto_DTO>();
     private Dictionary<int, string> categoryNames = new();
-    private decimal ?totalInventoryValue; 
-    private decimal ?averagePrice; 
-    private int totalCategories; 
-    private string ?ultimoProductoNombre;
+    private decimal? totalInventoryValue;
+    private decimal? averagePrice;
+    private int totalCategories;
+    private string? ultimoProductoNombre;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadInventoryData();
@@ -188,7 +192,6 @@
         try
         {
             var productosResponse = await Http.GetFromJsonAsync<IEnumerable<Producto_DTO>>("api/producto/GetProductos");
-
             var resumenResponse = await Http.GetFromJsonAsync<ResumenInventarioDTO>("api/producto/GetResumenInventario");
 
             if (resumenResponse != null)
@@ -196,51 +199,42 @@
                 totalProducts = resumenResponse.TotalProducts;
                 inStock = resumenResponse.InStock;
                 outOfStock = resumenResponse.OutOfStock;
-                totalInventoryValue = resumenResponse.TotalInventoryValue; 
-                averagePrice = resumenResponse.AveragePrice; 
-                totalCategories = resumenResponse.TotalCategories; 
-                ultimoProductoNombre = resumenResponse.UltimoProducto;
-
-            }
-
-            if (productosResponse != null)
-            {
-                totalProducts = resumenResponse.TotalProducts;
-                inStock = resumenResponse.InStock;
-                outOfStock = resumenResponse.OutOfStock;
-                totalInventoryValue = resumenResponse.TotalInventoryValue; 
+                totalInventoryValue = resumenResponse.TotalInventoryValue;
                 averagePrice = resumenResponse.AveragePrice;
-                totalCategories = resumenResponse.TotalCategories; 
+                totalCategories = resumenResponse.TotalCategories;
+                ultimoProductoNombre = resumenResponse.UltimoProducto;
             }
 
+            // Obtener categorías
             var categoriasResponse = await Http.GetFromJsonAsync<IEnumerable<Categoria_DTO>>("api/categoria");
-
             if (categoriasResponse != null)
             {
                 categoryNames = categoriasResponse.ToDictionary(c => c.Id, c => c.Nombre);
             }
 
+            // Obtener productos por categoría
             var productosPorCategoriaResponse = await Http.GetFromJsonAsync<IEnumerable<CuentaCategoriaDTO>>("api/producto/GetProductosPorCategoria");
-
             if (productosPorCategoriaResponse != null)
             {
                 productsByCategory = productosPorCategoriaResponse
                     .Select(g => new CuentaCategoriaDTO
                         {
-                            CategoryName = categoryNames.TryGetValue(g.Category, out var name) ? name : "Desconocido", // Nombre de la categoría
+                            CategoryName = categoryNames.TryGetValue(g.Category, out var name) ? name : "Desconocido",
                             Count = g.Count
                         })
-                    .Where(x => x.Count > 0) 
-                    .ToList(); 
+                    .Where(x => x.Count > 0)
+                    .ToList();
             }
 
-            inventoryItems = productosResponse.ToList(); 
+            // Obtener productos
+            if (productosResponse != null)
+            {
+                inventoryItems = productosResponse.ToList();
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error al cargar datos del inventario: {ex.Message}");
         }
     }
-
-
 }

@@ -16,6 +16,8 @@ namespace InventarioPro.Shared.DTOS.Venta
         public DateTime FechaCreacion { get; set; }
         public DateTime FechaActualizacion { get; set; }
         public List<VentaDetalle_DTO> VentaDetalle_DTOs { get; set; } = new List<VentaDetalle_DTO>();
+        public bool Eliminado { get; set; } = false;
+
 
     }
 }

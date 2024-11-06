@@ -31,6 +31,7 @@ namespace InventarioPro.Server.Controllers
                     MontoTotal = ventaDto.MontoTotal,
                     Nombre = ventaDto.Nombre,
                     Cedula = ventaDto.Cedula,
+                    FechaActualizacion = DateTime.Now,
                 };
 
                 _db.Ventas.Add(venta);
@@ -51,16 +52,20 @@ namespace InventarioPro.Server.Controllers
                                 IdProducto = detalle.IdProducto,
                                 Cantidad = detalle.Cantidad,
                                 Precio = detalle.Precio,
-                                IdVenta = idVenta
+                                IdVenta = idVenta,
+                                FechaCreacion = DateTime.Now,
+                                FechaActualizacion = DateTime.Now,
+                                Eliminado = false
+
                             };
 
                             _db.VentaDetalles.Add(ventaDetalle);
 
-                            // Restar existencia del producto
+                          
                             var producto = await _db.Productos.FindAsync(detalle.IdProducto);
                             if (producto != null)
                             {
-                                producto.Existencia -= detalle.Cantidad; // Ajusta la propiedad de existencia
+                                producto.Existencia -= detalle.Cantidad; 
                                 _db.Productos.Update(producto);
                             }
                         }
@@ -77,7 +82,6 @@ namespace InventarioPro.Server.Controllers
             }
             else
             {
-                // Actualizar venta existente
                 var venta = await _db.Ventas.FindAsync(ventaDto.Id);
                 if (venta == null)
                 {
@@ -88,8 +92,8 @@ namespace InventarioPro.Server.Controllers
                 venta.MontoTotal = ventaDto.MontoTotal;
                 venta.Nombre = ventaDto.Nombre;
                 venta.Cedula = ventaDto.Cedula;
+                venta.FechaActualizacion = DateTime.Now;
 
-                // Actualizar o agregar detalles de la venta
                 foreach (var detalle in ventaDto.VentaDetalle_DTOs)
                 {
                     var ventaDetalle = await _db.VentaDetalles
@@ -98,36 +102,39 @@ namespace InventarioPro.Server.Controllers
 
                     if (ventaDetalle != null)
                     {
-                        // Actualizar detalle existente
                         ventaDetalle.Cantidad = detalle.Cantidad;
                         ventaDetalle.Precio = detalle.Precio;
+                        ventaDetalle.FechaActualizacion = DateTime.Now;
+                        ventaDetalle.Eliminado = false;
 
-                        // Restar la nueva cantidad del producto
                         var producto = await _db.Productos.FindAsync(detalle.IdProducto);
                         if (producto != null)
                         {
-                            producto.Existencia -= (detalle.Cantidad - ventaDetalle.Cantidad); // Ajusta la propiedad de existencia
+                            producto.Existencia -= (detalle.Cantidad - ventaDetalle.Cantidad); 
                             _db.Productos.Update(producto);
                         }
                     }
                     else
                     {
-                        // Agregar nuevo detalle
+                
                         ventaDetalle = new VentaDetalle
                         {
                             IdProducto = detalle.IdProducto,
                             Cantidad = detalle.Cantidad,
                             Precio = detalle.Precio,
-                            IdVenta = venta.Id
+                            IdVenta = venta.Id,
+                            FechaActualizacion = DateTime.Now,
+                            Eliminado = false
+
                         };
 
                         _db.VentaDetalles.Add(ventaDetalle);
 
-                        // Restar existencia del producto
+         
                         var producto = await _db.Productos.FindAsync(detalle.IdProducto);
                         if (producto != null)
                         {
-                            producto.Existencia -= detalle.Cantidad; // Ajusta la propiedad de existencia
+                            producto.Existencia -= detalle.Cantidad;
                             _db.Productos.Update(producto);
                         }
                     }
@@ -141,7 +148,7 @@ namespace InventarioPro.Server.Controllers
         public async Task<ActionResult<List<Venta_DTO>>> GetVentas()
         {
             var ventas = await _db.Ventas
-                .Where(v => !v.Eliminado) // Solo ventas no eliminadas
+                .Where(v => v.Eliminado != true) 
                 .ToListAsync();
 
             var ventasDto = new List<Venta_DTO>();
@@ -152,14 +159,13 @@ namespace InventarioPro.Server.Controllers
                 {
                     Id = v.Id,
                     Fecha = v.Fecha,
-                    MontoTotal = v.MontoTotal,
+                    MontoTotal = Convert.ToDecimal(v.MontoTotal),
                     Nombre = v.Nombre,
                     Cedula = v.Cedula
                 };
 
-                // Obtener los detalles de la venta
                 var detalles = await _db.VentaDetalles
-                    .Where(d => d.IdVenta == v.Id)
+                    .Where(d => d.IdVenta == v.Id && d.Eliminado != true)
                     .ToListAsync();
 
                 foreach (var detalle in detalles)
@@ -168,7 +174,7 @@ namespace InventarioPro.Server.Controllers
                     {
                         IdProducto = detalle.IdProducto,
                         Cantidad = detalle.Cantidad,
-                        Precio = detalle.Precio
+                        Precio = Convert.ToDecimal(detalle.Precio)
                     });
                 }
 
@@ -185,42 +191,64 @@ namespace InventarioPro.Server.Controllers
         [HttpGet("GetVentaById/{id}")]
         public async Task<ActionResult<Venta_DTO>> GetVentaById(int id)
         {
-            var venta = await _db.Ventas
-                .Where(v => v.Id == id && !v.Eliminado) // Solo ventas no eliminadas
-                .FirstOrDefaultAsync();
+            var venta = await (from v in _db.Ventas
+                               where v.Id == id && v.Eliminado != true  
+                               select new Venta_DTO
+                               {
+                                   Id = v.Id,
+                                   Fecha = v.Fecha,
+                                   MontoTotal = Convert.ToDecimal(v.MontoTotal),
+                                   Nombre = v.Nombre,
+                                   Cedula = v.Cedula,
+                                   FechaCreacion = v.FechaCreacion,
+                                   FechaActualizacion = v.FechaActualizacion,
+
+                                   VentaDetalle_DTOs = (from d in _db.VentaDetalles
+                                                        where d.IdVenta == v.Id && d.Eliminado != true
+                                                        select new VentaDetalle_DTO
+                                                        {
+                                                            Id = d.Id,  
+                                                            IdProducto = d.IdProducto,  
+                                                            Cantidad = d.Cantidad,  
+                                                            Precio = Convert.ToDecimal(d.Precio),  
+                                                            IdVenta = d.IdVenta,  
+                                                            FechaCreacion = d.FechaCreacion,
+                                                            FechaActualizacion = d.FechaActualizacion
+
+                                                        }).ToList()
+                               }).FirstOrDefaultAsync();
 
             if (venta == null)
             {
-                return NotFound("Venta no encontrada.");
+                return NotFound(new { error = "Venta no encontrada." });
             }
 
-            var ventaDto = new Venta_DTO
+            return Ok(venta);
+        }
+        [HttpPut("EliminarDetalle/{id}")]
+        public async Task<IActionResult> EliminarDetalle(int id, [FromBody] bool eliminado)
+        {
+            try
             {
-                Id = venta.Id,
-                Fecha = venta.Fecha,
-                MontoTotal = venta.MontoTotal,
-                Nombre = venta.Nombre,
-                Cedula = venta.Cedula
-            };
+                var detalle = await _db.VentaDetalles.FirstOrDefaultAsync(d => d.Id == id);
 
-            // Obtener los detalles de la venta
-            var detalles = await _db.VentaDetalles
-                .Where(d => d.IdVenta == venta.Id)
-                .ToListAsync();
-
-            foreach (var detalle in detalles)
-            {
-                ventaDto.VentaDetalle_DTOs.Add(new VentaDetalle_DTO
+                if (detalle == null)
                 {
-                    IdProducto = detalle.IdProducto,
-                    Cantidad = detalle.Cantidad,
-                    Precio = detalle.Precio
-                });
-            }
+                    return NotFound(new { error = "Detalle no encontrado." });
+                }
 
-            return Ok(ventaDto);
+                detalle.Eliminado = true;
+
+                _db.VentaDetalles.Update(detalle);
+                await _db.SaveChangesAsync();
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Hubo un problema al eliminar el detalle: " + ex.Message });
+            }
         }
 
     }
-
 }
