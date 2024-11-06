@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace InventarioPro.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class inicial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -64,22 +64,6 @@ namespace InventarioPro.Server.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Categorias", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "EntradaDetalles",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    EntradaId = table.Column<int>(type: "int", nullable: false),
-                    IdProducto = table.Column<int>(type: "int", nullable: false),
-                    Cantidad = table.Column<int>(type: "int", nullable: false),
-                    Precio = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_EntradaDetalles", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -257,6 +241,28 @@ namespace InventarioPro.Server.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "EntradaDetalles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    EntradaId = table.Column<int>(type: "int", nullable: false),
+                    IdProducto = table.Column<int>(type: "int", nullable: false),
+                    Cantidad = table.Column<int>(type: "int", nullable: false),
+                    Precio = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EntradaDetalles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_EntradaDetalles_Entradas_EntradaId",
+                        column: x => x.EntradaId,
+                        principalTable: "Entradas",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.InsertData(
                 table: "Categorias",
                 columns: new[] { "Id", "Eliminado", "Nombre" },
@@ -305,6 +311,11 @@ namespace InventarioPro.Server.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EntradaDetalles_EntradaId",
+                table: "EntradaDetalles",
+                column: "EntradaId");
         }
 
         /// <inheritdoc />
@@ -332,9 +343,6 @@ namespace InventarioPro.Server.Migrations
                 name: "EntradaDetalles");
 
             migrationBuilder.DropTable(
-                name: "Entradas");
-
-            migrationBuilder.DropTable(
                 name: "Productos");
 
             migrationBuilder.DropTable(
@@ -348,6 +356,9 @@ namespace InventarioPro.Server.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "Entradas");
         }
     }
 }
