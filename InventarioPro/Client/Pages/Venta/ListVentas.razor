@@ -72,13 +72,13 @@
     private DateTime? value1 { get; set; } = DateTime.Today;
     private DateTime? value2 { get; set; } = DateTime.Today;
     private string searchTerm;
-    private bool isLoading = true; // Variable para indicar que los datos están cargando
+    private bool isLoading = true; 
 
     protected override async Task OnInitializedAsync()
     {
         await LoadVentas();
-        filteredVentas = ventas;  // Start with all the products
-        isLoading = false;  // Se setea a false cuando se hayan cargado los datos
+        filteredVentas = ventas;  
+        isLoading = false;  
     }
 
     private async Task LoadVentas()
@@ -99,22 +99,19 @@
     {
         try
         {
-            // Retrieve all ventas first
             var allVentas = await Http.GetFromJsonAsync<List<Venta_DTO>>("api/venta/GetVentas");
 
-            // Filter by dates if applicable
             if (value1.HasValue && value2.HasValue)
             {
                 allVentas = allVentas.Where(v => v.Fecha >= value1.Value && v.Fecha <= value2.Value).ToList();
             }
 
-            // Search by client name if there is a search term
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 allVentas = allVentas.Where(v => v.Nombre.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
             }
 
-            filteredVentas = allVentas; // Update the filtered list
+            filteredVentas = allVentas; 
         }
         catch (HttpRequestException ex)
         {
@@ -130,7 +127,7 @@
 
         if (result != null)
         {
-            await LoadVentas(); // Refresh the list
+            await LoadVentas(); 
         }
     }
 
@@ -152,7 +149,6 @@
 
     public void exportarVentasExcel()
     {
-        // Verifica si hay ventas para exportar
         if (ventas == null || !ventas.Any())
         {
             Console.WriteLine("No hay ventas para exportar.");
@@ -170,27 +166,23 @@
             {
                 var worksheet = ep.Workbook.Worksheets.Add("Ventas");
 
-                // Añadir cabeceras
                 for (int i = 0; i < cabecerasTabla.Length; i++)
                 {
                     worksheet.Column(i + 1).Width = 20;
                     worksheet.Cells[1, i + 1].Value = cabecerasTabla[i];
                 }
 
-                // Inicializar valores
                 int fila = 2;
                 foreach (var venta in ventas)
                 {
                     int col = 1;
 
-                    // Rellenar las propiedades de la venta
                     foreach (string propiedad in propiedadesMostrar)
                     {
                         worksheet.Cells[fila, col].Value = venta.GetType().GetProperty(propiedad)?.GetValue(venta)?.ToString() ?? "N/A";
                         col++;
                     }
 
-                    // Agregar detalles de la venta
                     var detalles = venta.VentaDetalle_DTOs.Select(d => $"{d.IdProducto} x {d.Cantidad} a {d.Precio:C}").ToArray();
                     worksheet.Cells[fila, col].Value = string.Join(", ", detalles);
 
@@ -213,7 +205,6 @@
         return;
     }
 
-    // Datos ficticios de la empresa
     string empresaNombre = "Tech Solutions S.A.";
     string empresaDireccion = "Av. de la Tecnología 123, Ciudad Innovadora";
     string empresaTelefono = "+123 456 7890";
@@ -227,11 +218,9 @@
         PdfWriter writer = new PdfWriter(ms);
         using (var pdfDoc = new PdfDocument(writer))
         {
-            // Crea el documento PDF
             Document doc = new Document(pdfDoc, PageSize.A4);
-            doc.SetMargins(30, 30, 40, 30); // márgenes más amplios para mayor elegancia
+            doc.SetMargins(30, 30, 40, 30); 
 
-            // Encabezado de la empresa con un estilo limpio
             Paragraph empresaInfo = new Paragraph()
                 .Add(new Text(empresaNombre).SetBold().SetFontSize(16).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
                 .Add(new Text("\n" + empresaDireccion).SetFontSize(10).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
@@ -241,7 +230,6 @@
                 .SetMarginBottom(20);
             doc.Add(empresaInfo);
 
-            // Título del documento con mayor énfasis
             Paragraph p1 = new Paragraph("Reporte de Ventas")
                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
                 .SetFontSize(20)
@@ -250,7 +238,6 @@
                 .SetMarginBottom(10);
             doc.Add(p1);
 
-            // Subtítulo con la fecha actual de la exportación (solo fecha, sin hora)
             Paragraph fechaExportacion = new Paragraph("Fecha de Exportación: " + DateTime.Now.ToString("dd/MM/yyyy"))
                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
                 .SetFontSize(12)
@@ -258,12 +245,10 @@
                 .SetMarginBottom(20);
             doc.Add(fechaExportacion);
 
-            // Crear la tabla con bordes visibles
             Table table = new Table(cabecerasTabla.Length, true);
             table.SetWidthPercent(100);
-            table.SetMarginBottom(30); // mayor espacio después de la tabla
+            table.SetMarginBottom(30); 
 
-            // Estilo de cabecera de la tabla (con fondo gris claro y bordes)
             foreach (var cabecera in cabecerasTabla)
             {
                 var headerCell = new Cell().Add(new Paragraph(cabecera))
@@ -272,38 +257,34 @@
                     .SetBold()
                     .SetFontColor(iText.Kernel.Colors.ColorConstants.DARK_GRAY)
                     .SetPadding(8)
-                    .SetBorderTop(new SolidBorder(1)) // Borde superior
-                    .SetBorderBottom(new SolidBorder(1)) // Borde inferior
-                    .SetBorderLeft(new SolidBorder(1)) // Borde izquierdo
-                    .SetBorderRight(new SolidBorder(1)); // Borde derecho
+                    .SetBorderTop(new SolidBorder(1)) 
+                    .SetBorderBottom(new SolidBorder(1)) 
+                    .SetBorderLeft(new SolidBorder(1)) 
+                    .SetBorderRight(new SolidBorder(1)); 
                 table.AddHeaderCell(headerCell);
             }
 
-            // Agregar las ventas a la tabla (con bordes)
             foreach (var venta in ventas)
             {
-                // Insertar datos de venta
                 foreach (var propiedad in propiedadesMostrar)
                 {
                     var valor = venta.GetType().GetProperty(propiedad)?.GetValue(venta)?.ToString() ?? "N/A";
 
-                    // Si la propiedad es la fecha de la venta, la formateamos correctamente
                     if (propiedad == "Fecha" && DateTime.TryParse(valor, out DateTime fechaVenta))
                     {
-                        valor = fechaVenta.ToString("dd/MM/yyyy"); // Solo la fecha, sin la hora
+                        valor = fechaVenta.ToString("dd/MM/yyyy"); 
                     }
 
                     var cell = new Cell().Add(new Paragraph(valor))
                         .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
                         .SetPadding(8)
-                        .SetBorderTop(new SolidBorder(1)) // Borde superior
-                        .SetBorderBottom(new SolidBorder(1)) // Borde inferior
-                        .SetBorderLeft(new SolidBorder(1)) // Borde izquierdo
-                        .SetBorderRight(new SolidBorder(1)); // Borde derecho
+                        .SetBorderTop(new SolidBorder(1)) 
+                        .SetBorderBottom(new SolidBorder(1)) 
+                        .SetBorderLeft(new SolidBorder(1)) 
+                        .SetBorderRight(new SolidBorder(1)); 
                     table.AddCell(cell);
                 }
 
-                // Insertar detalles de la venta
                 var detalles = venta.VentaDetalle_DTOs.Select(d => $"{d.IdProducto} x {d.Cantidad} a {d.Precio:C}").ToArray();
                 var detallesCell = new Cell().Add(new Paragraph(string.Join(", ", detalles)))
                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
@@ -315,10 +296,8 @@
                 table.AddCell(detallesCell);
             }
 
-            // Agregar la tabla al documento
             doc.Add(table);
 
-            // Pie de página (información adicional de la empresa)
             Paragraph piePagina = new Paragraph()
                 .Add(new Text("Tech Solutions S.A. | Todos los derechos reservados").SetFontSize(8).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
@@ -326,16 +305,13 @@
                 .SetMarginTop(10);
             doc.Add(piePagina);
 
-            // Cerrar el documento PDF
             doc.Close();
             writer.Close();
 
-            // Convertir a base64
             byte[] buffer = ms.ToArray();
             string base64 = Convert.ToBase64String(buffer);
             string pdf = "data:application/pdf;base64," + base64;
 
-            // Invocar función JavaScript para descargar el archivo PDF
             jsruntime.InvokeVoidAsync("descargarPDF", pdf);
         }
     }
