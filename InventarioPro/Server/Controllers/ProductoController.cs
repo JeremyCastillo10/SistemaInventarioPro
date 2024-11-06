@@ -239,7 +239,7 @@ namespace InventarioPro.Server.Controllers
             var averagePrice = totalProducts > 0
                 ? await _db.Productos
                     .Where(p => p.Eliminado != true)
-                    .AverageAsync(p => p.Precio)
+                    .AverageAsync(p => p.Costo)
                 : 0;
             var ultimoProducto = await _db.Productos
                 .OrderByDescending(p => p.FechaCreacion) 

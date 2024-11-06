@@ -1,0 +1,183 @@
+﻿@using InventarioPro.Shared.DTOS.Producto
+@using InventarioPro.Shared.DTOS.Venta
+@inject HttpClient Http
+@inject Radzen.DialogService DialogService
+@inject SweetAlertService swal
+
+<EditForm Model="@venta" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <div style="padding: 20px;">
+        <RadzenDatePicker @bind-Value="venta.Fecha" DateFormat="dd/MM/yyyy" Placeholder="Fecha" Style="width: 100%; margin-bottom: 10px;" />
+        <RadzenTextBox @bind-Value="venta.Nombre" Placeholder="Nombre del Cliente" Style="width: 100%; margin-bottom: 10px;" />
+        <RadzenTextBox @bind-Value="venta.Cedula" Placeholder="Cédula del Cliente" Style="width: 100%; margin-bottom: 10px;" />
+
+        <h5 class="badge-success">DETALLES DE LA VENTA:</h5>
+
+        <!-- Fila para los inputs con Flexbox -->
+        <div class="form-group d-flex align-items-center" style="gap: 10px;">
+            <RadzenDropDown @bind-Value="nuevoDetalle.IdProducto" Data="@productos" TextProperty="Nombre" ValueProperty="Id" Placeholder="Seleccionar Producto" Style="flex: 1;" />
+            <label for="costo">Cantidad:</label>
+            <RadzenNumeric @bind-Value="nuevoDetalle.Cantidad" Placeholder="Cantidad" Style="flex: 1;" />
+            <label for="costo">Precio:</label>
+            <RadzenNumeric @bind-Value="nuevoDetalle.Precio" Placeholder="Precio" Style="flex: 1;" Decimal="true" />
+            <button class="btn btn-secondary" type="button" @onclick="AddDetalle">Agregar</button>
+        </div>
+
+        <h5>Detalles Agregados:</h5>
+        <RadzenDataGrid AllowSorting="true" PageSize="5" AllowPaging="true" Data="@detalles">
+            <Columns>
+                <RadzenDataGridColumn Property="@nameof(VentaDetalle_DTO.Cantidad)" Title="Cantidad" />
+                <RadzenDataGridColumn Property="@nameof(VentaDetalle_DTO.Precio)" Title="Precio" />
+                <RadzenDataGridColumn Title="Producto">
+                    <Template Context="data">
+                        @((productos.FirstOrDefault(p => p.Id == data.IdProducto)?.Nombre) ?? "Sin Producto")
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Title="Acciones">
+                    <Template Context="data">
+                        <button class="btn btn-danger" type="button" @onclick="@(() => RemoveDetalle(data))">Remover</button>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+
+        <h5 class="mt-3">Monto Total: @MontoTotal</h5>
+
+        <div class="d-flex justify-content-between mt-4">
+            <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Guardar Venta" />
+            <RadzenButton Text="Cancelar" Click="Cancel" />
+        </div>
+    </div>
+</EditForm>
+
+
+@code {
+    [Parameter]
+    public Venta_DTO venta { get; set; } = new Venta_DTO();
+    private List<VentaDetalle_DTO> detalles = new List<VentaDetalle_DTO>();
+    private VentaDetalle_DTO nuevoDetalle = new VentaDetalle_DTO();
+    private List<Producto_DTO> productos = new List<Producto_DTO>();
+
+    private decimal ITBIS = 0.18m; // Definir el ITBIS como un porcentaje (18%)
+
+    // Monto Total calculado que incluye el ITBIS
+    private decimal MontoTotal => CalcularMontoTotal();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProductos();
+    }
+
+    private async Task LoadProductos()
+    {
+        var response = await Http.GetAsync("api/producto/GetProductos");
+        if (response.IsSuccessStatusCode)
+        {
+            productos = await response.Content.ReadFromJsonAsync<List<Producto_DTO>>();
+        }
+        else
+        {
+            // Manejar error al cargar productos
+        }
+    }
+    private async void AddDetalle()
+    {
+        // Validar que los campos tienen valores correctos
+        if (nuevoDetalle.IdProducto > 0 && nuevoDetalle.Cantidad > 0 && nuevoDetalle.Precio >= 0)
+        {
+            // Buscar el producto seleccionado
+            var producto = productos.FirstOrDefault(p => p.Id == nuevoDetalle.IdProducto);
+
+            // Verificar si el producto existe y si hay suficiente stock
+            if (producto != null && producto.Existencia >= nuevoDetalle.Cantidad)
+            {
+                var newDetalles = new List<VentaDetalle_DTO>(detalles)
+            {
+                new VentaDetalle_DTO
+                {
+                    IdProducto = nuevoDetalle.IdProducto,
+                    Cantidad = nuevoDetalle.Cantidad,
+                    Precio = nuevoDetalle.Precio
+                }
+            };
+
+                // Asignar la nueva lista a la propiedad detalles
+                detalles = newDetalles;
+
+                // Limpiar el objeto nuevoDetalle para que los campos se limpien
+                nuevoDetalle = new VentaDetalle_DTO();
+
+                // Llamar a StateHasChanged() para forzar que Blazor vuelva a renderizar el componente
+                StateHasChanged(); // Esto es crucial para reflejar el cambio inmediatamente
+            }
+            else
+            {
+                // Mostrar una advertencia si no hay suficiente stock
+                await swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Error",
+                        Text = $"No hay suficiente existencia para agregar este producto. Quedan {producto?.Existencia} unidades.",
+                        Icon = SweetAlertIcon.Warning,
+                        ConfirmButtonText = "OK"
+                    });
+            }
+        }
+    }
+
+   
+
+    private void RemoveDetalle(VentaDetalle_DTO detalle)
+    {
+        detalles.Remove(detalle);
+        // Reasignar la lista de detalles para forzar que Blazor actualice la UI
+        detalles = detalles.ToList();
+        StateHasChanged(); // Forzar la actualización de la UI
+    }
+
+    // Método para calcular el monto total de la venta (precio de los detalles + ITBIS)
+    private decimal CalcularMontoTotal()
+    {
+        decimal subtotal = detalles.Sum(d => d.Cantidad * d.Precio);
+        decimal totalConITBIS = subtotal * (1 + ITBIS); // Sumamos el ITBIS
+        return totalConITBIS;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        // Asignar el monto total a la propiedad de la venta
+        venta.MontoTotal = MontoTotal;
+
+        // Asignar la lista de detalles a la propiedad de la venta
+        venta.VentaDetalle_DTOs = detalles;
+
+
+        var response = await Http.PostAsJsonAsync("api/venta/Guardar", venta);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await ShowAlert("Éxito", (venta.Id == 0) ? "Venta Creada Con Exito!" : "Venta Actualizada Con Exito", SweetAlertIcon.Success);
+
+            Cancel();
+        }
+        else
+        {
+            // Manejar error
+        }
+    }
+
+    private async Task ShowAlert(string title, string text, SweetAlertIcon icon)
+    {
+        await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = title,
+                Text = text,
+                Icon = icon,
+                ConfirmButtonText = "OK"
+            });
+    }
+
+    private void Cancel()
+    {
+        DialogService.Close(null);
+    }
+}

@@ -1,0 +1,57 @@
+﻿@page "/ListVentas"
+@using InventarioPro.Shared.DTOS.Venta
+@inject HttpClient Http
+@inject Radzen.DialogService DialogService
+
+<PageTitle>Inventario de Ventas</PageTitle>
+
+<div class="header">
+    <h2>Inventario de Ventas</h2>
+    <RadzenButton Text="Agregar Venta" Click="OpenAddVentaDialog" Style="margin-bottom: 10px;" />
+</div>
+
+<div style="max-height: 450px; overflow-y: auto;">
+    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowSorting="true" PageSize="8" AllowPaging="true"
+                    Data="@ventas" ColumnWidth="300px">
+        <Columns>
+            <RadzenDataGridColumn Property="@nameof(Venta_DTO.Fecha)" Title="Fecha" FormatString="{0:dd/MM/yyyy}" />
+            <RadzenDataGridColumn Property="@nameof(Venta_DTO.MontoTotal)" Title="Monto Total" FormatString="{0:C}" />
+            <RadzenDataGridColumn Property="@nameof(Venta_DTO.Nombre)" Title="Cliente" />
+            <RadzenDataGridColumn Title="Acciones">
+                <Template Context="data">
+                    <RadzenButton Text="Detalles" Click="() => OpenDetailDialog(data.Id)" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</div>
+
+@code {
+    private List<Venta_DTO> ventas = new List<Venta_DTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+
+    private async Task LoadVentas()
+    {
+        ventas = await Http.GetFromJsonAsync<List<Venta_DTO>>("api/venta");
+    }
+
+    private async Task OpenAddVentaDialog()
+    {
+        var newVenta = new Venta_DTO();
+        var options = new Radzen.DialogOptions { Style = "width: 700px;" };
+        var result = await DialogService.OpenAsync<FormVenta>("Agregar Nueva Venta", new Dictionary<string, object> { { "venta", newVenta } }, options);
+
+        if (result != null)
+        {
+            await LoadVentas(); // Refresh the list
+        }
+    }
+
+    private async Task OpenDetailDialog(int ventaId)
+    {
+        // Open the detail dialog (not implemented in this example)
+    }
+}
