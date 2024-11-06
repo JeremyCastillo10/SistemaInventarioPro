@@ -8,5 +8,10 @@ namespace InventarioPro.Shared.DTOS.Entrada
 {
     public class EntradaDetalle_DTO
     {
+        public int Id { get; set; }
+        public int EntradaId { get; set; }
+        public int IdProducto { get; set; }
+        public int Cantidad { get; set; }
+        public decimal Precio { get; set; }
     }
 }
