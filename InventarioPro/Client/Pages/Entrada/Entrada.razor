@@ -61,8 +61,10 @@
                                 <!-- Itera sobre la lista de entradas, asumiendo que se llama listentradaDetalle_DTO -->
                                 @foreach (var item in listentradaDetalle_DTO)
                                 {
+                                    var producto = listproducto_DTO.FirstOrDefault(p => p.Id == item.IdProducto);
+
                                     <tr style="height: 40px;">
-                                        <td>@item.IdProducto</td>
+                                        <td>@producto.Nombre</td>
                                         <td>@item.Cantidad</td>
                                         <td>@item.Precio.ToString("C")</td> <!-- Formato de moneda -->
                                         <td>
@@ -143,16 +145,21 @@
 
     private void AgregarEntrada()
     {
-        listentradaDetalle_DTO.Add(entradaDetalle_DTO);
+        var item = listentradaDetalle_DTO.FirstOrDefault(p => p.IdProducto == entradaDetalle_DTO.IdProducto);
+        if (item == null)
+        {
+            listentradaDetalle_DTO.Add(entradaDetalle_DTO);
 
-        total += entradaDetalle_DTO.Precio;
-        entradaDetalle_DTO = new EntradaDetalle_DTO();
+            total += entradaDetalle_DTO.Precio;
+            entradaDetalle_DTO = new EntradaDetalle_DTO();
 
-        StateHasChanged();
+            StateHasChanged();
+        }
+
     }
     private void EliminarEntrada(int id)
     {
-        var item = listentradaDetalle_DTO.FirstOrDefault(p => p.IdProducto == id);
+        var item = listentradaDetalle_DTO.FirstOrDefault(p => p.IdProducto == entrada_DTO.Id);
         if (item != null)
         {
             total -= item.Precio;
