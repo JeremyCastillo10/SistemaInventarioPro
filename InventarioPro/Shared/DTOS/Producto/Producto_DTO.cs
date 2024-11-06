@@ -50,6 +50,7 @@ namespace InventarioPro.Shared.DTOS.Producto
 
         public bool Eliminado { get; set; } = false;
 
+
     }
 
 }

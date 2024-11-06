@@ -137,6 +137,89 @@ namespace InventarioPro.Server.Controllers
                 return Ok("Venta modificada con éxito.");
             }
         }
+        [HttpGet("GetVentas")]
+        public async Task<ActionResult<List<Venta_DTO>>> GetVentas()
+        {
+            var ventas = await _db.Ventas
+                .Where(v => !v.Eliminado) // Solo ventas no eliminadas
+                .ToListAsync();
+
+            var ventasDto = new List<Venta_DTO>();
+
+            foreach (var v in ventas)
+            {
+                var ventaDto = new Venta_DTO
+                {
+                    Id = v.Id,
+                    Fecha = v.Fecha,
+                    MontoTotal = v.MontoTotal,
+                    Nombre = v.Nombre,
+                    Cedula = v.Cedula
+                };
+
+                // Obtener los detalles de la venta
+                var detalles = await _db.VentaDetalles
+                    .Where(d => d.IdVenta == v.Id)
+                    .ToListAsync();
+
+                foreach (var detalle in detalles)
+                {
+                    ventaDto.VentaDetalle_DTOs.Add(new VentaDetalle_DTO
+                    {
+                        IdProducto = detalle.IdProducto,
+                        Cantidad = detalle.Cantidad,
+                        Precio = detalle.Precio
+                    });
+                }
+
+                ventasDto.Add(ventaDto);
+            }
+
+            if (ventasDto != null && ventasDto.Count > 0)
+            {
+                return Ok(ventasDto);
+            }
+            return NotFound("No se encontraron ventas.");
+        }
+
+        [HttpGet("GetVentaById/{id}")]
+        public async Task<ActionResult<Venta_DTO>> GetVentaById(int id)
+        {
+            var venta = await _db.Ventas
+                .Where(v => v.Id == id && !v.Eliminado) // Solo ventas no eliminadas
+                .FirstOrDefaultAsync();
+
+            if (venta == null)
+            {
+                return NotFound("Venta no encontrada.");
+            }
+
+            var ventaDto = new Venta_DTO
+            {
+                Id = venta.Id,
+                Fecha = venta.Fecha,
+                MontoTotal = venta.MontoTotal,
+                Nombre = venta.Nombre,
+                Cedula = venta.Cedula
+            };
+
+            // Obtener los detalles de la venta
+            var detalles = await _db.VentaDetalles
+                .Where(d => d.IdVenta == venta.Id)
+                .ToListAsync();
+
+            foreach (var detalle in detalles)
+            {
+                ventaDto.VentaDetalle_DTOs.Add(new VentaDetalle_DTO
+                {
+                    IdProducto = detalle.IdProducto,
+                    Cantidad = detalle.Cantidad,
+                    Precio = detalle.Precio
+                });
+            }
+
+            return Ok(ventaDto);
+        }
 
     }
 
