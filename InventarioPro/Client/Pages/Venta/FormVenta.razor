@@ -63,7 +63,6 @@
     private VentaDetalle_DTO nuevoDetalle = new VentaDetalle_DTO();
     private List<Producto_DTO> productos = new List<Producto_DTO>();
 
-    private decimal ITBIS = 0.18m; 
 
     private decimal MontoTotal => CalcularMontoTotal();
 
@@ -179,8 +178,7 @@
     private decimal CalcularMontoTotal()
     {
         decimal subtotal = detalles.Sum(d => d.Cantidad * d.Precio);
-        decimal totalConITBIS = subtotal * (1 + ITBIS); 
-        return totalConITBIS;
+        return subtotal;
     }
 
     private async Task HandleValidSubmit()
@@ -188,6 +186,7 @@
         venta.MontoTotal = MontoTotal;
 
         venta.VentaDetalle_DTOs = detalles;
+
 
         var response = await Http.PostAsJsonAsync("api/venta/Guardar", venta);
 
@@ -208,6 +207,7 @@
             if (result.IsConfirmed)
             {
                 exportarVentaPDF();
+
             }
 
             
@@ -354,7 +354,7 @@ public void exportarVentaPDF()
             string base64 = Convert.ToBase64String(buffer);
             string pdf = "data:application/pdf;base64," + base64;
 
-            jsruntime.InvokeVoidAsync("descargarPDF", pdf);
+                jsruntime.InvokeVoidAsync("descargarFactura", pdf);
         }
     }
     }
