@@ -15,6 +15,7 @@ namespace InventarioPro.Server.DAL
         public DbSet<Entrada> Entradas { get; set; }
         public DbSet<EntradaDetalle> EntradaDetalles { get; set; }
         public DbSet<Categoria> Categorias { get; set; }
+        public DbSet<Empresa> Empresas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
