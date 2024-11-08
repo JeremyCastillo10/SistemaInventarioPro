@@ -23,7 +23,7 @@
 
 <div class="header">
     <h2>Inventario de Productos</h2>
-    <RadzenButton Text="Agregar Producto" Click="OpenAddProductDialog" Style="margin-bottom: 10px;" />
+    <RadzenButton Text="Agregar Producto" Click="OpenAddProductDialog" Icon="add" Style="margin-bottom: 10px;" />
 </div>
 <div class="filters" style="display: flex; flex-wrap: wrap; margin-bottom: 20px;">
     <div style="display: flex; align-items: center; flex-wrap: wrap; width: 100%; margin-bottom: 10px;">
@@ -34,13 +34,13 @@
         <label style="margin-right: 5px;">Fecha Fin:</label>
         <RadzenDatePicker @bind-Value=@value2 DateFormat="dd/MM/yyyy" Style="margin-right: 10px; flex: 1 1 150px;" />
         <RadzenTextBox @bind-Value="searchTerm" Placeholder="Buscar Producto" Style="flex: 2; min-width: 150px; margin-right: 10px;" />
-        <RadzenButton Text="Filtrar" Click="FilterProducts" Style="margin-right: 10px;" />
+        <RadzenButton Text="Filtrar" Icon="search" Click="FilterProducts" Style="margin-right: 10px;" />
     </div>
-    <div style="display: flex; align-items: center; width: 100%;">
-        <RadzenButton Text="Exportar a Excel" Click="exportarExcel" />
-        <RadzenButton Text="Exportar a PDF" Click="ExportarPDF" />
+    <div style="display: flex; align-items: center; width: 100%; gap: 10px;">
+        <RadzenButton Text="Exportar a Excel" Click="exportarExcel" Icon="folder_open" />
+        <RadzenButton Text="Exportar a PDF" Click="ExportarPDF" Icon="picture_as_pdf" />
+    </div>
 
-    </div>
 </div>
 <div style="max-height: 450px; overflow-y: auto;">
     <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true" AllowSorting="true" PageSize="8" AllowPaging="true"

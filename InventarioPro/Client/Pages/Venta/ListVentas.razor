@@ -13,10 +13,9 @@
 @inject Radzen.DialogService DialogService
 
 <PageTitle>Inventario de Ventas</PageTitle>
-
-<div class="header">
+<div class="header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
     <h2>Inventario de Ventas</h2>
-    <RadzenButton Text="Agregar Venta" Click="OpenAddVentaDialog" Style="margin-bottom: 10px;" />
+    <RadzenButton Text="Agregar Venta" Click="OpenAddVentaDialog" Icon="add" Style="margin-bottom: 10px;" />
 </div>
 
 <div class="filters" style="display: flex; flex-wrap: wrap; margin-bottom: 20px;">
@@ -26,13 +25,13 @@
         <label style="margin-right: 5px;">Fecha Fin:</label>
         <RadzenDatePicker @bind-Value="value2" DateFormat="dd/MM/yyyy" Style="margin-right: 10px; flex: 1 1 150px;" />
         <RadzenTextBox @bind-Value="searchTerm" Placeholder="Buscar Cliente" Style="flex: 2; min-width: 150px; margin-right: 10px;" />
-        <RadzenButton Text="Filtrar" Click="FilterVentas" Style="margin-right: 10px;" />
+        <RadzenButton Text="Filtrar" Icon="search" Click="FilterVentas" Style="margin-right: 10px;" />
     </div>
-    <div style="display: flex; align-items: center; width: 100%; margin-left:4px">
-        <RadzenButton Text="Exportar a Excel" Click="exportarVentasExcel" />
-        <RadzenButton Text="Exportar a PDF" Click="exportarVentasPDF" />
+    <div style="display: flex; align-items: center; width: 100%; margin-left: 4px; gap: 10px;">
+        <RadzenButton Text="Exportar a Excel" Click="exportarVentasExcel" Icon="folder_open" />
+        <RadzenButton Text="Exportar a PDF" Click="exportarVentasPDF" Icon="picture_as_pdf" />
+    </div>
 
-    </div>
 </div>
 
 <div style="max-height: 450px; overflow-y: auto;">
