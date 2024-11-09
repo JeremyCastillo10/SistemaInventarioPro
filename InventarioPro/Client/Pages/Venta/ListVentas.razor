@@ -1,7 +1,10 @@
 ﻿@page "/ListVentas"
+@using InventarioPro.Shared.DTOS.Empresa
 @using InventarioPro.Shared.DTOS.Producto
 @using InventarioPro.Shared.DTOS.Venta
 @using OfficeOpenXml
+@using iText.IO.Image
+@using iText.Kernel.Colors
 @using iText.Kernel.Geom
 @using iText.Layout.Borders
 @using iText.Layout.Element
@@ -29,7 +32,7 @@
     </div>
     <div style="display: flex; align-items: center; width: 100%; margin-left: 4px; gap: 10px;">
         <RadzenButton Text="Exportar a Excel" Click="exportarVentasExcel" Icon="folder_open" />
-        <RadzenButton Text="Exportar a PDF" Click="exportarVentasPDF" Icon="picture_as_pdf" />
+        <RadzenButton Text="Exportar a PDF" Click="ExportarVentasPDF" Icon="picture_as_pdf" />
     </div>
 
 </div>
@@ -75,6 +78,8 @@
     private string searchTerm;
     private bool isLoading = true; 
     private List<Producto_DTO> productos;
+    private Empresa_DTO empresa;
+
 
 
     protected override async Task OnInitializedAsync()
@@ -83,6 +88,8 @@
         filteredVentas = ventas;  
         isLoading = false;  
         await ObtenerProductosDesdeApi();
+        empresa = await Http.GetFromJsonAsync<Empresa_DTO>("api/empresa/1");
+
 
     }
 
@@ -217,7 +224,8 @@
             Console.WriteLine($"Error al obtener productos: {ex.Message}");
         }
     }
-    public async Task exportarVentasPDF()
+
+    public async Task ExportarVentasPDF()
     {
         if (ventas == null || !ventas.Any())
         {
@@ -225,11 +233,12 @@
             return;
         }
 
-        // Datos de la empresa
-        string empresaNombre = "Tech Solutions S.A.";
-        string empresaDireccion = "Av. de la Tecnología 123, Ciudad Innovadora";
-        string empresaTelefono = "+123 456 7890";
-        string empresaEmail = "contacto@techsolutions.com";
+        // Datos de la empresa (usando los valores de la entidad 'empresa')
+        string empresaNombre = empresa.Nombre; // Nombre de la empresa
+        string empresaDireccion = empresa.Direccion; // Dirección de la empresa
+        string empresaTelefono = empresa.Telefono; // Teléfono de la empresa
+        string empresaRNC = empresa.RNC; // Email de la empresa
+        string logoBase64 = empresa.Logo; // Logo en Base64 (puede ser null o vacío)
 
         if (productos == null || productos.Count == 0)
         {
@@ -247,33 +256,53 @@
             using (var pdfDoc = new PdfDocument(writer))
             {
                 Document doc = new Document(pdfDoc, PageSize.A4);
-                doc.SetMargins(30, 30, 40, 30);
+                doc.SetMargins(40, 40, 60, 40); // Márgenes más amplios
 
-                // Agregar información de la empresa
+                // Si el logo está presente, agregarlo al encabezado
+                if (!string.IsNullOrEmpty(logoBase64))
+                {
+                    try
+                    {
+                        byte[] logoBytes = Convert.FromBase64String(logoBase64);
+                        ImageData logoImage = ImageDataFactory.Create(logoBytes);
+                        Image logo = new Image(logoImage)
+                            .SetWidth(120) // Ajusta el tamaño del logo
+                            .SetHeight(60); // Ajusta el tamaño del logo
+                        logo.SetFixedPosition(30, 780); // Posición fija, ajustada a 780 para evitar que se corte
+                        doc.Add(logo);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error al cargar el logo: {ex.Message}");
+                    }
+                }
+
+                // Agregar información de la empresa con un margen extra para separarlo del logo
                 Paragraph empresaInfo = new Paragraph()
-                    .Add(new Text(empresaNombre).SetBold().SetFontSize(16).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                    .Add(new Text("\n" + empresaDireccion).SetFontSize(10).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-                    .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(10).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-                    .Add(new Text("\nEmail: " + empresaEmail).SetFontSize(10).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
+                    .Add(new Text(empresaNombre).SetBold().SetFontSize(18).SetFontColor(new DeviceRgb(0, 0, 0))) // Nombre de la empresa
+                    .Add(new Text("\n" + empresaDireccion).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Dirección en gris
+                    .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Teléfono en gris
+                    .Add(new Text("\nEmail: " + empresaRNC).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Email en gris
                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-                    .SetMarginBottom(20);
+                    .SetMarginTop(40) // Se agrega margen superior para separar del logo
+                    .SetMarginBottom(25); // Margen inferior
                 doc.Add(empresaInfo);
 
                 // Título del reporte
                 Paragraph p1 = new Paragraph("Reporte de Ventas")
                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                    .SetFontSize(20)
+                    .SetFontSize(24)
                     .SetBold()
-                    .SetFontColor(iText.Kernel.Colors.ColorConstants.BLUE)
-                    .SetMarginBottom(10);
+                    .SetFontColor(new DeviceRgb(0, 123, 255)) // Azul para el título
+                    .SetMarginBottom(15);
                 doc.Add(p1);
 
                 // Fecha de exportación
                 Paragraph fechaExportacion = new Paragraph("Fecha de Exportación: " + DateTime.Now.ToString("dd/MM/yyyy"))
                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
                     .SetFontSize(12)
-                    .SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY)
-                    .SetMarginBottom(20);
+                    .SetFontColor(new DeviceRgb(169, 169, 169)) // Gris para la fecha
+                    .SetMarginBottom(25);
                 doc.Add(fechaExportacion);
 
                 // Crear la tabla de ventas
@@ -285,20 +314,19 @@
                 foreach (var cabecera in cabecerasTabla)
                 {
                     var headerCell = new Cell().Add(new Paragraph(cabecera))
-                        .SetBackgroundColor(iText.Kernel.Colors.ColorConstants.LIGHT_GRAY)
+                        .SetBackgroundColor(new DeviceRgb(173, 216, 230)) // Azul claro para las cabeceras
                         .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
                         .SetBold()
-                        .SetFontColor(iText.Kernel.Colors.ColorConstants.DARK_GRAY)
-                        .SetPadding(8)
-                        .SetBorderTop(new SolidBorder(1))
-                        .SetBorderBottom(new SolidBorder(1))
-                        .SetBorderLeft(new SolidBorder(1))
-                        .SetBorderRight(new SolidBorder(1));
+                        .SetFontColor(new DeviceRgb(255, 255, 255)) // Blanco
+                        .SetPadding(10)
+                        .SetBorder(new SolidBorder(0.5f)); // Bordes finos
                     table.AddHeaderCell(headerCell);
                 }
 
                 // Agregar filas de ventas
-                foreach (var venta in ventas)
+                decimal totalVentas = 0; // Variable para acumular el total
+
+                foreach (var venta in filteredVentas)
                 {
                     // Mostrar propiedades generales de la venta
                     foreach (var propiedad in propiedadesMostrar)
@@ -312,11 +340,8 @@
 
                         var cell = new Cell().Add(new Paragraph(valor))
                             .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                            .SetPadding(8)
-                            .SetBorderTop(new SolidBorder(1))
-                            .SetBorderBottom(new SolidBorder(1))
-                            .SetBorderLeft(new SolidBorder(1))
-                            .SetBorderRight(new SolidBorder(1));
+                            .SetPadding(10)
+                            .SetBorder(new SolidBorder(0.5f)); // Bordes finos
                         table.AddCell(cell);
                     }
 
@@ -333,20 +358,29 @@
                     // Mostrar los detalles de los productos
                     var detallesCell = new Cell().Add(new Paragraph(string.Join("\n", detalles))) // Cada detalle en una línea nueva
                         .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-                        .SetPadding(8)
-                        .SetBorderTop(new SolidBorder(1))
-                        .SetBorderBottom(new SolidBorder(1))
-                        .SetBorderLeft(new SolidBorder(1))
-                        .SetBorderRight(new SolidBorder(1));
+                        .SetPadding(10)
+                        .SetBorder(new SolidBorder(0.5f)); // Bordes finos
                     table.AddCell(detallesCell);
+
+                    // Acumular el total de la venta
+                    totalVentas += venta.MontoTotal;
                 }
 
                 // Agregar la tabla al documento
                 doc.Add(table);
 
+                // Total general de las ventas
+                Paragraph total = new Paragraph($"Total General: {totalVentas:C}")
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
+                    .SetFontSize(14)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(0, 123, 255)) // Azul para destacar el total
+                    .SetMarginBottom(20);
+                doc.Add(total);
+
                 // Pie de página
                 Paragraph piePagina = new Paragraph()
-                    .Add(new Text("Tech Solutions S.A. | Todos los derechos reservados").SetFontSize(8).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
+                    .Add(new Text($"{empresaNombre} | Todos los derechos reservados").SetFontSize(8).SetFontColor(new DeviceRgb(169, 169, 169))) // Gris claro
                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
                     .SetFixedPosition(0, 30, PageSize.A4.GetWidth())
                     .SetMarginTop(10);
@@ -363,6 +397,8 @@
             }
         }
     }
+
+
 
 
 

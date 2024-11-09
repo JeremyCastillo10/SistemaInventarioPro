@@ -1,5 +1,6 @@
 ﻿@page "/ListProductos"
 @using InventarioPro.Shared.DTOS.Categoria
+@using InventarioPro.Shared.DTOS.Empresa
 @using Microsoft.AspNetCore.Components
 @using OfficeOpenXml
 @using Radzen
@@ -8,6 +9,8 @@
 @using System.Threading.Tasks
 @using InventarioPro.Shared.DTOS.Producto
 @using System.IO
+@using iText.IO.Image
+@using iText.Kernel.Colors
 @using iText.Kernel.Geom
 @using iText.Layout.Borders
 @using iText.Layout.Element
@@ -96,6 +99,7 @@
     private List<Producto_DTO> filteredProducts = new List<Producto_DTO>();
     private IList<Producto_DTO> selectedProducts;
     private List<Categoria_DTO> categorias = new List<Categoria_DTO>();
+    private Empresa_DTO empresa;
     private int? selectedCategory;
     private int? selectedWarehouse;
     DateTime? value1 { get; set; } = DateTime.Today;
@@ -110,6 +114,7 @@
     protected override async Task OnInitializedAsync()
     {
         categorias = await Http.GetFromJsonAsync<List<Categoria_DTO>>("api/categoria");
+        empresa = await Http.GetFromJsonAsync<Empresa_DTO>("api/empresa/1");
         await LoadProducts();
         filteredProducts = products;
     }
@@ -266,11 +271,12 @@
             return;
         }
 
-        // Datos ficticios de la empresa
-        string empresaNombre = "Tech Solutions S.A.";
-        string empresaDireccion = "Av. de la Tecnología 123, Ciudad Innovadora";
-        string empresaTelefono = "+123 456 7890";
-        string empresaEmail = "contacto@techsolutions.com";
+        // Datos de la empresa desde la variable 'empresa' (ya cargados desde el API)
+        string empresaNombre = empresa.Nombre;
+        string empresaDireccion = empresa.Direccion;
+        string empresaTelefono = empresa.Telefono;
+        string empresaRNC = empresa.RNC;
+        string logoBase64 = empresa.Logo; // Logo en Base64
 
         string[] cabecerasTabla = { "Nombre", "Stock", "Fecha Creación", "Costo", "Precio", "Categoría" };
         string[] propiedadesMostrar = { "Nombre", "Existencia", "FechaCreacion", "Costo", "Precio" };
@@ -282,57 +288,68 @@
             {
                 // Crea el documento PDF
                 Document doc = new Document(pdfDoc, PageSize.A4);
-                doc.SetMargins(30, 30, 40, 30); // márgenes más amplios para mayor elegancia
+                doc.SetMargins(40, 40, 60, 40); // Márgenes amplios y más espacio
 
-                // Encabezado de la empresa con un estilo limpio
+                // Si el logo está presente, agregarlo al encabezado
+                if (!string.IsNullOrEmpty(logoBase64))
+                {
+                    byte[] logoBytes = Convert.FromBase64String(logoBase64);
+                    ImageData logoImage = ImageDataFactory.Create(logoBytes);
+                    Image logo = new Image(logoImage)
+                        .SetWidth(150) // Ancho de la imagen
+                        .SetHeight(75); // Alto de la imagen
+                    logo.SetFixedPosition(30, 780); // Posición fija, ajustada a 780 para evitar que se corte
+                    doc.Add(logo);
+                }
+
+                // Encabezado de la empresa con estilo moderno
                 Paragraph empresaInfo = new Paragraph()
-                    .Add(new Text(empresaNombre).SetBold().SetFontSize(16).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                    .Add(new Text("\n" + empresaDireccion).SetFontSize(10).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-                    .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(10).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-                    .Add(new Text("\nEmail: " + empresaEmail).SetFontSize(10).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-                    .SetMarginBottom(20);
+                   .Add(new Text(empresaNombre).SetBold().SetFontSize(18).SetFontColor(new DeviceRgb(0, 0, 0))) // Nombre de la empresa
+                   .Add(new Text("\n" + empresaDireccion).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Dirección en gris
+                   .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Teléfono en gris
+                   .Add(new Text("\nEmail: " + empresaRNC).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Email en gris
+                   .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
+                   .SetMarginTop(40) // Se agrega margen superior para separar del logo
+                   .SetMarginBottom(25); // Margen inferior
                 doc.Add(empresaInfo);
 
-                // Título del documento con mayor énfasis
+
+                // Título del documento con diseño profesional
                 Paragraph p1 = new Paragraph("Reporte de Inventario de Productos")
                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                    .SetFontSize(20)
+                    .SetFontSize(24)
                     .SetBold()
-                    .SetFontColor(iText.Kernel.Colors.ColorConstants.BLUE)
-                    .SetMarginBottom(10);
+                    .SetFontColor(new DeviceRgb(0, 123, 255)) // Azul moderno
+                    .SetMarginBottom(15);
                 doc.Add(p1);
 
-                // Subtítulo con la fecha actual de la exportación (solo fecha, sin hora)
+                // Subtítulo con la fecha de exportación, alineado a la derecha
                 Paragraph fechaExportacion = new Paragraph("Fecha de Exportación: " + DateTime.Now.ToString("dd/MM/yyyy"))
                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
                     .SetFontSize(12)
-                    .SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY)
-                    .SetMarginBottom(20);
+                    .SetFontColor(new DeviceRgb(169, 169, 169)) // Gris claro
+                    .SetMarginBottom(25);
                 doc.Add(fechaExportacion);
 
-                // Crear la tabla con bordes visibles
+                // Crear la tabla con bordes sutiles y diseño profesional
                 Table table = new Table(cabecerasTabla.Length, true);
                 table.SetWidthPercent(100);
-                table.SetMarginBottom(30); // mayor espacio después de la tabla
+                table.SetMarginBottom(40); // Mayor espacio después de la tabla
 
-                // Estilo de cabecera de la tabla (con fondo gris claro y bordes)
+                // Estilo de cabecera de la tabla (más elegante, color de fondo azul claro)
                 foreach (var cabecera in cabecerasTabla)
                 {
                     var headerCell = new Cell().Add(new Paragraph(cabecera))
-                        .SetBackgroundColor(iText.Kernel.Colors.ColorConstants.LIGHT_GRAY)
+                        .SetBackgroundColor(new DeviceRgb(173, 216, 230)) // Azul claro (LightBlue)
                         .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
                         .SetBold()
-                        .SetFontColor(iText.Kernel.Colors.ColorConstants.DARK_GRAY)
-                        .SetPadding(8)
-                        .SetBorderTop(new SolidBorder(1)) // Borde superior
-                        .SetBorderBottom(new SolidBorder(1)) // Borde inferior
-                        .SetBorderLeft(new SolidBorder(1)) // Borde izquierdo
-                        .SetBorderRight(new SolidBorder(1)); // Borde derecho
+                        .SetFontColor(new DeviceRgb(255, 255, 255)) // Blanco
+                        .SetPadding(12)
+                        .SetBorder(new SolidBorder(0.5f)); // Bordes finos y suaves
                     table.AddHeaderCell(headerCell);
                 }
 
-                // Agregar los productos a la tabla (con bordes)
+                // Agregar los productos a la tabla con estilo más moderno
                 foreach (var item in filteredProducts)
                 {
                     // Insertar datos de producto
@@ -343,16 +360,15 @@
                         // Si la propiedad es la fecha de creación, la formateamos correctamente
                         if (propiedad == "FechaCreacion" && DateTime.TryParse(valor, out DateTime fechaCreacion))
                         {
-                            valor = fechaCreacion.ToString("dd/MM/yyyy"); // Solo la fecha, sin la hora
+                            valor = fechaCreacion.ToString("dd/MM/yyyy"); // Solo la fecha
                         }
 
                         var cell = new Cell().Add(new Paragraph(valor))
                             .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                            .SetPadding(8)
-                            .SetBorderTop(new SolidBorder(1)) // Borde superior
-                            .SetBorderBottom(new SolidBorder(1)) // Borde inferior
-                            .SetBorderLeft(new SolidBorder(1)) // Borde izquierdo
-                            .SetBorderRight(new SolidBorder(1)); // Borde derecho
+                            .SetPadding(10)
+                            .SetBorder(new SolidBorder(0.5f)) // Bordes suaves
+                            .SetBackgroundColor(new DeviceRgb(255, 255, 255)) // Fondo blanco para las celdas
+                            .SetFontColor(new DeviceRgb(0, 0, 0)); // Texto negro
                         table.AddCell(cell);
                     }
 
@@ -360,20 +376,20 @@
                     var categoria = categorias.FirstOrDefault(c => c.Id == item.CategoriaId);
                     var categoriaCell = new Cell().Add(new Paragraph(categoria?.Nombre ?? "Sin Categoría"))
                         .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                        .SetPadding(8)
-                        .SetBorderTop(new SolidBorder(1)) // Borde superior
-                        .SetBorderBottom(new SolidBorder(1)) // Borde inferior
-                        .SetBorderLeft(new SolidBorder(1)) // Borde izquierdo
-                        .SetBorderRight(new SolidBorder(1)); // Borde derecho
+                        .SetPadding(10)
+                        .SetBorder(new SolidBorder(0.5f)) // Bordes suaves
+                        .SetBackgroundColor(new DeviceRgb(255, 255, 255)) // Fondo blanco
+                        .SetFontColor(new DeviceRgb(0, 0, 0)); // Texto negro
                     table.AddCell(categoriaCell);
                 }
 
                 // Agregar la tabla al documento
                 doc.Add(table);
 
-                // Pie de página (información adicional de la empresa)
+                // Pie de página con un diseño discreto y elegante
                 Paragraph piePagina = new Paragraph()
-                    .Add(new Text("Tech Solutions S.A. | Todos los derechos reservados").SetFontSize(8).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
+                    .Add(new Text("Tech Solutions S.A. | Todos los derechos reservados")
+                    .SetFontSize(8).SetFontColor(new DeviceRgb(169, 169, 169))) // Gris claro
                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
                     .SetFixedPosition(0, 30, PageSize.A4.GetWidth())
                     .SetMarginTop(10);
@@ -393,6 +409,8 @@
             }
         }
     }
+
+
     public class Warehouse
     {
         public int Id { get; set; }
