@@ -1,0 +1,143 @@
+﻿@page "/FormEmpresa"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@using InventarioPro.Shared.DTOS.Empresa
+@using MudBlazor
+@using System.IO
+
+<MudPaper Elevation="8" Class="pa-6" MaxWidth="700px" Style="margin:auto; background-color: #f5f5f5; border-radius: 12px;">
+    <MudText Typo="Typo.h5" Align="Align.Center" Class="mud-text-color-primary">@((empresa?.Id == 0 ? "Crear Empresa" : "Editar Empresa"))</MudText>
+
+    <EditForm Model="@empresa" OnValidSubmit="OnSubmit">
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="empresa.Nombre" Label="Nombre de la Empresa" Required="true" FullWidth="true" Margin="Margin.Dense" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="empresa.RNC" Label="RNC" Required="true" FullWidth="true" Margin="Margin.Dense" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="empresa.Direccion" Label="Dirección" Required="true" FullWidth="true" Margin="Margin.Dense" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="empresa.Telefono" Label="Teléfono" Required="true" FullWidth="true" Margin="Margin.Dense" />
+            </MudItem>
+        </MudGrid>
+
+        <MudDivider Class="my-4" />
+
+        <MudText Align="Align.Center" Typo="Typo.subtitle1">Logo de la Empresa</MudText>
+
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            @if (string.IsNullOrEmpty(base64Image))
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Inventory" Style="font-size: 150px; color: #4a4848; margin-bottom: 12px;" />
+            }
+            else
+            {
+                <img src="data:image/jpeg;base64,@base64Image" alt="Logo de la Empresa" style="max-width: 180px; margin-bottom: 12px; border-radius: 8px; border: 2px solid #ddd;" />
+            }
+
+            <InputFile OnChange="HandleFileSelected" accept="image/*" style="width: 100%; margin-bottom: 12px;" />
+
+            @if (!string.IsNullOrEmpty(invalidFileMessage))
+            {
+                <MudText Color="Color.Error" Align="Align.Center">@invalidFileMessage</MudText>
+            }
+        </div>
+
+        <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled" FullWidth="true" Style="margin-top: 16px;">
+            Guardar Empresa
+        </MudButton>
+    </EditForm>
+</MudPaper>
+
+@code {
+    private Empresa_DTO empresa = new Empresa_DTO();
+    private string base64Image;
+    private string invalidFileMessage;
+    private MudForm form;
+
+    // Método que se ejecuta cuando el formulario es enviado
+    private async Task OnSubmit()
+    {
+        try
+        {
+            HttpResponseMessage response;
+            if (empresa.Id == 0) // Si la empresa no tiene Id, es una creación
+            {
+                response = await Http.PostAsJsonAsync("api/empresa/GuardarEmpresa", empresa);
+            }
+            else // Si ya tiene Id, es una actualización
+            {
+                response = await Http.PostAsJsonAsync("api/empresa/GuardarEmpresa", empresa);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Si la operación fue exitosa, redirigimos a la página principal
+                NavigationManager.NavigateTo("/");
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error en el servidor: {errorMessage}");
+                invalidFileMessage = "Hubo un error al guardar la empresa.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error en el frontend: {ex.Message}");
+            invalidFileMessage = "Ocurrió un error inesperado al guardar.";
+        }
+    }
+
+    // Método para manejar la carga del archivo y convertirlo a base64
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        var maxFileSize = 1 * 1024 * 1024; // 1 MB
+
+        if (file.Size > maxFileSize)
+        {
+            invalidFileMessage = "El archivo es demasiado grande. El tamaño máximo permitido es 1 MB.";
+            base64Image = null; // Limpiar la imagen actual si el archivo es inválido
+            return;
+        }
+
+        invalidFileMessage = null;
+
+        using (var stream = new MemoryStream())
+        {
+            await file.OpenReadStream(maxFileSize).CopyToAsync(stream);
+            var imageBytes = stream.ToArray();
+            base64Image = Convert.ToBase64String(imageBytes);
+            empresa.Logo = base64Image; // Asignamos el base64 al objeto empresa
+        }
+    }
+
+    // Método para cargar los datos de la empresa si ya existe
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Intentamos obtener la empresa con el ID 1 (ajustar según sea necesario)
+            var response = await Http.GetFromJsonAsync<Empresa_DTO>("api/empresa/1");
+
+            if (response != null)
+            {
+                empresa = response;
+                base64Image = empresa.Logo; // Cargar la imagen base64 si ya existe
+            }
+            else
+            {
+                empresa = new Empresa_DTO(); // Si no existe la empresa, inicializar el objeto vacío
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar la empresa: {ex.Message}");
+            invalidFileMessage = "Ocurrió un error al cargar la empresa.";
+        }
+    }
+}

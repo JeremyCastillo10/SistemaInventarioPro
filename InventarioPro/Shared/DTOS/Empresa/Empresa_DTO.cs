@@ -23,6 +23,6 @@ namespace InventarioPro.Shared.DTOS.Empresa
         [Required(ErrorMessage = "El campo {0} es requerido.")]
         public string Telefono { get; set; } = string.Empty;
         public string Logo { get; set; } = string.Empty;
-        public bool PermitirCargaData { get; set; }
+        public bool PermitirCargaData { get; set; } = true;
     }
 }
