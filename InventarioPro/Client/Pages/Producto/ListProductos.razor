@@ -163,7 +163,7 @@
 
             if (value1.HasValue && value2.HasValue)
             {
-                var filteredByDate = await Http.GetFromJsonAsync<List<Producto_DTO>>($"api/producto/FiltrarPorFechas/{value1.Value:yyyy-MM-dd}/{value2.Value:yyyy-MM-dd}");
+                var filteredByDate = await Http.GetFromJsonAsync<List<Producto_DTO>>($"api/producto/FiltrarPorFechas/" + Convert.ToDateTime(value1).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) + "/" + Convert.ToDateTime(value2).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
 
                 filteredProducts = allProducts
                     .Where(p => filteredByDate.Any(fd => fd.Id == p.Id))
@@ -217,7 +217,7 @@
             return;
         }
 
-        string[] cabecerasTabla = { "Nombre", "Stock", "Fecha Creacion", "Costo", "Precio", "Categoría" };
+        string[] cabecerasTabla = { "Nombre", "Stock", "Fecha Creacion", "Costo", "Precio",  };
         string[] propiedadesMostrar = { "Nombre", "Existencia", "FechaCreacion", "Costo", "Precio" };
 
         using (MemoryStream ms = new MemoryStream())

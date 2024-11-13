@@ -105,7 +105,7 @@ namespace InventarioPro.Server.Controllers
                     Nombre = p.Nombre,
                     Descripcion = p.Descripcion,
                     Precio = (Convert.ToDecimal(p.Precio)),
-                    Costo = (Convert.ToDecimal(p.Precio)),
+                    Costo = (Convert.ToDecimal(p.Costo)),
                     CategoriaId = p.CategoriaId ?? 0,
                     Existencia = p.Existencia ?? 0,
                     Codigo = p.Codigo,
@@ -172,11 +172,11 @@ namespace InventarioPro.Server.Controllers
 
             return NotFound("No se encontraron productos en esta categoría.");
         }
-        [HttpGet("FiltrarPorFechas/{fecha1}/{fecha2}")]
-        public async Task<ActionResult<List<Producto_DTO>>> FiltrarPorFechas(DateTime fecha1, DateTime fecha2)
+        [HttpGet("FiltrarPorFechas/{fecha1?}/{fecha2?}")]
+        public async Task<ActionResult<List<Producto_DTO>>> FiltrarPorFechas(string fecha1, string fecha2)
         {
             var productos = await _db.Productos
-                .Where(p => p.FechaCreacion >= fecha1 && p.FechaCreacion <= fecha2 && p.Eliminado != true)
+                .Where(p => p.FechaCreacion >= Convert.ToDateTime(fecha1) && p.FechaCreacion <= Convert.ToDateTime(fecha2) && p.Eliminado != true)
                 .Select(p => new Producto_DTO
                 {
                     Id = p.Id,
