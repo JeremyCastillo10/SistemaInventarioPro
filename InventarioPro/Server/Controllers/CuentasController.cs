@@ -1,5 +1,4 @@
 ﻿using InventarioPro.Shared.DTOs;
-using InventarioPro.Shared.DTOS.Cuenta;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -81,112 +80,9 @@ namespace InventarioPro.Server.Controllers
             }
         }
 
-        // Asignar rol a un usuario
-        [HttpPost("AsignarRol")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<ActionResult> AsignarRol([FromBody] AsignarRolDTO asignarRolDTO)
-        {
-            var usuario = await userManager.FindByEmailAsync(asignarRolDTO.Email);
-            if (usuario == null)
-            {
-                return NotFound("Usuario no encontrado");
-            }
-
-            // Verificar si el rol existe
-            var roleExists = await roleManager.RoleExistsAsync(asignarRolDTO.Role);
-            if (!roleExists)
-            {
-                return BadRequest("Rol no existe");
-            }
-
-            // Asignar el rol al usuario
-            var result = await userManager.AddToRoleAsync(usuario, asignarRolDTO.Role);
-            if (result.Succeeded)
-            {
-                return NoContent();
-            }
-
-            return BadRequest("Error al asignar rol");
-        }
-
-        [HttpGet("roles")]
-        public IActionResult ObtenerRoles()
-        {
-            var roles = roleManager.Roles.Select(role => role.Name).ToList();
-            return Ok(roles);
-        }
-
-        // Asignar permisos a un rol
-        [HttpPost("asignarPermisos")]
-        public async Task<ActionResult> AsignarPermisos([FromBody] AsignarPermisosDTO asignarPermisosDTO)
-        {
-            if (string.IsNullOrWhiteSpace(asignarPermisosDTO.Role))
-            {
-                return BadRequest("El rol es obligatorio.");
-            }
-
-            if (string.IsNullOrWhiteSpace(asignarPermisosDTO.Permisos))
-            {
-                return BadRequest("Los permisos son obligatorios.");
-            }
-
-            // Obtener el rol
-            var role = await roleManager.FindByNameAsync(asignarPermisosDTO.Role);
-            if (role == null)
-            {
-                return BadRequest("El rol especificado no existe.");
-            }
-
-            // Asignar los permisos (claims) al rol
-            var permisos = asignarPermisosDTO.Permisos.Split(',');
-            foreach (var permiso in permisos)
-            {
-                var claim = new Claim("Permission", permiso.Trim());
-                await roleManager.AddClaimAsync(role, claim);
-            }
-
-            return NoContent(); // 204 No Content
-        }
-
-        // Crear rol con permisos
-        [HttpPost("crearRol")]
-        public async Task<ActionResult> CrearRol([FromBody] CrearRolDTO crearRolDTO)
-        {
-            if (string.IsNullOrWhiteSpace(crearRolDTO.NombreRol))
-            {
-                return BadRequest("El nombre del rol es obligatorio.");
-            }
-
-            if (string.IsNullOrWhiteSpace(crearRolDTO.Permisos))
-            {
-                return BadRequest("Los permisos son obligatorios.");
-            }
-
-            // Verificar si el rol ya existe
-            var roleExistente = await roleManager.RoleExistsAsync(crearRolDTO.NombreRol);
-            if (roleExistente)
-            {
-                return BadRequest("El rol ya existe.");
-            }
-
-            // Crear el nuevo rol
-            var nuevoRol = new IdentityRole(crearRolDTO.NombreRol);
-            var resultado = await roleManager.CreateAsync(nuevoRol);
-            if (!resultado.Succeeded)
-            {
-                return BadRequest("Error al crear el rol.");
-            }
-
-            // Asignar los permisos al rol
-            var permisos = crearRolDTO.Permisos.Split(',');
-            foreach (var permiso in permisos)
-            {
-                var claim = new Claim("Permission", permiso.Trim());
-                await roleManager.AddClaimAsync(nuevoRol, claim);
-            }
-
-            return NoContent(); // 204 No Content
-        }
+     
+      
+    
         // Generar el token JWT
         private async Task<RespuestaAuthenticacion> ConstruirToken(CredencialesUsuario credencialesUsuario)
         {
