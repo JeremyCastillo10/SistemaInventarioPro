@@ -1,6 +1,7 @@
 ﻿@page "/ListProductos"
 @using InventarioPro.Shared.DTOS.Categoria
 @using InventarioPro.Shared.DTOS.Empresa
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components
 @using OfficeOpenXml
 @using Radzen
@@ -21,6 +22,7 @@
 @inject HttpClient Http;
 
 @inject Radzen.DialogService DialogService
+
 
 <PageTitle>Inventario de Productos</PageTitle>
 

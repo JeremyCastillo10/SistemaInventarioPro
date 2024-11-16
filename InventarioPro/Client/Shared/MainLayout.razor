@@ -1,17 +1,31 @@
-﻿@inherits LayoutComponentBase
+﻿@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@inherits LayoutComponentBase
 @inject NavigationManager nav
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject AuthenticationService AuthenticationService
+
 <MudThemeProvider />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <RadzenComponents />
 
-<RadzenLayout
-    Style="grid-template-columns: auto 1fr; grid-template-areas: 'rz-header rz-header' 'rz-sidebar rz-body'; ">
+<RadzenLayout Style="grid-template-columns: auto 1fr; grid-template-areas: 'rz-header rz-header' 'rz-sidebar rz-body'; ">
+
     <RadzenHeader Style="background-color:#002050; color:white">
         <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0">
             <RadzenSidebarToggle Click="@(() => leftSidebarExpanded = !leftSidebarExpanded)" />
             <RadzenLabel Text="Control de Inventario" />
+
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="25px" Style="margin-left:auto;">
+                <MudAvatar>
+                    <MudImage Src="imagenes/avatar.png"></MudImage>
+                </MudAvatar>
+                <RadzenText Text="@user?.Identity?.Name" Style="color:aliceblue" />
+                <RadzenButton Icon="logout" Click="CerrarSesion" />
+            </RadzenStack>
+
         </RadzenStack>
     </RadzenHeader>
 
@@ -25,19 +39,8 @@
             <RadzenPanelMenuItem Text="Suplidores" Icon="business" />
             <RadzenPanelMenuItem Text="Ventas" Icon="assignment" Path="/ListVentas" />
             <RadzenPanelMenuItem Text="Reportes" Icon="assessment" />
-
-            <!-- Configuración con submenús -->
-            <RadzenPanelMenuItem Icon="settings" Text="Configuración">
-                <RadzenPanelMenu>
-                    <RadzenPanelMenuItem Text="Usuarios" Icon="person" Path="/Usuarios" />
-                    <RadzenPanelMenuItem Text="Roles" Icon="assignment_ind" Path="/Roles" />
-                    <RadzenPanelMenuItem Text="Empresa" Icon="business" Path="/FormEmpresa" />
-                    <!-- Agrega otros submenús que desees -->
-                </RadzenPanelMenu>
-            </RadzenPanelMenuItem>
         </RadzenPanelMenu>
     </RadzenSidebar>
-
 
     <RadzenBody Style="grid-area: rz-body">
         @Body
@@ -45,10 +48,24 @@
 </RadzenLayout>
 
 @code {
-    bool leftSidebarExpanded = true;
+    private bool leftSidebarExpanded = true;
+    private ClaimsPrincipal user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        user = authState.User;
+    }
 
     public void IrDash()
     {
-        nav.NavigateTo("/Dashboard");
+        nav.NavigateTo("/");
     }
+
+    private async Task CerrarSesion()
+    {
+        await AuthenticationService.LogoutAsync();
+        nav.NavigateTo("/login");
+    }
+
 }

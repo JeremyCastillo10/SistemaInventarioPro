@@ -21,7 +21,7 @@ namespace InventarioPro.Server.Controllers
             _db = db;
         }
 
-
+        [Authorize(Policy = "CanSellProduct")]
         [HttpPost]
         public async Task<ActionResult<int>> GuardarProducto([FromBody] Producto_DTO productoDto)
         {

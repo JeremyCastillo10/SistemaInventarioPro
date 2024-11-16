@@ -1,0 +1,101 @@
+﻿@page "/login"
+@layout LoginLayout
+
+@using InventarioPro.Shared.DTOs
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject SweetAlertService swal
+
+<RadzenRow Gap="0" class="rz-my-12 rz-mx-auto rz-border-radius-6 rz-shadow-10" Style="width: 100%; max-width: 800px; overflow: hidden;">
+    <RadzenColumn Size="12" SizeMD="6">
+        <RadzenCard class="rz-shadow-0 rz-border-radius-0 rz-text-align-center rz-p-12"
+                    Style="height: 100%; background: url('/imagenes/inventarioImg.png') no-repeat center center/cover;">
+           
+        </RadzenCard>
+    </RadzenColumn>
+
+    <RadzenColumn Size="12" SizeMD="6">
+        <RadzenCard class="rz-shadow-0 rz-border-radius-0 rz-p-12">
+            <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H2" class="rz-mb-6">
+                Iniciar sesión
+            </RadzenText>
+
+            <EditForm Model="credencialesUsuario" OnValidSubmit="LoginR">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <RadzenTextBox @bind-Value="credencialesUsuario.Email" Placeholder="Correo electrónico" Style="width: 100%; margin-bottom: 10px;" />
+                <RadzenPassword @bind-Value="credencialesUsuario.Password" Placeholder="Contraseña" Style="width: 100%; margin-bottom: 20px;" />
+                <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Iniciar sesión" Style="width: 100%;" />
+            </EditForm>
+
+            <RadzenText Align="Align.Center" class="rz-mt-4">
+                ¿No tienes cuenta? <RadzenLink Href="/registrarse" class="rz-text-primary">Regístrate aquí</RadzenLink>
+            </RadzenText>
+            <RadzenText Align="Align.Center" class="rz-mt-2">
+                ¿Olvidaste tu contraseña? <RadzenLink Href="/forgot-password" class="rz-text-primary">Recupérala aquí</RadzenLink>
+            </RadzenText>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+@if (isSubmitting)
+{
+    <p>Iniciando sesión...</p>
+}
+
+@code {
+    private CredencialesUsuario credencialesUsuario = new CredencialesUsuario();
+    private bool isSubmitting = false;
+    private string errorMessage = null;
+
+    private async Task LoginR()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+
+        if (string.IsNullOrEmpty(credencialesUsuario.Email) || string.IsNullOrEmpty(credencialesUsuario.Password))
+        {
+            await ShowAlert("Error", "Todos los campos son requeridos", SweetAlertIcon.Error);
+            isSubmitting = false;
+            return;
+        }
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/cuentas/login", credencialesUsuario);
+            if (response.IsSuccessStatusCode)
+            {
+                var authResponse = await response.Content.ReadFromJsonAsync<RespuestaAuthenticacion>();
+
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "jwt_token", authResponse.Token);
+
+                await ShowAlert("Éxito", "Inicio de sesión exitoso", SweetAlertIcon.Success);
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                errorMessage = await response.Content.ReadAsStringAsync();
+                await ShowAlert("Error", "Hubo un problema con el inicio de sesión", SweetAlertIcon.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            await ShowAlert("Error", "Error al conectar con el servidor. Inténtalo más tarde.", SweetAlertIcon.Error);
+        }
+
+        isSubmitting = false;
+    }
+
+    private async Task ShowAlert(string title, string text, SweetAlertIcon icon)
+    {
+        await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = title,
+                Text = text,
+                Icon = icon,
+                ConfirmButtonText = "OK"
+            });
+    }
+}
