@@ -3,7 +3,11 @@
 @using Radzen
 @using System.Collections.Generic
 @using System.Linq
-@using System.Threading.Tasks
+@using InventarioPro.Shared.DTOS.Entrada
+@using InventarioPro.Shared.DTOS.Producto
+@inject SweetAlertService swal
+@using Radzen
+@inject HttpClient Http
 @inject Radzen.DialogService DialogService
 <PageTitle>Inventario de Entrada</PageTitle>
 
@@ -11,20 +15,45 @@
     <h2>Inventario de Entrada</h2>
     <RadzenButton Text="Agregar Producto"  Click="OpenAddProductDialog"  Style="margin-bottom: 10px;" />
 </div>
-<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true" AllowSorting="true"
-                PageSize="5" AllowPaging="true" Data="@Entradas" ColumnWidth="300px" ShowPagingSummary="true">
+<!-- Contenedor para el formulario de búsqueda -->
+<div class="mb-3">
+    <label>Fecha Inicio:</label>
+    <RadzenDatePicker @bind-Value="fechaInicio" Style="margin-right: 10px;" />
+
+    <label>Fecha Fin:</label>
+    <RadzenDatePicker @bind-Value="fechaFin" Style="margin-right: 10px;" />
+
+    <RadzenButton Text="Buscar" Icon="search" Click="FiltrarPorFecha" ButtonStyle="ButtonStyle.Primary" Style="margin-left: 10px;" />
+</div>
+
+<!-- RadzenDataGrid -->
+<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true"
+                AllowSorting="true" PageSize="5" AllowPaging="true" Data="@listentrada_DTO2" ColumnWidth="300px" ShowPagingSummary="true">
     <Columns>
-        <RadzenDataGridColumn Property="@nameof(Entradass.NombreProducto)" Title="Nombre del Producto" Width="160px" />
-        <RadzenDataGridColumn Property="@nameof(Entradass.NombreProveedor)" Title="Categoría" Width="200px" />
-        <RadzenDataGridColumn Property="@nameof(Entradass.Precio)" Title="Precio" FormatString="{0:C}" Width="120px" />
-        <RadzenDataGridColumn Property="@nameof(Entradass.Stock)" Title="Stock" Width="160px" />
-        <RadzenDataGridColumn TItem="Entradass" Property="Actions" Width="100px" Title="Acciones">
-            <Template>
-                <button class="btn btn-danger" @onclick="() => EliminarEntrada(context)">Eliminar</button>
+        <!-- Columna de Fecha usando @nameof -->
+        <RadzenDataGridColumn Property="@nameof(Entrada_DTO.Fecha)" Title="Fecha" Width="160px" />
+
+        <!-- Columna de Monto Total usando @nameof -->
+        <RadzenDataGridColumn Property="@nameof(Entrada_DTO.MontoTotal)" Title="Monto Total" Width="200px" />
+
+        <!-- Columna de Acciones -->
+        <RadzenDataGridColumn Width="200px" Title="Acciones">
+            <Template Context="entrada_DTO">
+                <!-- Botón Editar -->
+                <button class="btn btn-warning btn-sm" @onclick="() => EditarEntrada(entrada_DTO.Id)" style="margin-right: 10px;">
+                    <i class="bi bi-pencil"></i> Editar
+                </button>
+
+                <!-- Botón Eliminar -->
+                <button class="btn btn-danger btn-sm" @onclick="() => EliminarEntrada()">
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
             </Template>
         </RadzenDataGridColumn>
     </Columns>
 </RadzenDataGrid>
+
+
 <style>
     .header {
         display: flex;
@@ -44,32 +73,77 @@
 </style>
 
 @code {
+
+    private List<Entradass> Entradas = new List<Entradass>();
+    private Entrada_DTO entrada_DTO = new Entrada_DTO();
+    private Entradass NuevaEntrada = new Entradass();
+    private List<Entrada_DTO> listentrada_DTO = new List<Entrada_DTO>();
+    private List<Entrada_DTO> listentrada_DTO2 = new List<Entrada_DTO>();
+    private DateTime? fechaInicio;
+    private DateTime? fechaFin;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await Http.GetAsync($"api/entrada/getentrada");
+        listentrada_DTO= await response.Content.ReadFromJsonAsync<List<Entrada_DTO>>();
+        listentrada_DTO2 = listentrada_DTO;
+
+
+    }
+
     private async Task OpenAddProductDialog()
     {
-         var options = new Radzen.DialogOptions { Style = "width: 900px;" };
-    var result = await DialogService.OpenAsync<Entrada>("Agregar Nuevo Producto", null, options);
 
-    if (result != null)
-    {
-        Entradas.Add(result);
-        // Si tienes un método ApplyFilters() para actualizar la vista, lo llamas aquí
-        // ApplyFilters(); // Descomenta esto si lo tienes
-    }
-  
-        
+        var result = await DialogService.OpenAsync<FormEntrada>(null);
+
+        if (result != null)
+        {
+            Entradas.Add(result);
+            // Si tienes un método ApplyFilters() para actualizar la vista, lo llamas aquí
+            // ApplyFilters(); // Descomenta esto si lo tienes
+        }
+
+
     }
     private bool MostrarFormulario = false;
 
     // Modelo de entrada
-    private List<Entradass> Entradas = new List<Entradass>();
 
-    private Entradass NuevaEntrada = new Entradass();
 
     // Método para abrir el formulario
-    private void AbrirFormulario()
+    private async Task EditarEntrada(int id)
     {
-        NuevaEntrada = new Entradass();
-        MostrarFormulario = true;
+        Console.WriteLine(id);
+
+        var item = listentrada_DTO.FirstOrDefault(p => p.Id == id);
+
+        await DialogService.OpenAsync<FormEntrada>(
+       null,
+            new Dictionary<string, object> { { "entrada_DTO", item } }
+        );
+
+   
+
+
+    }
+    // Método para filtrar las entradas por fecha
+    private void FiltrarPorFecha()
+    {
+        if (fechaInicio.HasValue && fechaFin.HasValue)
+        {
+            // Filtra la lista original usando las fechas seleccionadas
+            listentrada_DTO2 = listentrada_DTO
+             .Where(e => e.Fecha.Date >= fechaInicio.Value.Date && e.Fecha.Date <= fechaFin.Value.Date)
+             .ToList();
+            fechaInicio = new DateTime();
+            fechaFin=new DateTime();
+        }
+        else
+        {
+         
+        }
     }
 
     // Método para cerrar el formulario
@@ -78,17 +152,12 @@
         MostrarFormulario = false;
     }
 
-    // Método para guardar la nueva entrada
-    private void GuardarEntrada()
-    {
-        Entradas.Add(NuevaEntrada);
-        CerrarFormulario();
-    }
+   
 
     // Método para eliminar una entrada
-    private void EliminarEntrada(Entradass entrada)
+    private void EliminarEntrada()
     {
-        Entradas.Remove(entrada);
+       
     }
 
     // Clase modelo para una entrada

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventarioPro.Server.Migrations
 {
     [DbContext(typeof(Contexto))]
-    [Migration("20241106233613_Init")]
-    partial class Init
+    [Migration("20241116184247_inicial")]
+    partial class inicial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
