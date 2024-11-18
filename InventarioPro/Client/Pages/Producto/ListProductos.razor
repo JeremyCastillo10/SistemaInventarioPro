@@ -154,6 +154,7 @@
         {
             List<Producto_DTO> allProducts = new List<Producto_DTO>();
 
+            // Obtener productos según la categoría
             if (selectedCategory.HasValue)
             {
                 allProducts = await Http.GetFromJsonAsync<List<Producto_DTO>>($"api/producto/GetPorCategoria/{selectedCategory.Value}");
@@ -163,9 +164,26 @@
                 allProducts = await Http.GetFromJsonAsync<List<Producto_DTO>>("api/producto/GetProductos");
             }
 
+            // Verificar si la lista de productos está vacía
+            if (allProducts == null || !allProducts.Any())
+            {
+                filteredProducts = new List<Producto_DTO>(); // Asignar lista vacía si no hay productos
+                return; // Salir del método si no hay productos
+            }
+
+            // Filtrar productos por fecha si es necesario
             if (value1.HasValue && value2.HasValue)
             {
-                var filteredByDate = await Http.GetFromJsonAsync<List<Producto_DTO>>($"api/producto/FiltrarPorFechas/" + Convert.ToDateTime(value1).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) + "/" + Convert.ToDateTime(value2).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+                var filteredByDate = await Http.GetFromJsonAsync<List<Producto_DTO>>($"api/producto/FiltrarPorFechas/"
+                    + Convert.ToDateTime(value1).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) + "/"
+                    + Convert.ToDateTime(value2).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+
+                // Verificar si la lista filtrada por fecha está vacía
+                if (filteredByDate == null || !filteredByDate.Any())
+                {
+                    filteredProducts = new List<Producto_DTO>(); // Asignar lista vacía si no hay productos filtrados por fecha
+                    return;
+                }
 
                 filteredProducts = allProducts
                     .Where(p => filteredByDate.Any(fd => fd.Id == p.Id))
@@ -176,19 +194,28 @@
                 filteredProducts = allProducts;
             }
 
+            // Filtrar productos por término de búsqueda
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 filteredProducts = filteredProducts
                     .Where(p => p.Nombre.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
                     .ToList();
             }
-
         }
         catch (HttpRequestException ex)
         {
-            filteredProducts = new List<Producto_DTO>();
+            // Manejar excepciones relacionadas con la solicitud HTTP
+            Console.WriteLine($"Error al obtener los productos: {ex.Message}");
+            filteredProducts = new List<Producto_DTO>(); // Asignar lista vacía en caso de error
+        }
+        catch (Exception ex)
+        {
+            // Manejar cualquier otra excepción general
+            Console.WriteLine($"Error inesperado: {ex.Message}");
+            filteredProducts = new List<Producto_DTO>(); // Asignar lista vacía en caso de error
         }
     }
+
 
     private async Task OpenEditProductDialog(int productId)
     {

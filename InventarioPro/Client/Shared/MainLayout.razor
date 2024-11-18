@@ -39,7 +39,16 @@
             <RadzenPanelMenuItem Text="Suplidores" Icon="business" />
             <RadzenPanelMenuItem Text="Ventas" Icon="assignment" Path="/ListVentas" />
             <RadzenPanelMenuItem Text="Reportes" Icon="assessment" />
+            <RadzenPanelMenuItem Icon="settings" Text="Configuración">
+                <RadzenPanelMenu>
+                    <RadzenPanelMenuItem Text="Usuarios" Icon="person" Path="/Usuarios" />
+                    <RadzenPanelMenuItem Text="Roles" Icon="assignment_ind" Path="/Roles" />
+                    <RadzenPanelMenuItem Text="Empresa" Icon="business" Path="/FormEmpresa" />
+                    <!-- Agrega otros submenús que desees -->
+                </RadzenPanelMenu>
+            </RadzenPanelMenuItem>
         </RadzenPanelMenu>
+
     </RadzenSidebar>
 
     <RadzenBody Style="grid-area: rz-body">
