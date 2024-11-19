@@ -1,4 +1,4 @@
-@using InventarioPro.Shared.DTOS.Empresa
+﻿@using InventarioPro.Shared.DTOS.Empresa
 @using InventarioPro.Shared.DTOS.Producto
 @using InventarioPro.Shared.DTOS.Venta
 @using System.Globalization
@@ -96,7 +96,7 @@
             venta.Fecha = ventaDetails.Fecha;
             venta.MontoTotal = ventaDetails.MontoTotal;
 
-            StateHasChanged(); 
+            StateHasChanged();
         }
         else
         {
@@ -144,7 +144,7 @@
 
                 nuevoDetalle = new VentaDetalle_DTO();
 
-                StateHasChanged(); 
+                StateHasChanged();
             }
             else
             {
@@ -161,22 +161,22 @@
 
     private async void RemoveDetalle(VentaDetalle_DTO detalle)
     {
-        if (venta.Id == 0) 
+        if (venta.Id == 0)
         {
             detalles.Remove(detalle);
-            detalles = detalles.ToList(); 
-            StateHasChanged(); 
+            detalles = detalles.ToList();
+            StateHasChanged();
         }
-        else 
+        else
         {
 
             await swal.FireAsync(new SweetAlertOptions
-                        {
-                            Title = "Error",
-                            Text = "No se pudo eliminar el detalle. Inténtalo de nuevo.",
-                            Icon = SweetAlertIcon.Error,
-                            ConfirmButtonText = "OK"
-                        });
+                {
+                    Title = "Error",
+                    Text = "No se pudo eliminar el detalle. Inténtalo de nuevo.",
+                    Icon = SweetAlertIcon.Error,
+                    ConfirmButtonText = "OK"
+                });
 
         }
 
@@ -239,11 +239,11 @@
         string empresaDireccion = empresa.Direccion;
         string empresaTelefono = empresa.Telefono;
         string empresaEmail = empresa.RNC;
-        string logoBase64 = empresa.Logo;  
+        string logoBase64 = empresa.Logo;
 
         string[] cabecerasTabla = { "Producto", "Cantidad", "Precio Unitario", "Total" };
 
-        var cultura = new CultureInfo("es-DO"); 
+        var cultura = new CultureInfo("es-DO");
 
         using (MemoryStream ms = new MemoryStream())
         {
@@ -251,9 +251,9 @@
             using (var pdfDoc = new PdfDocument(writer))
             {
                 Document doc = new Document(pdfDoc, PageSize.A4);
-                doc.SetMargins(40, 40, 40, 40);  
+                doc.SetMargins(40, 40, 40, 40);
 
-                pdfDoc.AddNewPage();  
+                pdfDoc.AddNewPage();
 
                 if (!string.IsNullOrEmpty(logoBase64))
                 {
@@ -262,9 +262,9 @@
                         byte[] logoBytes = Convert.FromBase64String(logoBase64);
                         ImageData logoImage = ImageDataFactory.Create(logoBytes);
                         Image logo = new Image(logoImage)
-                            .SetWidth(120) 
-                            .SetHeight(60); 
-                        logo.SetFixedPosition(30, 780); 
+                            .SetWidth(120)
+                            .SetHeight(60);
+                        logo.SetFixedPosition(30, 780);
                         doc.Add(logo);
                     }
                     catch (Exception ex)
@@ -379,7 +379,7 @@
                 doc.Add(table);
 
                 decimal subtotal = venta.MontoTotal;
-                decimal impuestos = subtotal * 0.18m; 
+                decimal impuestos = subtotal * 0.18m;
                 decimal totalConImpuestos = subtotal + impuestos;
 
                 Paragraph resumen = new Paragraph()

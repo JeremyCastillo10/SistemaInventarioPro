@@ -27,8 +27,7 @@
         <RadzenDatePicker @bind-Value="value1" DateFormat="dd/MM/yyyy" Style="margin-right: 10px; flex: 1 1 150px;" />
         <label style="margin-right: 5px;">Fecha Fin:</label>
         <RadzenDatePicker @bind-Value="value2" DateFormat="dd/MM/yyyy" Style="margin-right: 10px; flex: 1 1 150px;" />
-        <RadzenTextBox @bind-Value="searchTerm" Placeholder="Buscar Cliente"
-            Style="flex: 2; min-width: 150px; margin-right: 10px;" />
+        <RadzenTextBox @bind-Value="searchTerm" Placeholder="Buscar Cliente" Style="flex: 2; min-width: 150px; margin-right: 10px;" />
         <RadzenButton Text="Filtrar" Icon="search" Click="FilterVentas" Style="margin-right: 10px;" />
     </div>
     <div style="display: flex; align-items: center; width: 100%; margin-left: 4px; gap: 10px;">
@@ -48,7 +47,7 @@
     else
     {
         <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowSorting="true" PageSize="8" AllowPaging="true"
-            Data="@filteredVentas" ColumnWidth="300px" ShowPagingSummary="true" @bind-Value="@selectedVentas">
+                        Data="@filteredVentas" ColumnWidth="300px" ShowPagingSummary="true" @bind-Value="@selectedVentas">
             <Columns>
                 <RadzenDataGridColumn Property="@nameof(Venta_DTO.Fecha)" Title="Fecha" FormatString="{0:dd/MM/yyyy}" />
                 <RadzenDataGridColumn Property="@nameof(Venta_DTO.MontoTotal)" Title="Monto Total" FormatString="{0:C}" />
@@ -77,7 +76,7 @@
     private DateTime? value1 { get; set; } = DateTime.Today;
     private DateTime? value2 { get; set; } = DateTime.Today;
     private string searchTerm;
-    private bool isLoading = true;
+    private bool isLoading = true; 
     private List<Producto_DTO> productos;
     private Empresa_DTO empresa;
 
@@ -86,8 +85,8 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadVentas();
-        filteredVentas = ventas;
-        isLoading = false;
+        filteredVentas = ventas;  
+        isLoading = false;  
         await ObtenerProductosDesdeApi();
         empresa = await Http.GetFromJsonAsync<Empresa_DTO>("api/empresa/1");
 
@@ -124,7 +123,7 @@
                 allVentas = allVentas.Where(v => v.Nombre.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
             }
 
-            filteredVentas = allVentas;
+            filteredVentas = allVentas; 
         }
         catch (HttpRequestException ex)
         {
@@ -136,12 +135,11 @@
     {
         var newVenta = new Venta_DTO();
         var options = new Radzen.DialogOptions { Style = "width: 700px;" };
-        var result = await DialogService.OpenAsync<FormVenta>("Agregar Nueva Venta", new Dictionary<string, object> { { "venta",
-newVenta } }, options);
+        var result = await DialogService.OpenAsync<FormVenta>("Agregar Nueva Venta", new Dictionary<string, object> { { "venta", newVenta } }, options);
 
         if (result != null)
         {
-            await LoadVentas();
+            await LoadVentas(); 
         }
     }
 
@@ -153,8 +151,7 @@ newVenta } }, options);
         {
             var ventaDetails = await response.Content.ReadFromJsonAsync<Venta_DTO>();
             var options = new Radzen.DialogOptions { Style = "width: 900px;" };
-            await DialogService.OpenAsync<FormVenta>("Detalles de la Venta", new Dictionary<string, object> { { "venta",
-ventaDetails } }, options);
+            await DialogService.OpenAsync<FormVenta>("Detalles de la Venta", new Dictionary<string, object> { { "venta", ventaDetails } }, options);
         }
         else
         {
@@ -269,8 +266,8 @@ ventaDetails } }, options);
                         byte[] logoBytes = Convert.FromBase64String(logoBase64);
                         ImageData logoImage = ImageDataFactory.Create(logoBytes);
                         Image logo = new Image(logoImage)
-                        .SetWidth(120) // Ajusta el tamaño del logo
-                        .SetHeight(60); // Ajusta el tamaño del logo
+                            .SetWidth(120) // Ajusta el tamaño del logo
+                            .SetHeight(60); // Ajusta el tamaño del logo
                         logo.SetFixedPosition(30, 780); // Posición fija, ajustada a 780 para evitar que se corte
                         doc.Add(logo);
                     }
@@ -282,31 +279,30 @@ ventaDetails } }, options);
 
                 // Agregar información de la empresa con un margen extra para separarlo del logo
                 Paragraph empresaInfo = new Paragraph()
-                .Add(new Text(empresaNombre).SetBold().SetFontSize(18).SetFontColor(new DeviceRgb(0, 0, 0))) // Nombre de la empresa
-                .Add(new Text("\n" + empresaDireccion).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Dirección en gris
-                .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Teléfono
-en gris
-.Add(new Text("\nEmail: " + empresaRNC).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Email en gris
-.SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-.SetMarginTop(40) // Se agrega margen superior para separar del logo
-.SetMarginBottom(25); // Margen inferior
+                    .Add(new Text(empresaNombre).SetBold().SetFontSize(18).SetFontColor(new DeviceRgb(0, 0, 0))) // Nombre de la empresa
+                    .Add(new Text("\n" + empresaDireccion).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Dirección en gris
+                    .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Teléfono en gris
+                    .Add(new Text("\nEmail: " + empresaRNC).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Email en gris
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
+                    .SetMarginTop(40) // Se agrega margen superior para separar del logo
+                    .SetMarginBottom(25); // Margen inferior
                 doc.Add(empresaInfo);
 
                 // Título del reporte
                 Paragraph p1 = new Paragraph("Reporte de Ventas")
-                .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                .SetFontSize(24)
-                .SetBold()
-                .SetFontColor(new DeviceRgb(0, 123, 255)) // Azul para el título
-                .SetMarginBottom(15);
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetFontSize(24)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(0, 123, 255)) // Azul para el título
+                    .SetMarginBottom(15);
                 doc.Add(p1);
 
                 // Fecha de exportación
                 Paragraph fechaExportacion = new Paragraph("Fecha de Exportación: " + DateTime.Now.ToString("dd/MM/yyyy"))
-                .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
-                .SetFontSize(12)
-                .SetFontColor(new DeviceRgb(169, 169, 169)) // Gris para la fecha
-                .SetMarginBottom(25);
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
+                    .SetFontSize(12)
+                    .SetFontColor(new DeviceRgb(169, 169, 169)) // Gris para la fecha
+                    .SetMarginBottom(25);
                 doc.Add(fechaExportacion);
 
                 // Crear la tabla de ventas
@@ -318,12 +314,12 @@ en gris
                 foreach (var cabecera in cabecerasTabla)
                 {
                     var headerCell = new Cell().Add(new Paragraph(cabecera))
-                    .SetBackgroundColor(new DeviceRgb(173, 216, 230)) // Azul claro para las cabeceras
-                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                    .SetBold()
-                    .SetFontColor(new DeviceRgb(255, 255, 255)) // Blanco
-                    .SetPadding(10)
-                    .SetBorder(new SolidBorder(0.5f)); // Bordes finos
+                        .SetBackgroundColor(new DeviceRgb(173, 216, 230)) // Azul claro para las cabeceras
+                        .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                        .SetBold()
+                        .SetFontColor(new DeviceRgb(255, 255, 255)) // Blanco
+                        .SetPadding(10)
+                        .SetBorder(new SolidBorder(0.5f)); // Bordes finos
                     table.AddHeaderCell(headerCell);
                 }
 
@@ -343,9 +339,9 @@ en gris
                         }
 
                         var cell = new Cell().Add(new Paragraph(valor))
-                        .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                        .SetPadding(10)
-                        .SetBorder(new SolidBorder(0.5f)); // Bordes finos
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                            .SetPadding(10)
+                            .SetBorder(new SolidBorder(0.5f)); // Bordes finos
                         table.AddCell(cell);
                     }
 
@@ -361,9 +357,9 @@ en gris
 
                     // Mostrar los detalles de los productos
                     var detallesCell = new Cell().Add(new Paragraph(string.Join("\n", detalles))) // Cada detalle en una línea nueva
-                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-                    .SetPadding(10)
-                    .SetBorder(new SolidBorder(0.5f)); // Bordes finos
+                        .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
+                        .SetPadding(10)
+                        .SetBorder(new SolidBorder(0.5f)); // Bordes finos
                     table.AddCell(detallesCell);
 
                     // Acumular el total de la venta
@@ -375,20 +371,19 @@ en gris
 
                 // Total general de las ventas
                 Paragraph total = new Paragraph($"Total General: {totalVentas:C}")
-                .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
-                .SetFontSize(14)
-                .SetBold()
-                .SetFontColor(new DeviceRgb(0, 123, 255)) // Azul para destacar el total
-                .SetMarginBottom(20);
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
+                    .SetFontSize(14)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(0, 123, 255)) // Azul para destacar el total
+                    .SetMarginBottom(20);
                 doc.Add(total);
 
                 // Pie de página
                 Paragraph piePagina = new Paragraph()
-                .Add(new Text($"{empresaNombre} | Todos los derechos reservados").SetFontSize(8).SetFontColor(new DeviceRgb(169, 169,
-                169))) // Gris claro
-                .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                .SetFixedPosition(0, 30, PageSize.A4.GetWidth())
-                .SetMarginTop(10);
+                    .Add(new Text($"{empresaNombre} | Todos los derechos reservados").SetFontSize(8).SetFontColor(new DeviceRgb(169, 169, 169))) // Gris claro
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetFixedPosition(0, 30, PageSize.A4.GetWidth())
+                    .SetMarginTop(10);
                 doc.Add(piePagina);
 
                 doc.Close();

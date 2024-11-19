@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace InventarioPro.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class inicial : Migration
+    public partial class Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -69,7 +69,6 @@ namespace InventarioPro.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-<<<<<<<< HEAD:InventarioPro/Server/Migrations/20241113235213_Init.cs
                 name: "Empresas",
                 columns: table => new
                 {
@@ -88,8 +87,6 @@ namespace InventarioPro.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-========
->>>>>>>> Daniel:InventarioPro/Server/Migrations/20241116184247_inicial.cs
                 name: "Entradas",
                 columns: table => new
                 {
@@ -302,15 +299,9 @@ namespace InventarioPro.Server.Migrations
                 columns: new[] { "Id", "Eliminado", "FechaActualizacion", "FechaCreacion", "Nombre" },
                 values: new object[,]
                 {
-<<<<<<<< HEAD:InventarioPro/Server/Migrations/20241113235213_Init.cs
                     { 1, false, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Bebidas" },
                     { 2, false, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Ropa" },
                     { 3, false, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Lacteos" }
-========
-                    { 1, null, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Bebidas" },
-                    { 2, null, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Ropa" },
-                    { 3, null, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Lacteos" }
->>>>>>>> Daniel:InventarioPro/Server/Migrations/20241116184247_inicial.cs
                 });
 
             migrationBuilder.CreateIndex(
@@ -383,12 +374,9 @@ namespace InventarioPro.Server.Migrations
                 name: "Empresas");
 
             migrationBuilder.DropTable(
-<<<<<<<< HEAD:InventarioPro/Server/Migrations/20241113235213_Init.cs
                 name: "EntradaDetalles");
 
             migrationBuilder.DropTable(
-========
->>>>>>>> Daniel:InventarioPro/Server/Migrations/20241116184247_inicial.cs
                 name: "Productos");
 
             migrationBuilder.DropTable(

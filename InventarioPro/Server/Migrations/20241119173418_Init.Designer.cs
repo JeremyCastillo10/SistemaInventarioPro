@@ -12,13 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventarioPro.Server.Migrations
 {
     [DbContext(typeof(Contexto))]
-<<<<<<<< HEAD:InventarioPro/Server/Migrations/20241113235213_Init.Designer.cs
-    [Migration("20241113235213_Init")]
+    [Migration("20241119173418_Init")]
     partial class Init
-========
-    [Migration("20241116184247_inicial")]
-    partial class inicial
->>>>>>>> Daniel:InventarioPro/Server/Migrations/20241116184247_inicial.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -58,10 +53,7 @@ namespace InventarioPro.Server.Migrations
                         new
                         {
                             Id = 1,
-<<<<<<<< HEAD:InventarioPro/Server/Migrations/20241113235213_Init.Designer.cs
                             Eliminado = false,
-========
->>>>>>>> Daniel:InventarioPro/Server/Migrations/20241116184247_inicial.Designer.cs
                             FechaActualizacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FechaCreacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Nombre = "Bebidas"
@@ -69,10 +61,7 @@ namespace InventarioPro.Server.Migrations
                         new
                         {
                             Id = 2,
-<<<<<<<< HEAD:InventarioPro/Server/Migrations/20241113235213_Init.Designer.cs
                             Eliminado = false,
-========
->>>>>>>> Daniel:InventarioPro/Server/Migrations/20241116184247_inicial.Designer.cs
                             FechaActualizacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FechaCreacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Nombre = "Ropa"
@@ -80,10 +69,7 @@ namespace InventarioPro.Server.Migrations
                         new
                         {
                             Id = 3,
-<<<<<<<< HEAD:InventarioPro/Server/Migrations/20241113235213_Init.Designer.cs
                             Eliminado = false,
-========
->>>>>>>> Daniel:InventarioPro/Server/Migrations/20241116184247_inicial.Designer.cs
                             FechaActualizacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FechaCreacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Nombre = "Lacteos"
