@@ -50,7 +50,10 @@ namespace InventarioPro.Server.Migrations
                         new
                         {
                             Id = 1,
+<<<<<<< HEAD
                             Eliminado = false,
+=======
+>>>>>>> Daniel
                             FechaActualizacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FechaCreacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Nombre = "Bebidas"
@@ -58,7 +61,10 @@ namespace InventarioPro.Server.Migrations
                         new
                         {
                             Id = 2,
+<<<<<<< HEAD
                             Eliminado = false,
+=======
+>>>>>>> Daniel
                             FechaActualizacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FechaCreacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Nombre = "Ropa"
@@ -66,7 +72,10 @@ namespace InventarioPro.Server.Migrations
                         new
                         {
                             Id = 3,
+<<<<<<< HEAD
                             Eliminado = false,
+=======
+>>>>>>> Daniel
                             FechaActualizacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FechaCreacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Nombre = "Lacteos"

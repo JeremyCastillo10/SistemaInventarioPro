@@ -1,10 +1,14 @@
 ﻿using InventarioPro.Server.DAL;
 using InventarioPro.Server.Models;
 using InventarioPro.Shared.DTOS.Categoria;
+using InventarioPro.Shared.DTOS.Categoria;
 using InventarioPro.Shared.DTOS.Producto;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using Microsoft.VisualBasic;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -21,6 +25,7 @@ namespace InventarioPro.Server.Controllers
             _db = db;
         }
 
+
         [HttpPost]
         public async Task<ActionResult<int>> GuardarProducto([FromBody] Producto_DTO productoDto)
         {
@@ -32,64 +37,79 @@ namespace InventarioPro.Server.Controllers
             Console.WriteLine($"Producto recibido: {productoDto.Nombre}");
 
             if (productoDto.Id == 0)
-            {
-                var producto = new Producto
+                if (productoDto.Id == 0)
                 {
-                    FechaCreacion = DateTime.Now,
-                    FechaActualizacion = DateTime.Now,
-                    Nombre = productoDto.Nombre,
-                    Descripcion = productoDto.Descripcion,
-                    CategoriaId = productoDto.CategoriaId,
-                    Existencia = 0,
-                    Eliminado = false,
-                    Precio = productoDto.Precio,
-                    Costo = productoDto.Costo,
-                    Codigo = productoDto.Codigo,
-                    ImagenProducto = productoDto.ImagenProducto != null ? Convert.FromBase64String(productoDto.ImagenProducto) : null
-                };
+                    var producto = new Producto
+                    {
+                        FechaCreacion = DateTime.Now,
+                        FechaActualizacion = DateTime.Now,
+                        Nombre = productoDto.Nombre,
+                        Descripcion = productoDto.Descripcion,
+                        CategoriaId = productoDto.CategoriaId,
+                        Existencia = 0,
+                        Eliminado = false,
+                        Precio = productoDto.Precio,
+                        Costo = productoDto.Costo,
+                        Codigo = productoDto.Codigo,
+                        ImagenProducto = productoDto.ImagenProducto != null ? Convert.FromBase64String(productoDto.ImagenProducto) : null
+                    };
 
-                try
-                {
-                    _db.Productos.Add(producto);
-                    await _db.SaveChangesAsync();
-                    return CreatedAtAction(nameof(GuardarProducto), new { id = producto.Id }, new { id = producto.Id, message = "Producto creado exitosamente." });
+                    try
+                    {
+                        _db.Productos.Add(producto);
+                        await _db.SaveChangesAsync();
+                        return CreatedAtAction(nameof(GuardarProducto), new { id = producto.Id }, new { id = producto.Id, message = "Producto creado exitosamente." });
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        var errorMessage = ex.InnerException?.Message ?? ex.Message;
+                        Console.WriteLine($"Error al guardar producto: {errorMessage}");
+                        return BadRequest(new { error = errorMessage });
+                    }
                 }
-                catch (DbUpdateException ex)
+                else
                 {
-                    var errorMessage = ex.InnerException?.Message ?? ex.Message;
-                    Console.WriteLine($"Error al guardar producto: {errorMessage}");
-                    return BadRequest(new { error = errorMessage });
-                }
-            }
-            else
-            {
-                var productoExistente = await _db.Productos.FirstOrDefaultAsync(p => p.Id == productoDto.Id);
-                if (productoExistente == null)
-                {
-                    return NotFound("Producto no encontrado.");
-                }
+                    var productoExistente = await _db.Productos.FirstOrDefaultAsync(p => p.Id == productoDto.Id);
+                    if (productoExistente == null)
+                    {
+                        return NotFound("Producto no encontrado.");
+                    }
 
-                productoExistente.FechaActualizacion = DateTime.Now;
-                productoExistente.Nombre = productoDto.Nombre;
-                productoExistente.Existencia = productoDto.Existencia;
-                productoExistente.Descripcion = productoDto.Descripcion;
-                productoExistente.CategoriaId = productoDto.CategoriaId;
-                productoExistente.Precio = productoDto.Precio;
-                productoExistente.Costo = productoDto.Costo;
-                productoExistente.ImagenProducto = productoDto.ImagenProducto != null ? Convert.FromBase64String(productoDto.ImagenProducto) : null;
+                    productoExistente.FechaActualizacion = DateTime.Now;
+                    productoExistente.Nombre = productoDto.Nombre;
+                    productoExistente.Existencia = productoDto.Existencia;
+                    productoExistente.Descripcion = productoDto.Descripcion;
+                    productoExistente.CategoriaId = productoDto.CategoriaId;
+                    productoExistente.Precio = productoDto.Precio;
+                    productoExistente.Costo = productoDto.Costo;
+                    productoExistente.ImagenProducto = productoDto.ImagenProducto != null ? Convert.FromBase64String(productoDto.ImagenProducto) : null;
+                    var productoExistente = await _db.Productos.FirstOrDefaultAsync(p => p.Id == productoDto.Id);
+                    if (productoExistente == null)
+                    {
+                        return NotFound("Producto no encontrado.");
+                    }
 
-                try
-                {
-                    await _db.SaveChangesAsync();
-                    return Ok("Producto modificado con éxito.");
+                    productoExistente.FechaActualizacion = DateTime.Now;
+                    productoExistente.Nombre = productoDto.Nombre;
+                    productoExistente.Existencia = productoDto.Existencia;
+                    productoExistente.Descripcion = productoDto.Descripcion;
+                    productoExistente.CategoriaId = productoDto.CategoriaId;
+                    productoExistente.Precio = productoDto.Precio;
+                    productoExistente.Costo = productoDto.Costo;
+                    productoExistente.ImagenProducto = productoDto.ImagenProducto != null ? Convert.FromBase64String(productoDto.ImagenProducto) : null;
+
+                    try
+                    {
+                        await _db.SaveChangesAsync();
+                        return Ok("Producto modificado con éxito.");
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        var errorMessage = ex.InnerException?.Message ?? ex.Message;
+                        Console.WriteLine($"Error al actualizar producto: {errorMessage}");
+                        return BadRequest(new { error = errorMessage });
+                    }
                 }
-                catch (DbUpdateException ex)
-                {
-                    var errorMessage = ex.InnerException?.Message ?? ex.Message;
-                    Console.WriteLine($"Error al actualizar producto: {errorMessage}");
-                    return BadRequest(new { error = errorMessage });
-                }
-            }
         }
 
 

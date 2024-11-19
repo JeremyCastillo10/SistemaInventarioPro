@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components
 @using OfficeOpenXml
+@using OfficeOpenXml
 @using Radzen
 @using System.Collections.Generic
 @using System.Linq
@@ -32,13 +33,16 @@
 </div>
 <div class="filters" style="display: flex; flex-wrap: wrap; margin-bottom: 20px;">
     <div style="display: flex; align-items: center; flex-wrap: wrap; width: 100%; margin-bottom: 10px;">
-        <RadzenDropDown @bind-Value="selectedCategory" Data="@categorias" TextProperty="Nombre" ValueProperty="Id" Placeholder="Categoría" Style="margin-right: 10px; flex: 1 1 150px;" />
-        <RadzenDropDown @bind-Value="selectedWarehouse" Data="@warehouses" TextProperty="Name" ValueProperty="Id" Placeholder="Almacén" Style="margin-right: 10px; flex: 1 1 150px;" />
+        <RadzenDropDown @bind-Value="selectedCategory" Data="@categorias" TextProperty="Nombre" ValueProperty="Id"
+            Placeholder="Categoría" Style="margin-right: 10px; flex: 1 1 150px;" />
+        <RadzenDropDown @bind-Value="selectedWarehouse" Data="@warehouses" TextProperty="Name" ValueProperty="Id"
+            Placeholder="Almacén" Style="margin-right: 10px; flex: 1 1 150px;" />
         <label style="margin-right: 5px;">Fecha Inicio:</label>
         <RadzenDatePicker @bind-Value=@value1 DateFormat="dd/MM/yyyy" Style="margin-right: 10px; flex: 1 1 150px;" />
         <label style="margin-right: 5px;">Fecha Fin:</label>
         <RadzenDatePicker @bind-Value=@value2 DateFormat="dd/MM/yyyy" Style="margin-right: 10px; flex: 1 1 150px;" />
-        <RadzenTextBox @bind-Value="searchTerm" Placeholder="Buscar Producto" Style="flex: 2; min-width: 150px; margin-right: 10px;" />
+        <RadzenTextBox @bind-Value="searchTerm" Placeholder="Buscar Producto"
+            Style="flex: 2; min-width: 150px; margin-right: 10px;" />
         <RadzenButton Text="Filtrar" Icon="search" Click="FilterProducts" Style="margin-right: 10px;" />
     </div>
     <div style="display: flex; align-items: center; width: 100%; gap: 10px;">
@@ -48,15 +52,14 @@
 
 </div>
 <div style="max-height: 450px; overflow-y: auto;">
-    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true" AllowSorting="true" PageSize="8" AllowPaging="true"
-                    Data="@filteredProducts" ColumnWidth="300px" ShowPagingSummary="true" @bind-Value="@selectedProducts">
+    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true" AllowSorting="true"
+        PageSize="8" AllowPaging="true" Data="@filteredProducts" ColumnWidth="300px" ShowPagingSummary="true"
+        @bind-Value="@selectedProducts">
         <Columns>
             <RadzenDataGridColumn Title="Foto" Width="180px" TextAlign="TextAlign.Center">
                 <Template Context="data">
-                    <RadzenImage Path="@($"data:image/jpeg;base64,{data.ImagenProducto}")"
-                                 class="rz-product-image"
-                                 AlternateText="@(data.Nombre)"
-                                 Style="width: 60px; height: auto;" />
+                    <RadzenImage Path="@($"data:image/jpeg;base64,{data.ImagenProducto}")" class="rz-product-image"
+                        AlternateText="@(data.Nombre)" Style="width: 60px; height: auto;" />
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn Property="@nameof(Producto_DTO.Nombre)" Title="Nombre del Producto" Width="190px" />
@@ -65,9 +68,44 @@
                     @((categorias.FirstOrDefault(c => c.Id == data.CategoriaId)?.Nombre) ?? "Sin Categoría")
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn Property="@nameof(Producto_DTO.FechaCreacion)" Filterable="false" Title="Fecha" Width="120px" FormatString="{0:dd/MM/yyyy}" />
-            <RadzenDataGridColumn Property="@nameof(Producto_DTO.Precio)" Title="Precio" FormatString="{0:C}" Width="120px" />
-            <RadzenDataGridColumn Property="@nameof(Producto_DTO.Costo)" Title="Costo" FormatString="{0:C}" Width="120px" />
+            <RadzenDataGridColumn Property="@nameof(Producto_DTO.FechaCreacion)" Filterable="false" Title="Fecha"
+                Width="120px" FormatString="{0:dd/MM/yyyy}" />
+            <RadzenDataGridColumn Property="@nameof(Producto_DTO.Precio)" Title="Precio" FormatString="{0:C}"
+                Width="120px" />
+            <RadzenDataGridColumn Property="@nameof(Producto_DTO.Costo)" Title="Costo" FormatString="{0:C}"
+                Width="120px" />
+            <RadzenDataGridColumn Property="@nameof(Producto_DTO.Existencia)" Title="Stock" Width="120px" />
+            <RadzenDataGridColumn Title="Acciones" Width="120px">
+                <Template Context="data">
+                    <RadzenButton Text="Editar" Click="() => OpenEditProductDialog(data.Id)" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</div>
+<div style="max-height: 450px; overflow-y: auto;">
+    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true" AllowSorting="true"
+        PageSize="8" AllowPaging="true" Data="@filteredProducts" ColumnWidth="300px" ShowPagingSummary="true"
+        @bind-Value="@selectedProducts">
+        <Columns>
+            <RadzenDataGridColumn Title="Foto" Width="180px" TextAlign="TextAlign.Center">
+                <Template Context="data">
+                    <RadzenImage Path="@($"data:image/jpeg;base64,{data.ImagenProducto}")" class="rz-product-image"
+                        AlternateText="@(data.Nombre)" Style="width: 60px; height: auto;" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Property="@nameof(Producto_DTO.Nombre)" Title="Nombre del Producto" Width="190px" />
+            <RadzenDataGridColumn Title="Categoría" Width="110px">
+                <Template Context="data">
+                    @((categorias.FirstOrDefault(c => c.Id == data.CategoriaId)?.Nombre) ?? "Sin Categoría")
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Property="@nameof(Producto_DTO.FechaCreacion)" Filterable="false" Title="Fecha"
+                Width="120px" FormatString="{0:dd/MM/yyyy}" />
+            <RadzenDataGridColumn Property="@nameof(Producto_DTO.Precio)" Title="Precio" FormatString="{0:C}"
+                Width="120px" />
+            <RadzenDataGridColumn Property="@nameof(Producto_DTO.Costo)" Title="Costo" FormatString="{0:C}"
+                Width="120px" />
             <RadzenDataGridColumn Property="@nameof(Producto_DTO.Existencia)" Title="Stock" Width="120px" />
             <RadzenDataGridColumn Title="Acciones" Width="120px">
                 <Template Context="data">
@@ -122,28 +160,37 @@
     }
 
     private List<Warehouse> warehouses = new List<Warehouse>
-    {
-        new Warehouse { Id = 1, Name = "Almacén A" },
-        new Warehouse { Id = 2, Name = "Almacén B" },
-        new Warehouse { Id = 3, Name = "Almacén C" }
-    };
+{
+new Warehouse { Id = 1, Name = "Almacén A" },
+new Warehouse { Id = 2, Name = "Almacén B" },
+new Warehouse { Id = 3, Name = "Almacén C" }
+};
 
     private async Task LoadProducts()
+private async Task LoadProducts()
     {
         products = await Http.GetFromJsonAsync<List<Producto_DTO>>("api/producto/GetProductos");
-        filteredProducts = products; 
+        filteredProducts = products;
+        products = await Http.GetFromJsonAsync<List<Producto_DTO>>("api/producto/GetProductos");
+        filteredProducts = products;
     }
 
     private async Task OpenAddProductDialog()
     {
-        var newProduct = new Producto_DTO(); 
+        var newProduct = new Producto_DTO();
         var options = new Radzen.DialogOptions { Style = "width: 900px;" };
-        var result = await DialogService.OpenAsync<FormProducto>("Agregar Nuevo Producto", new Dictionary<string, object> { { "Product", newProduct } }, options);
+        var result = await DialogService.OpenAsync<FormProducto>("Agregar Nuevo Producto", new Dictionary<string, object> { {
+"Product", newProduct } }, options);
+        var newProduct = new Producto_DTO();
+        var options = new Radzen.DialogOptions { Style = "width: 900px;" };
+        var result = await DialogService.OpenAsync<FormProducto>("Agregar Nuevo Producto", new Dictionary<string, object> { {
+"Product", newProduct } }, options);
 
         if (result != null)
         {
             products.Add(result);
-            await LoadProducts(); 
+            await LoadProducts();
+            await LoadProducts();
         }
     }
 
@@ -175,8 +222,8 @@
             if (value1.HasValue && value2.HasValue)
             {
                 var filteredByDate = await Http.GetFromJsonAsync<List<Producto_DTO>>($"api/producto/FiltrarPorFechas/"
-                    + Convert.ToDateTime(value1).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) + "/"
-                    + Convert.ToDateTime(value2).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+                + Convert.ToDateTime(value1).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) + "/"
+                + Convert.ToDateTime(value2).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
 
                 // Verificar si la lista filtrada por fecha está vacía
                 if (filteredByDate == null || !filteredByDate.Any())
@@ -186,8 +233,8 @@
                 }
 
                 filteredProducts = allProducts
-                    .Where(p => filteredByDate.Any(fd => fd.Id == p.Id))
-                    .ToList();
+                .Where(p => filteredByDate.Any(fd => fd.Id == p.Id))
+                .ToList();
             }
             else
             {
@@ -198,8 +245,8 @@
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 filteredProducts = filteredProducts
-                    .Where(p => p.Nombre.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
+                .Where(p => p.Nombre.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
             }
         }
         catch (HttpRequestException ex)
@@ -227,7 +274,8 @@
             var productToEdit = await response.Content.ReadFromJsonAsync<Producto_DTO>();
 
             var options = new Radzen.DialogOptions { Style = "width: 900px;" };
-            await DialogService.OpenAsync<FormProducto>("Editar Producto", new Dictionary<string, object> { { "Product", productToEdit } }, options);
+            await DialogService.OpenAsync<FormProducto>("Editar Producto", new Dictionary<string, object> { { "Product",
+productToEdit } }, options);
         }
         else
         {
@@ -246,7 +294,7 @@
             return;
         }
 
-        string[] cabecerasTabla = { "Nombre", "Stock", "Fecha Creacion", "Costo", "Precio",  };
+        string[] cabecerasTabla = { "Nombre", "Stock", "Fecha Creacion", "Costo", "Precio", };
         string[] propiedadesMostrar = { "Nombre", "Existencia", "FechaCreacion", "Costo", "Precio" };
 
         using (MemoryStream ms = new MemoryStream())
@@ -325,39 +373,40 @@
                     byte[] logoBytes = Convert.FromBase64String(logoBase64);
                     ImageData logoImage = ImageDataFactory.Create(logoBytes);
                     Image logo = new Image(logoImage)
-                        .SetWidth(150) // Ancho de la imagen
-                        .SetHeight(75); // Alto de la imagen
+                    .SetWidth(150) // Ancho de la imagen
+                    .SetHeight(75); // Alto de la imagen
                     logo.SetFixedPosition(30, 780); // Posición fija, ajustada a 780 para evitar que se corte
                     doc.Add(logo);
                 }
 
                 // Encabezado de la empresa con estilo moderno
                 Paragraph empresaInfo = new Paragraph()
-                   .Add(new Text(empresaNombre).SetBold().SetFontSize(18).SetFontColor(new DeviceRgb(0, 0, 0))) // Nombre de la empresa
-                   .Add(new Text("\n" + empresaDireccion).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Dirección en gris
-                   .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Teléfono en gris
-                   .Add(new Text("\nEmail: " + empresaRNC).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Email en gris
-                   .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-                   .SetMarginTop(40) // Se agrega margen superior para separar del logo
-                   .SetMarginBottom(25); // Margen inferior
+                .Add(new Text(empresaNombre).SetBold().SetFontSize(18).SetFontColor(new DeviceRgb(0, 0, 0))) // Nombre de la empresa
+                .Add(new Text("\n" + empresaDireccion).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Dirección en gris
+                .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Teléfono
+en gris
+.Add(new Text("\nEmail: " + empresaRNC).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Email en gris
+.SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
+.SetMarginTop(40) // Se agrega margen superior para separar del logo
+.SetMarginBottom(25); // Margen inferior
                 doc.Add(empresaInfo);
 
 
                 // Título del documento con diseño profesional
                 Paragraph p1 = new Paragraph("Reporte de Inventario de Productos")
-                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                    .SetFontSize(24)
-                    .SetBold()
-                    .SetFontColor(new DeviceRgb(0, 123, 255)) // Azul moderno
-                    .SetMarginBottom(15);
+                .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                .SetFontSize(24)
+                .SetBold()
+                .SetFontColor(new DeviceRgb(0, 123, 255)) // Azul moderno
+                .SetMarginBottom(15);
                 doc.Add(p1);
 
                 // Subtítulo con la fecha de exportación, alineado a la derecha
                 Paragraph fechaExportacion = new Paragraph("Fecha de Exportación: " + DateTime.Now.ToString("dd/MM/yyyy"))
-                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
-                    .SetFontSize(12)
-                    .SetFontColor(new DeviceRgb(169, 169, 169)) // Gris claro
-                    .SetMarginBottom(25);
+                .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
+                .SetFontSize(12)
+                .SetFontColor(new DeviceRgb(169, 169, 169)) // Gris claro
+                .SetMarginBottom(25);
                 doc.Add(fechaExportacion);
 
                 // Crear la tabla con bordes sutiles y diseño profesional
@@ -369,12 +418,12 @@
                 foreach (var cabecera in cabecerasTabla)
                 {
                     var headerCell = new Cell().Add(new Paragraph(cabecera))
-                        .SetBackgroundColor(new DeviceRgb(173, 216, 230)) // Azul claro (LightBlue)
-                        .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                        .SetBold()
-                        .SetFontColor(new DeviceRgb(255, 255, 255)) // Blanco
-                        .SetPadding(12)
-                        .SetBorder(new SolidBorder(0.5f)); // Bordes finos y suaves
+                    .SetBackgroundColor(new DeviceRgb(173, 216, 230)) // Azul claro (LightBlue)
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(255, 255, 255)) // Blanco
+                    .SetPadding(12)
+                    .SetBorder(new SolidBorder(0.5f)); // Bordes finos y suaves
                     table.AddHeaderCell(headerCell);
                 }
 
@@ -393,22 +442,22 @@
                         }
 
                         var cell = new Cell().Add(new Paragraph(valor))
-                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                            .SetPadding(10)
-                            .SetBorder(new SolidBorder(0.5f)) // Bordes suaves
-                            .SetBackgroundColor(new DeviceRgb(255, 255, 255)) // Fondo blanco para las celdas
-                            .SetFontColor(new DeviceRgb(0, 0, 0)); // Texto negro
+                        .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                        .SetPadding(10)
+                        .SetBorder(new SolidBorder(0.5f)) // Bordes suaves
+                        .SetBackgroundColor(new DeviceRgb(255, 255, 255)) // Fondo blanco para las celdas
+                        .SetFontColor(new DeviceRgb(0, 0, 0)); // Texto negro
                         table.AddCell(cell);
                     }
 
                     // Insertar categoría
                     var categoria = categorias.FirstOrDefault(c => c.Id == item.CategoriaId);
                     var categoriaCell = new Cell().Add(new Paragraph(categoria?.Nombre ?? "Sin Categoría"))
-                        .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                        .SetPadding(10)
-                        .SetBorder(new SolidBorder(0.5f)) // Bordes suaves
-                        .SetBackgroundColor(new DeviceRgb(255, 255, 255)) // Fondo blanco
-                        .SetFontColor(new DeviceRgb(0, 0, 0)); // Texto negro
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetPadding(10)
+                    .SetBorder(new SolidBorder(0.5f)) // Bordes suaves
+                    .SetBackgroundColor(new DeviceRgb(255, 255, 255)) // Fondo blanco
+                    .SetFontColor(new DeviceRgb(0, 0, 0)); // Texto negro
                     table.AddCell(categoriaCell);
                 }
 
@@ -417,11 +466,11 @@
 
                 // Pie de página con un diseño discreto y elegante
                 Paragraph piePagina = new Paragraph()
-                    .Add(new Text("Tech Solutions S.A. | Todos los derechos reservados")
-                    .SetFontSize(8).SetFontColor(new DeviceRgb(169, 169, 169))) // Gris claro
-                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                    .SetFixedPosition(0, 30, PageSize.A4.GetWidth())
-                    .SetMarginTop(10);
+                .Add(new Text("Tech Solutions S.A. | Todos los derechos reservados")
+                .SetFontSize(8).SetFontColor(new DeviceRgb(169, 169, 169))) // Gris claro
+                .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                .SetFixedPosition(0, 30, PageSize.A4.GetWidth())
+                .SetMarginTop(10);
                 doc.Add(piePagina);
 
                 // Cerrar el documento PDF

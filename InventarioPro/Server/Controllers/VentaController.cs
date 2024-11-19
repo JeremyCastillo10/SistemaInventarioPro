@@ -61,11 +61,11 @@ namespace InventarioPro.Server.Controllers
 
                             _db.VentaDetalles.Add(ventaDetalle);
 
-                          
+
                             var producto = await _db.Productos.FindAsync(detalle.IdProducto);
                             if (producto != null)
                             {
-                                producto.Existencia -= detalle.Cantidad; 
+                                producto.Existencia -= detalle.Cantidad;
                                 _db.Productos.Update(producto);
                             }
                         }
@@ -110,13 +110,13 @@ namespace InventarioPro.Server.Controllers
                         var producto = await _db.Productos.FindAsync(detalle.IdProducto);
                         if (producto != null)
                         {
-                            producto.Existencia -= (detalle.Cantidad - ventaDetalle.Cantidad); 
+                            producto.Existencia -= (detalle.Cantidad - ventaDetalle.Cantidad);
                             _db.Productos.Update(producto);
                         }
                     }
                     else
                     {
-                
+
                         ventaDetalle = new VentaDetalle
                         {
                             IdProducto = detalle.IdProducto,
@@ -130,7 +130,7 @@ namespace InventarioPro.Server.Controllers
 
                         _db.VentaDetalles.Add(ventaDetalle);
 
-         
+
                         var producto = await _db.Productos.FindAsync(detalle.IdProducto);
                         if (producto != null)
                         {
@@ -188,7 +188,7 @@ namespace InventarioPro.Server.Controllers
         public async Task<ActionResult<List<Venta_DTO>>> GetVentas()
         {
             var ventas = await _db.Ventas
-                .Where(v => v.Eliminado != true) 
+                .Where(v => v.Eliminado != true)
                 .ToListAsync();
 
             var ventasDto = new List<Venta_DTO>();
@@ -232,7 +232,7 @@ namespace InventarioPro.Server.Controllers
         public async Task<ActionResult<Venta_DTO>> GetVentaById(int id)
         {
             var venta = await (from v in _db.Ventas
-                               where v.Id == id && v.Eliminado != true  
+                               where v.Id == id && v.Eliminado != true
                                select new Venta_DTO
                                {
                                    Id = v.Id,
@@ -247,11 +247,11 @@ namespace InventarioPro.Server.Controllers
                                                         where d.IdVenta == v.Id && d.Eliminado != true
                                                         select new VentaDetalle_DTO
                                                         {
-                                                            Id = d.Id,  
-                                                            IdProducto = d.IdProducto,  
-                                                            Cantidad = d.Cantidad,  
-                                                            Precio = Convert.ToDecimal(d.Precio),  
-                                                            IdVenta = d.IdVenta,  
+                                                            Id = d.Id,
+                                                            IdProducto = d.IdProducto,
+                                                            Cantidad = d.Cantidad,
+                                                            Precio = Convert.ToDecimal(d.Precio),
+                                                            IdVenta = d.IdVenta,
                                                             FechaCreacion = d.FechaCreacion,
                                                             FechaActualizacion = d.FechaActualizacion
 

@@ -1,6 +1,7 @@
 ﻿using InventarioPro.Server.DAL;
+using InventarioPro.Server.Models;
 using InventarioPro.Shared.DTOS.Categoria;
-using Microsoft.AspNetCore.Http;
+using InventarioPro.Shared.DTOS.Producto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +29,36 @@ namespace InventarioPro.Server.Controllers
                 .ToListAsync();
 
             return Ok(articulos);
+        }
+        [HttpPost("Savecategoria")]
+
+        public async Task<ActionResult<int>> GuardarCategoria([FromBody] Categoria_DTO categoria_DTO)
+        {
+            
+            
+
+
+            if (categoria_DTO.Id > 0)
+            {
+                var categoria = await _db.Categorias.FindAsync(categoria_DTO.Id);
+                categoria.Nombre = categoria_DTO.Nombre;
+                categoria.FechaActualizacion = DateTime.Now;
+
+                await _db.SaveChangesAsync();
+
+            }
+            else
+            {
+                var categoria = new Categoria();
+
+                categoria.Nombre = categoria_DTO.Nombre;
+                categoria.FechaCreacion = DateTime.Now;
+                categoria.Eliminado = false;
+
+                _db.Categorias.Add(categoria);
+                await _db.SaveChangesAsync();
+            }
+            return 0;
         }
     }
 }
