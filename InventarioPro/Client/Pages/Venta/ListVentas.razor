@@ -88,10 +88,33 @@
         filteredVentas = ventas;  
         isLoading = false;  
         await ObtenerProductosDesdeApi();
-        empresa = await Http.GetFromJsonAsync<Empresa_DTO>("api/empresa/1");
+    try{
+        var empresaResponse = await Http.GetAsync("api/empresa/1");
 
-
+        if (empresaResponse.IsSuccessStatusCode)
+        {
+            empresa = await empresaResponse.Content.ReadFromJsonAsync<Empresa_DTO>();
+        }
+        else
+        {
+            empresa = new Empresa_DTO
+                {
+                    Id = 0,
+                    RNC = "Desconocido",
+                    Nombre = "Desconocido",
+                    Direccion = "Desconocida",
+                    Telefono = "Desconocido",
+                    Logo = string.Empty,
+                    PermitirCargaData = false
+                };
+            Console.WriteLine($"Error al obtener la empresa: {empresaResponse.StatusCode}");
+        }
     }
+catch (HttpRequestException ex)
+{
+    Console.WriteLine($"Error en la solicitud HTTP: {ex.Message}");
+}
+}
 
     private async Task LoadVentas()
     {
