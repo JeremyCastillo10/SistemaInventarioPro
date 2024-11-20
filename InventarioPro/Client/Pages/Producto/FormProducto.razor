@@ -136,11 +136,15 @@
         {
             await ShowAlert("Éxito", (Product.Id == 0) ? "Producto creado con éxito!" : "Producto actualizado con éxito!", SweetAlertIcon.Success);
             DialogService.Close(Product);
+            StateHasChanged();
+
         }
         else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
             await ShowAlert("Error", $"No se pudo {(Product.Id == 0 ? "crear" : "actualizar")} el producto: {errorMessage}", SweetAlertIcon.Error);
+            StateHasChanged();
+
         }
         nav.NavigateTo("/ListProductos");
     }
