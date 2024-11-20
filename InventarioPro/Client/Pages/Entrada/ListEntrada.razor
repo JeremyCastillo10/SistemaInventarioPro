@@ -1,5 +1,7 @@
 @page "/ListaEntrada"
+@using InventarioPro.Shared.DTOS.Empresa
 @using Microsoft.AspNetCore.Components
+@using OfficeOpenXml
 @using Radzen
 @using System.Collections.Generic
 @using System.Linq
@@ -7,6 +9,14 @@
 @using InventarioPro.Shared.DTOS.Producto
 @inject SweetAlertService swal
 @using Radzen
+@using iText.IO.Image
+@using iText.Kernel.Colors
+@using iText.Kernel.Geom
+@using iText.Kernel.Pdf
+@using iText.Layout
+@using iText.Layout.Element
+@inject IJSRuntime jsruntime;
+
 @inject HttpClient Http
 @inject Radzen.DialogService DialogService
 <PageTitle>Entrada de Productos</PageTitle>
@@ -25,6 +35,8 @@
 
     <RadzenButton Text="Buscar" Icon="search" Click="FiltrarPorFecha" ButtonStyle="ButtonStyle.Primary" Style="margin-left: 10px;" />
 </div>
+<RadzenButton Text="Exportar a Excel" Click="exportarEntradasExcel" Icon="folder_open" />
+<RadzenButton Text="Exportar a PDF" Click="ExportarEntradasPDF" Icon="picture_as_pdf" />
 
 <!-- RadzenDataGrid -->
 <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true"
@@ -81,18 +93,45 @@
     private List<Entrada_DTO> listentrada_DTO2 = new List<Entrada_DTO>();
     private DateTime? fechaInicio;
     private DateTime? fechaFin;
+    private Empresa_DTO empresa;
 
 
 
     protected override async Task OnInitializedAsync()
     {
-        var response = await Http.GetAsync($"api/entrada/getentrada");
-        listentrada_DTO= await response.Content.ReadFromJsonAsync<List<Entrada_DTO>>();
-        listentrada_DTO2 = listentrada_DTO;
+        try
+        {
+            var response = await Http.GetAsync("api/entrada/getentrada");
+            response.EnsureSuccessStatusCode(); 
+            listentrada_DTO = await response.Content.ReadFromJsonAsync<List<Entrada_DTO>>();
+            listentrada_DTO2 = listentrada_DTO;
 
+            var empresaResponse = await Http.GetAsync("api/empresa/1");
 
+            if (empresaResponse.IsSuccessStatusCode)
+            {
+                empresa = await empresaResponse.Content.ReadFromJsonAsync<Empresa_DTO>();
+            }
+            else
+            {
+                empresa = new Empresa_DTO
+                    {
+                        Id = 0, 
+                        RNC = "Desconocido",  
+                        Nombre = "Desconocido", 
+                        Direccion = "Desconocida", 
+                        Telefono = "Desconocido", 
+                        Logo = string.Empty, 
+                        PermitirCargaData = false 
+                    };
+                Console.WriteLine($"Error al obtener la empresa: {empresaResponse.StatusCode}");
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Error en la solicitud HTTP: {ex.Message}");
+        }
     }
-
     private async Task OpenAddProductDialog()
     {
 
@@ -101,8 +140,8 @@
         if (result != null)
         {
             Entradas.Add(result);
-            // Si tienes un método ApplyFilters() para actualizar la vista, lo llamas aquí
-            // ApplyFilters(); // Descomenta esto si lo tienes
+
+
         }
 
 
@@ -124,7 +163,7 @@
             new Dictionary<string, object> { { "entrada_DTO", item } }
         );
 
-   
+
 
 
     }
@@ -142,7 +181,7 @@
         }
         else
         {
-         
+
         }
     }
 
@@ -152,7 +191,256 @@
         MostrarFormulario = false;
     }
 
-   
+    public void exportarEntradasExcel()
+    {
+        if (listentrada_DTO2 == null || !listentrada_DTO2.Any())
+        {
+            Console.WriteLine("No hay entradas para exportar.");
+            return;
+        }
+
+        string[] cabecerasTabla = { "Fecha", "Monto Total", "Producto", "Cantidad", "Precio", "Sub Monto Total" };
+        string[] propiedadesMostrar = { "Fecha", "MontoTotal" };
+
+        using (MemoryStream ms = new MemoryStream())
+        {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+            using (ExcelPackage ep = new ExcelPackage())
+            {
+                var worksheet = ep.Workbook.Worksheets.Add("Entradas");
+
+                // Escribir cabeceras
+                for (int i = 0; i < cabecerasTabla.Length; i++)
+                {
+                    worksheet.Column(i + 1).Width = 20;
+                    worksheet.Cells[1, i + 1].Value = cabecerasTabla[i];
+                }
+
+                // Escribir los datos de las entradas
+                int fila = 2;
+                foreach (var entrada in listentrada_DTO2)
+                {
+                    int col = 1;
+
+                    // Escribir propiedades de la entrada (Fecha y Monto Total)
+                    foreach (string propiedad in propiedadesMostrar)
+                    {
+                        worksheet.Cells[fila, col].Value = entrada.GetType().GetProperty(propiedad)?.GetValue(entrada)?.ToString() ?? "N/A";
+                        col++;
+                    }
+
+                    // Escribir los detalles de la entrada en celdas separadas
+                    foreach (var detalle in entrada.entradaDetalle_DTO)
+                    {
+                        worksheet.Cells[fila, col].Value = detalle.IdProducto;
+                        col++;
+                        worksheet.Cells[fila, col].Value = detalle.Cantidad;
+                        col++;
+                        worksheet.Cells[fila, col].Value = detalle.Precio;
+                        col++;
+                        worksheet.Cells[fila, col].Value = detalle.SubMontoTotal;
+                        col++;
+
+                        fila++;
+                    }
+                }
+
+                ep.SaveAs(ms);
+                byte[] buffer = ms.ToArray();
+                string base64 = Convert.ToBase64String(buffer);
+                string excel = "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64," + base64;
+                jsruntime.InvokeVoidAsync("descargarExcel", excel);
+            }
+        }
+    }
+
+    public async Task ExportarEntradasPDF()
+    {
+        if (listentrada_DTO2 == null || !listentrada_DTO2.Any())
+        {
+            Console.WriteLine("No hay entradas para exportar.");
+            return;
+        }
+
+        string empresaNombre = empresa.Nombre;
+        string empresaDireccion = empresa.Direccion;
+        string empresaTelefono = empresa.Telefono;
+        string empresaRNC = empresa.RNC;
+        string logoBase64 = empresa.Logo;
+
+        using (MemoryStream ms = new MemoryStream())
+        {
+            PdfWriter writer = new PdfWriter(ms);
+            using (var pdfDoc = new PdfDocument(writer))
+            {
+                Document doc = new Document(pdfDoc, PageSize.A4);
+                doc.SetMargins(40, 40, 60, 40);
+
+                if (!string.IsNullOrEmpty(logoBase64))
+                {
+                    try
+                    {
+                        byte[] logoBytes = Convert.FromBase64String(logoBase64);
+                        ImageData logoImage = ImageDataFactory.Create(logoBytes);
+                        Image logo = new Image(logoImage)
+                            .SetWidth(120)
+                            .SetHeight(60);
+                        logo.SetFixedPosition(30, 780);
+                        doc.Add(logo);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error al cargar el logo: {ex.Message}");
+                    }
+                }
+
+                Paragraph empresaInfo = new Paragraph()
+                    .Add(new Text(empresaNombre).SetBold().SetFontSize(18))
+                    .Add(new Text("\n" + empresaDireccion).SetFontSize(12))
+                    .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(12))
+                    .Add(new Text("\nEmail: " + empresaRNC).SetFontSize(12))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
+                    .SetMarginTop(40)
+                    .SetMarginBottom(25);
+                doc.Add(empresaInfo);
+
+                Paragraph p1 = new Paragraph("Reporte de Entradas")
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetFontSize(24)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(0, 123, 255))
+                    .SetMarginBottom(15);
+                doc.Add(p1);
+
+                Paragraph fechaExportacion = new Paragraph("Fecha de Exportación: " + DateTime.Now.ToString("dd/MM/yyyy"))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
+                    .SetFontSize(12)
+                    .SetFontColor(new DeviceRgb(169, 169, 169))
+                    .SetMarginBottom(25);
+                doc.Add(fechaExportacion);
+
+                Table table = new Table(6, true); // 6 columnas
+                table.SetWidthPercent(100);
+                table.SetMarginBottom(30);
+
+                // Cabeceras de tabla
+                table.AddHeaderCell(new Cell().Add(new Paragraph("Fecha"))
+                    .SetBackgroundColor(new DeviceRgb(173, 216, 230))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(255, 255, 255))
+                    .SetPadding(10));
+                table.AddHeaderCell(new Cell().Add(new Paragraph("Monto Total"))
+                    .SetBackgroundColor(new DeviceRgb(173, 216, 230))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(255, 255, 255))
+                    .SetPadding(10));
+                table.AddHeaderCell(new Cell().Add(new Paragraph("Producto"))
+                    .SetBackgroundColor(new DeviceRgb(173, 216, 230))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(255, 255, 255))
+                    .SetPadding(10));
+                table.AddHeaderCell(new Cell().Add(new Paragraph("Cantidad"))
+                    .SetBackgroundColor(new DeviceRgb(173, 216, 230))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(255, 255, 255))
+                    .SetPadding(10));
+                table.AddHeaderCell(new Cell().Add(new Paragraph("Precio"))
+                    .SetBackgroundColor(new DeviceRgb(173, 216, 230))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(255, 255, 255))
+                    .SetPadding(10));
+                table.AddHeaderCell(new Cell().Add(new Paragraph("Sub Monto Total"))
+                    .SetBackgroundColor(new DeviceRgb(173, 216, 230))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(255, 255, 255))
+                    .SetPadding(10));
+
+                decimal totalEntradas = 0;
+
+                // Escribir filas de entradas
+                foreach (var entrada in listentrada_DTO2) // 'entradas' es tu lista de entradas
+            {
+                    // Verifica si es la primera vez que estás añadiendo la fila de la entrada (para fecha y monto total)
+                    bool esPrimeraEntrada = true;
+
+                    foreach (var detalle in entrada.entradaDetalle_DTO) // Itera sobre los detalles de cada entrada
+                    {
+                        // Solo agregar fecha y monto total en la primera iteración de los detalles de la entrada
+                        if (esPrimeraEntrada)
+                        {
+                            table.AddCell(new Cell().Add(new Paragraph(entrada.Fecha.ToString("dd/MM/yyyy")))
+                                .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                                .SetPadding(10));
+                            table.AddCell(new Cell().Add(new Paragraph(entrada.MontoTotal.ToString("C")))
+                                .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                                .SetPadding(10));
+                            esPrimeraEntrada = false; // Después de la primera iteración, marca que ya no es la primera
+                        }
+                        else
+                        {
+                            // Si no es la primera entrada, agregar celdas vacías para la fecha y monto total
+                            table.AddCell(new Cell().Add(new Paragraph("")).SetPadding(10));
+                            table.AddCell(new Cell().Add(new Paragraph("")).SetPadding(10));
+                        }
+
+                        // Añadir los detalles de la entrada (Producto, Cantidad, Precio, Sub Monto Total)
+                        table.AddCell(new Cell().Add(new Paragraph(detalle.IdProducto.ToString()))
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                            .SetPadding(10));
+                        table.AddCell(new Cell().Add(new Paragraph(detalle.Cantidad.ToString()))
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                            .SetPadding(10));
+                        table.AddCell(new Cell().Add(new Paragraph(detalle.Precio.ToString("C")))
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                            .SetPadding(10));
+                        table.AddCell(new Cell().Add(new Paragraph(detalle.SubMontoTotal?.ToString("C") ?? "N/A"))
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                            .SetPadding(10));
+                            entrada.MontoTotal = Convert.ToDecimal(detalle.SubMontoTotal);
+                        totalEntradas += entrada.MontoTotal;
+
+                    }
+
+                }
+
+
+                doc.Add(table);
+
+                Paragraph total = new Paragraph($"Total General: {totalEntradas:C}")
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
+                    .SetFontSize(14)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(0, 123, 255))
+                    .SetMarginBottom(20);
+                doc.Add(total);
+
+                // Pie de página
+                Paragraph piePagina = new Paragraph()
+                    .Add(new Text($"{empresaNombre} | Todos los derechos reservados").SetFontSize(8).SetFontColor(new DeviceRgb(169, 169, 169)))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetFixedPosition(0, 30, PageSize.A4.GetWidth())
+                    .SetMarginTop(10);
+                doc.Add(piePagina);
+
+                doc.Close();
+                writer.Close();
+
+                byte[] buffer = ms.ToArray();
+                string base64 = Convert.ToBase64String(buffer);
+                string pdf = "data:application/pdf;base64," + base64;
+
+                jsruntime.InvokeVoidAsync("descargarEntradas", pdf);
+            }
+        }
+    }
+
 
     // Método para eliminar una entrada
     private void EliminarEntrada()
