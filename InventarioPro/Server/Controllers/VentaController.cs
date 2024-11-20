@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Dynamic.Core;
 
 namespace InventarioPro.Server.Controllers
 {
@@ -27,11 +28,12 @@ namespace InventarioPro.Server.Controllers
                 // Crear nueva venta
                 var venta = new Venta
                 {
-                    Fecha = ventaDto.Fecha,
+                    FechaActualizacion = DateTime.Now,
+                    Fecha = DateTime.Now,
                     MontoTotal = ventaDto.MontoTotal,
                     Nombre = ventaDto.Nombre,
                     Cedula = ventaDto.Cedula,
-                    FechaActualizacion = DateTime.Now,
+                    Eliminado = false
                 };
 
                 _db.Ventas.Add(venta);
@@ -41,31 +43,29 @@ namespace InventarioPro.Server.Controllers
 
                 try
                 {
-                    // Agregar detalles de la venta
                     if (ventaDto.VentaDetalle_DTOs != null && ventaDto.VentaDetalle_DTOs.Any())
                     {
                         foreach (var detalle in ventaDto.VentaDetalle_DTOs)
                         {
-                            // Crear el detalle de la venta
                             var ventaDetalle = new VentaDetalle
                             {
+                                FechaCreacion = DateTime.Now,
+                                FechaActualizacion = DateTime.Now,
                                 IdProducto = detalle.IdProducto,
                                 Cantidad = detalle.Cantidad,
                                 Precio = detalle.Precio,
                                 IdVenta = idVenta,
-                                FechaCreacion = DateTime.Now,
-                                FechaActualizacion = DateTime.Now,
                                 Eliminado = false
 
                             };
 
                             _db.VentaDetalles.Add(ventaDetalle);
 
-                          
+
                             var producto = await _db.Productos.FindAsync(detalle.IdProducto);
                             if (producto != null)
                             {
-                                producto.Existencia -= detalle.Cantidad; 
+                                producto.Existencia -= detalle.Cantidad;
                                 _db.Productos.Update(producto);
                             }
                         }
@@ -105,18 +105,18 @@ namespace InventarioPro.Server.Controllers
                         ventaDetalle.Cantidad = detalle.Cantidad;
                         ventaDetalle.Precio = detalle.Precio;
                         ventaDetalle.FechaActualizacion = DateTime.Now;
-                        ventaDetalle.Eliminado = false;
+                        ventaDetalle.Eliminado = venta.Eliminado;
 
                         var producto = await _db.Productos.FindAsync(detalle.IdProducto);
                         if (producto != null)
                         {
-                            producto.Existencia -= (detalle.Cantidad - ventaDetalle.Cantidad); 
+                            producto.Existencia -= (detalle.Cantidad - ventaDetalle.Cantidad);
                             _db.Productos.Update(producto);
                         }
                     }
                     else
                     {
-                
+
                         ventaDetalle = new VentaDetalle
                         {
                             IdProducto = detalle.IdProducto,
@@ -124,13 +124,13 @@ namespace InventarioPro.Server.Controllers
                             Precio = detalle.Precio,
                             IdVenta = venta.Id,
                             FechaActualizacion = DateTime.Now,
-                            Eliminado = false
+                            Eliminado = venta.Eliminado
 
                         };
 
                         _db.VentaDetalles.Add(ventaDetalle);
 
-         
+
                         var producto = await _db.Productos.FindAsync(detalle.IdProducto);
                         if (producto != null)
                         {
@@ -144,11 +144,51 @@ namespace InventarioPro.Server.Controllers
                 return Ok("Venta modificada con éxito.");
             }
         }
+        [HttpGet("GetResumenVentas")]
+        public async Task<ActionResult<ResumenVentasDTO>> GetResumenVentas()
+        {
+            var totalVentas = await _db.Ventas.CountAsync(v => v.Eliminado != true);
+
+            var numeroDeTransacciones = await _db.VentaDetalles
+                .Where(vd => vd.Eliminado != true)
+                .CountAsync();
+
+            var promedioPorVenta = totalVentas > 0
+                ? await _db.Ventas
+                    .Where(v => v.Eliminado != true && v.MontoTotal.HasValue)
+                    .AverageAsync(v => v.MontoTotal.Value)
+                : 0;
+
+            var ventasCanceladas = await _db.Ventas.CountAsync(v => v.Eliminado != true && v.MontoTotal == null); // Ejemplo de criterio
+
+            var devoluciones = await _db.VentaDetalles
+                .Where(vd => vd.Eliminado != true && vd.Cantidad < 0) // Si la cantidad es negativa, se trata como devolución
+                .CountAsync();
+
+            var ultimaVenta = await _db.Ventas
+                .Where(v => v.Eliminado != true && v.MontoTotal.HasValue)
+                .OrderBy(v => v.Fecha)
+                .Select(v => v.MontoTotal)
+                .FirstOrDefaultAsync();
+
+            var resumen = new ResumenVentasDTO
+            {
+                TotalVentas = totalVentas,
+                NumeroDeTransacciones = numeroDeTransacciones,
+                PromedioPorVenta = promedioPorVenta,
+                VentasCanceladas = ventasCanceladas,
+                Devoluciones = devoluciones,
+                UltimaVenta = ultimaVenta
+            };
+
+            return Ok(resumen);
+        }
+
         [HttpGet("GetVentas")]
         public async Task<ActionResult<List<Venta_DTO>>> GetVentas()
         {
             var ventas = await _db.Ventas
-                .Where(v => v.Eliminado != true) 
+                .Where(v => v.Eliminado != true)
                 .ToListAsync();
 
             var ventasDto = new List<Venta_DTO>();
@@ -192,7 +232,7 @@ namespace InventarioPro.Server.Controllers
         public async Task<ActionResult<Venta_DTO>> GetVentaById(int id)
         {
             var venta = await (from v in _db.Ventas
-                               where v.Id == id && v.Eliminado != true  
+                               where v.Id == id && v.Eliminado != true
                                select new Venta_DTO
                                {
                                    Id = v.Id,
@@ -207,11 +247,11 @@ namespace InventarioPro.Server.Controllers
                                                         where d.IdVenta == v.Id && d.Eliminado != true
                                                         select new VentaDetalle_DTO
                                                         {
-                                                            Id = d.Id,  
-                                                            IdProducto = d.IdProducto,  
-                                                            Cantidad = d.Cantidad,  
-                                                            Precio = Convert.ToDecimal(d.Precio),  
-                                                            IdVenta = d.IdVenta,  
+                                                            Id = d.Id,
+                                                            IdProducto = d.IdProducto,
+                                                            Cantidad = d.Cantidad,
+                                                            Precio = Convert.ToDecimal(d.Precio),
+                                                            IdVenta = d.IdVenta,
                                                             FechaCreacion = d.FechaCreacion,
                                                             FechaActualizacion = d.FechaActualizacion
 
@@ -251,4 +291,5 @@ namespace InventarioPro.Server.Controllers
         }
 
     }
+
 }

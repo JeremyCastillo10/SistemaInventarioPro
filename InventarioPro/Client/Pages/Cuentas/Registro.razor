@@ -1,0 +1,94 @@
+﻿@page "/registrarse"
+@layout RegistroLayour
+@using InventarioPro.Shared.DTOs
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject SweetAlertService swal
+
+<RadzenRow Gap="0" class="rz-my-12 rz-mx-auto rz-border-radius-6 rz-shadow-10" Style="width: 100%; max-width: 800px; overflow: hidden;">
+    <RadzenColumn Size="12" SizeMD="6">
+        <RadzenCard class="rz-shadow-0 rz-border-radius-0 rz-text-align-center rz-p-12"
+                    Style="height: 100%; background: url('/imagenes/inventarioImg.png') no-repeat center center/cover;">
+            <RadzenText TextStyle="TextStyle.DisplayH3" TagName="TagName.H2" class="rz-color-white rz-mb-6">¡Bienvenido!</RadzenText>
+
+        </RadzenCard>
+    </RadzenColumn>
+
+    <RadzenColumn Size="12" SizeMD="6">
+        <RadzenCard class="rz-shadow-0 rz-border-radius-0 rz-p-12">
+            <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H2" class="rz-mb-6">
+                Registrar Usuario
+            </RadzenText>
+
+            <EditForm Model="credencialesUsuario" OnValidSubmit="Registrar">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <RadzenTextBox @bind-Value="credencialesUsuario.Email" Placeholder="Correo electrónico" Style="width: 100%; margin-bottom: 10px;" />
+                <RadzenPassword @bind-Value="credencialesUsuario.Password" Placeholder="Contraseña" Style="width: 100%; margin-bottom: 10px;" />
+                <RadzenPassword @bind-Value="credencialesUsuario.ConfirmPassword" Placeholder="Confirmar contraseña" Style="width: 100%; margin-bottom: 20px;" />
+                <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Registrar" Style="width: 100%;" Disabled="@isSubmitting" />
+            </EditForm>
+
+            @if (errorMessage != null)
+            {
+                <RadzenText Align="Align.Center" class="rz-color-error rz-mt-3">
+                    @errorMessage
+                </RadzenText>
+            }
+
+            <RadzenText Align="Align.Center" class="rz-mt-4">
+                ¿Ya tienes cuenta? <RadzenLink Href="/login" class="rz-text-primary">Inicia sesión aquí</RadzenLink>
+            </RadzenText>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+@if (isSubmitting)
+{
+    <p>Registrando...</p>
+}
+
+@code {
+    private UserRegister credencialesUsuario = new UserRegister();
+    private bool isSubmitting = false;
+    private string errorMessage = null;
+
+    private async Task Registrar()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+
+        if (credencialesUsuario.Password != credencialesUsuario.ConfirmPassword)
+        {
+            errorMessage = "Las contraseñas no coinciden.";
+            isSubmitting = false;
+            return;
+        }
+
+        var response = await Http.PostAsJsonAsync("api/cuentas/registrar", credencialesUsuario);
+        if (response.IsSuccessStatusCode)
+        {
+            await ShowAlert("Éxito", "Registro exitoso, por favor inicia sesión.", SweetAlertIcon.Success);
+            Navigation.NavigateTo("/login");
+        }
+        else
+        {
+            errorMessage = await response.Content.ReadAsStringAsync();
+        }
+
+        isSubmitting = false;
+    }
+
+    private async Task ShowAlert(string title, string text, SweetAlertIcon icon)
+    {
+        await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = title,
+                Text = text,
+                Icon = icon,
+                ConfirmButtonText = "OK"
+            });
+    }
+}

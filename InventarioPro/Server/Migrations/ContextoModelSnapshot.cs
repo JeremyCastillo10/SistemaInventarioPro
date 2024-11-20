@@ -50,6 +50,7 @@ namespace InventarioPro.Server.Migrations
                         new
                         {
                             Id = 1,
+                            Eliminado = false,
                             FechaActualizacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FechaCreacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Nombre = "Bebidas"
@@ -57,6 +58,7 @@ namespace InventarioPro.Server.Migrations
                         new
                         {
                             Id = 2,
+                            Eliminado = false,
                             FechaActualizacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FechaCreacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Nombre = "Ropa"
@@ -64,10 +66,42 @@ namespace InventarioPro.Server.Migrations
                         new
                         {
                             Id = 3,
+                            Eliminado = false,
                             FechaActualizacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             FechaCreacion = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Nombre = "Lacteos"
                         });
+                });
+
+            modelBuilder.Entity("InventarioPro.Server.Models.Empresa", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Direccion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("Logo")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("Nombre")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("PermitirCargarData")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RNC")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Telefono")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Empresas");
                 });
 
             modelBuilder.Entity("InventarioPro.Server.Models.Entrada", b =>

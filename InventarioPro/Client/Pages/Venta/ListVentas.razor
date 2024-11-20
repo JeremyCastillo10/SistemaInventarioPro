@@ -1,6 +1,10 @@
 ﻿@page "/ListVentas"
+@using InventarioPro.Shared.DTOS.Empresa
+@using InventarioPro.Shared.DTOS.Producto
 @using InventarioPro.Shared.DTOS.Venta
 @using OfficeOpenXml
+@using iText.IO.Image
+@using iText.Kernel.Colors
 @using iText.Kernel.Geom
 @using iText.Layout.Borders
 @using iText.Layout.Element
@@ -12,10 +16,9 @@
 @inject Radzen.DialogService DialogService
 
 <PageTitle>Inventario de Ventas</PageTitle>
-
-<div class="header">
+<div class="header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
     <h2>Inventario de Ventas</h2>
-    <RadzenButton Text="Agregar Venta" Click="OpenAddVentaDialog" Style="margin-bottom: 10px;" />
+    <RadzenButton Text="Agregar Venta" Click="OpenAddVentaDialog" Icon="add" Style="margin-bottom: 10px;" />
 </div>
 
 <div class="filters" style="display: flex; flex-wrap: wrap; margin-bottom: 20px;">
@@ -25,12 +28,13 @@
         <label style="margin-right: 5px;">Fecha Fin:</label>
         <RadzenDatePicker @bind-Value="value2" DateFormat="dd/MM/yyyy" Style="margin-right: 10px; flex: 1 1 150px;" />
         <RadzenTextBox @bind-Value="searchTerm" Placeholder="Buscar Cliente" Style="flex: 2; min-width: 150px; margin-right: 10px;" />
-        <RadzenButton Text="Filtrar" Click="FilterVentas" Style="margin-right: 10px;" />
+        <RadzenButton Text="Filtrar" Icon="search" Click="FilterVentas" Style="margin-right: 10px;" />
     </div>
-    <div style="display: flex; align-items: center; width: 100%;">
-        <RadzenButton Text="Exportar a Excel" Click="exportarVentasExcel" />
-        <RadzenButton Text="Exportar a PDF" Click="exportarVentasPDF" />
+    <div style="display: flex; align-items: center; width: 100%; margin-left: 4px; gap: 10px;">
+        <RadzenButton Text="Exportar a Excel" Click="exportarVentasExcel" Icon="folder_open" />
+        <RadzenButton Text="Exportar a PDF" Click="ExportarVentasPDF" Icon="picture_as_pdf" />
     </div>
+
 </div>
 
 <div style="max-height: 450px; overflow-y: auto;">
@@ -73,13 +77,44 @@
     private DateTime? value2 { get; set; } = DateTime.Today;
     private string searchTerm;
     private bool isLoading = true; 
+    private List<Producto_DTO> productos;
+    private Empresa_DTO empresa;
+
+
 
     protected override async Task OnInitializedAsync()
     {
         await LoadVentas();
         filteredVentas = ventas;  
         isLoading = false;  
+        await ObtenerProductosDesdeApi();
+    try{
+        var empresaResponse = await Http.GetAsync("api/empresa/1");
+
+        if (empresaResponse.IsSuccessStatusCode)
+        {
+            empresa = await empresaResponse.Content.ReadFromJsonAsync<Empresa_DTO>();
+        }
+        else
+        {
+            empresa = new Empresa_DTO
+                {
+                    Id = 0,
+                    RNC = "Desconocido",
+                    Nombre = "Desconocido",
+                    Direccion = "Desconocida",
+                    Telefono = "Desconocido",
+                    Logo = string.Empty,
+                    PermitirCargaData = false
+                };
+            Console.WriteLine($"Error al obtener la empresa: {empresaResponse.StatusCode}");
+        }
     }
+catch (HttpRequestException ex)
+{
+    Console.WriteLine($"Error en la solicitud HTTP: {ex.Message}");
+}
+}
 
     private async Task LoadVentas()
     {
@@ -197,125 +232,197 @@
             }
         }
     }
-    public void exportarVentasPDF()
-{
-    if (ventas == null || !ventas.Any())
+    private async Task ObtenerProductosDesdeApi()
     {
-        Console.WriteLine("No hay ventas para exportar.");
-        return;
-    }
-
-    string empresaNombre = "Tech Solutions S.A.";
-    string empresaDireccion = "Av. de la Tecnología 123, Ciudad Innovadora";
-    string empresaTelefono = "+123 456 7890";
-    string empresaEmail = "contacto@techsolutions.com";
-
-    string[] cabecerasTabla = { "Fecha", "Monto Total", "Cliente", "Cédula", "Detalles" };
-    string[] propiedadesMostrar = { "Fecha", "MontoTotal", "Nombre", "Cedula" };
-
-    using (MemoryStream ms = new MemoryStream())
-    {
-        PdfWriter writer = new PdfWriter(ms);
-        using (var pdfDoc = new PdfDocument(writer))
+        try
         {
-            Document doc = new Document(pdfDoc, PageSize.A4);
-            doc.SetMargins(30, 30, 40, 30); 
-
-            Paragraph empresaInfo = new Paragraph()
-                .Add(new Text(empresaNombre).SetBold().SetFontSize(16).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                .Add(new Text("\n" + empresaDireccion).SetFontSize(10).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-                .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(10).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-                .Add(new Text("\nEmail: " + empresaEmail).SetFontSize(10).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-                .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-                .SetMarginBottom(20);
-            doc.Add(empresaInfo);
-
-            Paragraph p1 = new Paragraph("Reporte de Ventas")
-                .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                .SetFontSize(20)
-                .SetBold()
-                .SetFontColor(iText.Kernel.Colors.ColorConstants.BLUE)
-                .SetMarginBottom(10);
-            doc.Add(p1);
-
-            Paragraph fechaExportacion = new Paragraph("Fecha de Exportación: " + DateTime.Now.ToString("dd/MM/yyyy"))
-                .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
-                .SetFontSize(12)
-                .SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY)
-                .SetMarginBottom(20);
-            doc.Add(fechaExportacion);
-
-            Table table = new Table(cabecerasTabla.Length, true);
-            table.SetWidthPercent(100);
-            table.SetMarginBottom(30); 
-
-            foreach (var cabecera in cabecerasTabla)
+            var response = await Http.GetFromJsonAsync<List<Producto_DTO>>("api/producto/GetProductos");
+            if (response != null)
             {
-                var headerCell = new Cell().Add(new Paragraph(cabecera))
-                    .SetBackgroundColor(iText.Kernel.Colors.ColorConstants.LIGHT_GRAY)
-                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                    .SetBold()
-                    .SetFontColor(iText.Kernel.Colors.ColorConstants.DARK_GRAY)
-                    .SetPadding(8)
-                    .SetBorderTop(new SolidBorder(1)) 
-                    .SetBorderBottom(new SolidBorder(1)) 
-                    .SetBorderLeft(new SolidBorder(1)) 
-                    .SetBorderRight(new SolidBorder(1)); 
-                table.AddHeaderCell(headerCell);
+                productos = response;
             }
-
-            foreach (var venta in ventas)
-            {
-                foreach (var propiedad in propiedadesMostrar)
-                {
-                    var valor = venta.GetType().GetProperty(propiedad)?.GetValue(venta)?.ToString() ?? "N/A";
-
-                    if (propiedad == "Fecha" && DateTime.TryParse(valor, out DateTime fechaVenta))
-                    {
-                        valor = fechaVenta.ToString("dd/MM/yyyy"); 
-                    }
-
-                    var cell = new Cell().Add(new Paragraph(valor))
-                        .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                        .SetPadding(8)
-                        .SetBorderTop(new SolidBorder(1)) 
-                        .SetBorderBottom(new SolidBorder(1)) 
-                        .SetBorderLeft(new SolidBorder(1)) 
-                        .SetBorderRight(new SolidBorder(1)); 
-                    table.AddCell(cell);
-                }
-
-                var detalles = venta.VentaDetalle_DTOs.Select(d => $"{d.IdProducto} x {d.Cantidad} a {d.Precio:C}").ToArray();
-                var detallesCell = new Cell().Add(new Paragraph(string.Join(", ", detalles)))
-                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                    .SetPadding(8)
-                    .SetBorderTop(new SolidBorder(1))
-                    .SetBorderBottom(new SolidBorder(1))
-                    .SetBorderLeft(new SolidBorder(1))
-                    .SetBorderRight(new SolidBorder(1));
-                table.AddCell(detallesCell);
-            }
-
-            doc.Add(table);
-
-            Paragraph piePagina = new Paragraph()
-                .Add(new Text("Tech Solutions S.A. | Todos los derechos reservados").SetFontSize(8).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-                .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                .SetFixedPosition(0, 30, PageSize.A4.GetWidth())
-                .SetMarginTop(10);
-            doc.Add(piePagina);
-
-            doc.Close();
-            writer.Close();
-
-            byte[] buffer = ms.ToArray();
-            string base64 = Convert.ToBase64String(buffer);
-            string pdf = "data:application/pdf;base64," + base64;
-
-            jsruntime.InvokeVoidAsync("descargarPDF", pdf);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al obtener productos: {ex.Message}");
         }
     }
-}
+
+    public async Task ExportarVentasPDF()
+    {
+        if (ventas == null || !ventas.Any())
+        {
+            Console.WriteLine("No hay ventas para exportar.");
+            return;
+        }
+
+        // Datos de la empresa (usando los valores de la entidad 'empresa')
+        string empresaNombre = empresa.Nombre; // Nombre de la empresa
+        string empresaDireccion = empresa.Direccion; // Dirección de la empresa
+        string empresaTelefono = empresa.Telefono; // Teléfono de la empresa
+        string empresaRNC = empresa.RNC; // Email de la empresa
+        string logoBase64 = empresa.Logo; // Logo en Base64 (puede ser null o vacío)
+
+        if (productos == null || productos.Count == 0)
+        {
+            Console.WriteLine("No se pudieron obtener los productos.");
+            return;
+        }
+
+        // Cabeceras de la tabla
+        string[] cabecerasTabla = { "Fecha", "Monto Total", "Cliente", "Cédula", "Detalles" };
+        string[] propiedadesMostrar = { "Fecha", "MontoTotal", "Nombre", "Cedula" };
+
+        using (MemoryStream ms = new MemoryStream())
+        {
+            PdfWriter writer = new PdfWriter(ms);
+            using (var pdfDoc = new PdfDocument(writer))
+            {
+                Document doc = new Document(pdfDoc, PageSize.A4);
+                doc.SetMargins(40, 40, 60, 40); // Márgenes más amplios
+
+                // Si el logo está presente, agregarlo al encabezado
+                if (!string.IsNullOrEmpty(logoBase64))
+                {
+                    try
+                    {
+                        byte[] logoBytes = Convert.FromBase64String(logoBase64);
+                        ImageData logoImage = ImageDataFactory.Create(logoBytes);
+                        Image logo = new Image(logoImage)
+                            .SetWidth(120) // Ajusta el tamaño del logo
+                            .SetHeight(60); // Ajusta el tamaño del logo
+                        logo.SetFixedPosition(30, 780); // Posición fija, ajustada a 780 para evitar que se corte
+                        doc.Add(logo);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error al cargar el logo: {ex.Message}");
+                    }
+                }
+
+                // Agregar información de la empresa con un margen extra para separarlo del logo
+                Paragraph empresaInfo = new Paragraph()
+                    .Add(new Text(empresaNombre).SetBold().SetFontSize(18).SetFontColor(new DeviceRgb(0, 0, 0))) // Nombre de la empresa
+                    .Add(new Text("\n" + empresaDireccion).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Dirección en gris
+                    .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Teléfono en gris
+                    .Add(new Text("\nEmail: " + empresaRNC).SetFontSize(12).SetFontColor(new DeviceRgb(169, 169, 169))) // Email en gris
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
+                    .SetMarginTop(40) // Se agrega margen superior para separar del logo
+                    .SetMarginBottom(25); // Margen inferior
+                doc.Add(empresaInfo);
+
+                // Título del reporte
+                Paragraph p1 = new Paragraph("Reporte de Ventas")
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetFontSize(24)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(0, 123, 255)) // Azul para el título
+                    .SetMarginBottom(15);
+                doc.Add(p1);
+
+                // Fecha de exportación
+                Paragraph fechaExportacion = new Paragraph("Fecha de Exportación: " + DateTime.Now.ToString("dd/MM/yyyy"))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
+                    .SetFontSize(12)
+                    .SetFontColor(new DeviceRgb(169, 169, 169)) // Gris para la fecha
+                    .SetMarginBottom(25);
+                doc.Add(fechaExportacion);
+
+                // Crear la tabla de ventas
+                Table table = new Table(cabecerasTabla.Length, true);
+                table.SetWidthPercent(100);
+                table.SetMarginBottom(30);
+
+                // Agregar cabeceras de la tabla
+                foreach (var cabecera in cabecerasTabla)
+                {
+                    var headerCell = new Cell().Add(new Paragraph(cabecera))
+                        .SetBackgroundColor(new DeviceRgb(173, 216, 230)) // Azul claro para las cabeceras
+                        .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                        .SetBold()
+                        .SetFontColor(new DeviceRgb(255, 255, 255)) // Blanco
+                        .SetPadding(10)
+                        .SetBorder(new SolidBorder(0.5f)); // Bordes finos
+                    table.AddHeaderCell(headerCell);
+                }
+
+                // Agregar filas de ventas
+                decimal totalVentas = 0; // Variable para acumular el total
+
+                foreach (var venta in filteredVentas)
+                {
+                    // Mostrar propiedades generales de la venta
+                    foreach (var propiedad in propiedadesMostrar)
+                    {
+                        var valor = venta.GetType().GetProperty(propiedad)?.GetValue(venta)?.ToString() ?? "N/A";
+
+                        if (propiedad == "Fecha" && DateTime.TryParse(valor, out DateTime fechaVenta))
+                        {
+                            valor = fechaVenta.ToString("dd/MM/yyyy"); // Formateo de fecha
+                        }
+
+                        var cell = new Cell().Add(new Paragraph(valor))
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                            .SetPadding(10)
+                            .SetBorder(new SolidBorder(0.5f)); // Bordes finos
+                        table.AddCell(cell);
+                    }
+
+                    // Detalles de la venta (productos y cantidades)
+                    var detalles = venta.VentaDetalle_DTOs.Select(d =>
+                    {
+                        // Buscar el producto por IdProducto
+                        Producto_DTO producto = productos.FirstOrDefault(p => p.Id == d.IdProducto);
+                        string nombreProducto = producto?.Nombre ?? "Producto no encontrado";
+                        string precio = producto?.Precio.ToString("C") ?? "Precio no disponible";
+                        return $"{nombreProducto} x {d.Cantidad} a {precio}";
+                    }).ToArray();
+
+                    // Mostrar los detalles de los productos
+                    var detallesCell = new Cell().Add(new Paragraph(string.Join("\n", detalles))) // Cada detalle en una línea nueva
+                        .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
+                        .SetPadding(10)
+                        .SetBorder(new SolidBorder(0.5f)); // Bordes finos
+                    table.AddCell(detallesCell);
+
+                    // Acumular el total de la venta
+                    totalVentas += venta.MontoTotal;
+                }
+
+                // Agregar la tabla al documento
+                doc.Add(table);
+
+                // Total general de las ventas
+                Paragraph total = new Paragraph($"Total General: {totalVentas:C}")
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
+                    .SetFontSize(14)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(0, 123, 255)) // Azul para destacar el total
+                    .SetMarginBottom(20);
+                doc.Add(total);
+
+                // Pie de página
+                Paragraph piePagina = new Paragraph()
+                    .Add(new Text($"{empresaNombre} | Todos los derechos reservados").SetFontSize(8).SetFontColor(new DeviceRgb(169, 169, 169))) // Gris claro
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetFixedPosition(0, 30, PageSize.A4.GetWidth())
+                    .SetMarginTop(10);
+                doc.Add(piePagina);
+
+                doc.Close();
+                writer.Close();
+
+                byte[] buffer = ms.ToArray();
+                string base64 = Convert.ToBase64String(buffer);
+                string pdf = "data:application/pdf;base64," + base64;
+
+                jsruntime.InvokeVoidAsync("descargarVentas", pdf);
+            }
+        }
+    }
+
+
+
 
 
 }

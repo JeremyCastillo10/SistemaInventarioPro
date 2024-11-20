@@ -1,9 +1,10 @@
-﻿@using CurrieTechnologies.Razor.SweetAlert2
+﻿﻿@using CurrieTechnologies.Razor.SweetAlert2
 @using InventarioPro.Shared.DTOS.Categoria
 @using InventarioPro.Shared.DTOS.Producto
 @inject SweetAlertService swal
 @inject HttpClient Http
 @inject Radzen.DialogService DialogService
+@inject NavigationManager nav
 
 <style>
     .custom-dialog {
@@ -14,7 +15,7 @@
 
 <EditForm Model="@Product" OnValidSubmit="HandleValidSubmit">
     <DataAnnotationsValidator />
-    <div class="custom-dialog" style="margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;">
+    <div class="custom-dialog" style="margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: white;">
         <h3 class="text-center">@((Product.Id == 0) ? "Agregar Nuevo Producto" : "Modificar Producto")</h3>
 
         <div style="display: flex; gap: 20px;">
@@ -38,7 +39,7 @@
 
                 <RadzenTextBox @bind-Value="Product.Codigo" Id="codigo" Placeholder="Código del Producto" Style="width: 100%; margin-bottom: 10px;" />
                 <ValidationMessage For="@(() => Product.Codigo)" />
-                     <ValidationSummary></ValidationSummary>
+                <ValidationSummary></ValidationSummary>
             </div>
 
             <div style="flex: 0 0 300px; display: flex; flex-direction: column; align-items: center;">
@@ -83,7 +84,7 @@
         await LoadCategories();
         if (Product.Id != 0)
         {
-            base64Image = Product.ImagenProducto; 
+            base64Image = Product.ImagenProducto;
         }
     }
 
@@ -108,7 +109,7 @@
             Product = await response.Content.ReadFromJsonAsync<Producto_DTO>();
             if (!string.IsNullOrEmpty(Product.ImagenProducto))
             {
-                base64Image = Product.ImagenProducto; 
+                base64Image = Product.ImagenProducto;
             }
         }
         else
@@ -135,12 +136,17 @@
         {
             await ShowAlert("Éxito", (Product.Id == 0) ? "Producto creado con éxito!" : "Producto actualizado con éxito!", SweetAlertIcon.Success);
             DialogService.Close(Product);
+            StateHasChanged();
+
         }
         else
         {
             var errorMessage = await response.Content.ReadAsStringAsync();
             await ShowAlert("Error", $"No se pudo {(Product.Id == 0 ? "crear" : "actualizar")} el producto: {errorMessage}", SweetAlertIcon.Error);
+            StateHasChanged();
+
         }
+        nav.NavigateTo("/ListProductos");
     }
 
 

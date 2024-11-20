@@ -1,30 +1,71 @@
 @page "/ListaEntrada"
+@using InventarioPro.Shared.DTOS.Empresa
 @using Microsoft.AspNetCore.Components
+@using OfficeOpenXml
 @using Radzen
 @using System.Collections.Generic
 @using System.Linq
-@using System.Threading.Tasks
+@using InventarioPro.Shared.DTOS.Entrada
+@using InventarioPro.Shared.DTOS.Producto
+@inject SweetAlertService swal
+@using Radzen
+@using iText.IO.Image
+@using iText.Kernel.Colors
+@using iText.Kernel.Geom
+@using iText.Kernel.Pdf
+@using iText.Layout
+@using iText.Layout.Element
+@inject IJSRuntime jsruntime;
+
+@inject HttpClient Http
 @inject Radzen.DialogService DialogService
-<PageTitle>Inventario de Entrada</PageTitle>
+<PageTitle>Entrada de Productos</PageTitle>
 
 <div class="header">
-    <h2>Inventario de Entrada</h2>
-    <RadzenButton Text="Agregar Producto"  Click="OpenAddProductDialog"  Style="margin-bottom: 10px;" />
+    <h2>Entrada de Productosa</h2>
+    <RadzenButton Text="Nueva Entrada"  Click="OpenAddProductDialog"  Style="margin-bottom: 10px;" />
 </div>
-<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true" AllowSorting="true"
-                PageSize="5" AllowPaging="true" Data="@Entradas" ColumnWidth="300px" ShowPagingSummary="true">
+<!-- Contenedor para el formulario de búsqueda -->
+<div class="mb-3">
+    <label>Fecha Inicio:</label>
+    <RadzenDatePicker @bind-Value="fechaInicio" Style="margin-right: 10px;" />
+
+    <label>Fecha Fin:</label>
+    <RadzenDatePicker @bind-Value="fechaFin" Style="margin-right: 10px;" />
+
+    <RadzenButton Text="Buscar" Icon="search" Click="FiltrarPorFecha" ButtonStyle="ButtonStyle.Primary" Style="margin-left: 10px;" />
+</div>
+<RadzenButton Text="Exportar a Excel" Click="exportarEntradasExcel" Icon="folder_open" />
+<RadzenButton Text="Exportar a PDF" Click="ExportarEntradasPDF" Icon="picture_as_pdf" />
+
+<!-- RadzenDataGrid -->
+<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true"
+                AllowSorting="true" PageSize="5" AllowPaging="true" Data="@listentrada_DTO2" ColumnWidth="300px" ShowPagingSummary="true">
     <Columns>
-        <RadzenDataGridColumn Property="@nameof(Entradass.NombreProducto)" Title="Nombre del Producto" Width="160px" />
-        <RadzenDataGridColumn Property="@nameof(Entradass.NombreProveedor)" Title="Categoría" Width="200px" />
-        <RadzenDataGridColumn Property="@nameof(Entradass.Precio)" Title="Precio" FormatString="{0:C}" Width="120px" />
-        <RadzenDataGridColumn Property="@nameof(Entradass.Stock)" Title="Stock" Width="160px" />
-        <RadzenDataGridColumn TItem="Entradass" Property="Actions" Width="100px" Title="Acciones">
-            <Template>
-                <button class="btn btn-danger" @onclick="() => EliminarEntrada(context)">Eliminar</button>
+        <!-- Columna de Fecha usando @nameof -->
+        <RadzenDataGridColumn Property="@nameof(Entrada_DTO.Fecha)" Title="Fecha" Width="160px" />
+
+        <!-- Columna de Monto Total usando @nameof -->
+        <RadzenDataGridColumn Property="@nameof(Entrada_DTO.MontoTotal)" Title="Monto Total" Width="200px" />
+
+        <!-- Columna de Acciones -->
+        <RadzenDataGridColumn Width="200px" Title="Acciones">
+            <Template Context="entrada_DTO">
+                <!-- Botón Editar -->
+                <button class="btn btn-warning btn-sm" @onclick="() => EditarEntrada(entrada_DTO.Id)" style="margin-right: 10px;">
+                    <i class="bi bi-pencil"></i> Editar
+                </button>
+
+                <!-- Botón Eliminar -->
+                <button class="btn btn-danger btn-sm" @onclick="() => EliminarEntrada()">
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
             </Template>
         </RadzenDataGridColumn>
     </Columns>
 </RadzenDataGrid>
+
+
 <style>
     .header {
         display: flex;
@@ -44,32 +85,104 @@
 </style>
 
 @code {
+
+    private List<Entradass> Entradas = new List<Entradass>();
+    private Entrada_DTO entrada_DTO = new Entrada_DTO();
+    private Entradass NuevaEntrada = new Entradass();
+    private List<Entrada_DTO> listentrada_DTO = new List<Entrada_DTO>();
+    private List<Entrada_DTO> listentrada_DTO2 = new List<Entrada_DTO>();
+    private DateTime? fechaInicio;
+    private DateTime? fechaFin;
+    private Empresa_DTO empresa;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await Http.GetAsync("api/entrada/getentrada");
+            response.EnsureSuccessStatusCode(); 
+            listentrada_DTO = await response.Content.ReadFromJsonAsync<List<Entrada_DTO>>();
+            listentrada_DTO2 = listentrada_DTO;
+
+            var empresaResponse = await Http.GetAsync("api/empresa/1");
+
+            if (empresaResponse.IsSuccessStatusCode)
+            {
+                empresa = await empresaResponse.Content.ReadFromJsonAsync<Empresa_DTO>();
+            }
+            else
+            {
+                empresa = new Empresa_DTO
+                    {
+                        Id = 0, 
+                        RNC = "Desconocido",  
+                        Nombre = "Desconocido", 
+                        Direccion = "Desconocida", 
+                        Telefono = "Desconocido", 
+                        Logo = string.Empty, 
+                        PermitirCargaData = false 
+                    };
+                Console.WriteLine($"Error al obtener la empresa: {empresaResponse.StatusCode}");
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Error en la solicitud HTTP: {ex.Message}");
+        }
+    }
     private async Task OpenAddProductDialog()
     {
-         var options = new Radzen.DialogOptions { Style = "width: 900px;" };
-    var result = await DialogService.OpenAsync<Entrada>("Agregar Nuevo Producto", null, options);
 
-    if (result != null)
-    {
-        Entradas.Add(result);
-        // Si tienes un método ApplyFilters() para actualizar la vista, lo llamas aquí
-        // ApplyFilters(); // Descomenta esto si lo tienes
-    }
-  
-        
+        var result = await DialogService.OpenAsync<FormEntrada>(null);
+
+        if (result != null)
+        {
+            Entradas.Add(result);
+
+
+        }
+
+
     }
     private bool MostrarFormulario = false;
 
     // Modelo de entrada
-    private List<Entradass> Entradas = new List<Entradass>();
 
-    private Entradass NuevaEntrada = new Entradass();
 
     // Método para abrir el formulario
-    private void AbrirFormulario()
+    private async Task EditarEntrada(int id)
     {
-        NuevaEntrada = new Entradass();
-        MostrarFormulario = true;
+        Console.WriteLine(id);
+
+        var item = listentrada_DTO.FirstOrDefault(p => p.Id == id);
+
+        await DialogService.OpenAsync<FormEntrada>(
+       null,
+            new Dictionary<string, object> { { "entrada_DTO", item } }
+        );
+
+
+
+
+    }
+    // Método para filtrar las entradas por fecha
+    private void FiltrarPorFecha()
+    {
+        if (fechaInicio.HasValue && fechaFin.HasValue)
+        {
+            // Filtra la lista original usando las fechas seleccionadas
+            listentrada_DTO2 = listentrada_DTO
+             .Where(e => e.Fecha.Date >= fechaInicio.Value.Date && e.Fecha.Date <= fechaFin.Value.Date)
+             .ToList();
+            fechaInicio = new DateTime();
+            fechaFin=new DateTime();
+        }
+        else
+        {
+
+        }
     }
 
     // Método para cerrar el formulario
@@ -78,17 +191,261 @@
         MostrarFormulario = false;
     }
 
-    // Método para guardar la nueva entrada
-    private void GuardarEntrada()
+    public void exportarEntradasExcel()
     {
-        Entradas.Add(NuevaEntrada);
-        CerrarFormulario();
+        if (listentrada_DTO2 == null || !listentrada_DTO2.Any())
+        {
+            Console.WriteLine("No hay entradas para exportar.");
+            return;
+        }
+
+        string[] cabecerasTabla = { "Fecha", "Monto Total", "Producto", "Cantidad", "Precio", "Sub Monto Total" };
+        string[] propiedadesMostrar = { "Fecha", "MontoTotal" };
+
+        using (MemoryStream ms = new MemoryStream())
+        {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+            using (ExcelPackage ep = new ExcelPackage())
+            {
+                var worksheet = ep.Workbook.Worksheets.Add("Entradas");
+
+                // Escribir cabeceras
+                for (int i = 0; i < cabecerasTabla.Length; i++)
+                {
+                    worksheet.Column(i + 1).Width = 20;
+                    worksheet.Cells[1, i + 1].Value = cabecerasTabla[i];
+                }
+
+                // Escribir los datos de las entradas
+                int fila = 2;
+                foreach (var entrada in listentrada_DTO2)
+                {
+                    int col = 1;
+
+                    // Escribir propiedades de la entrada (Fecha y Monto Total)
+                    foreach (string propiedad in propiedadesMostrar)
+                    {
+                        worksheet.Cells[fila, col].Value = entrada.GetType().GetProperty(propiedad)?.GetValue(entrada)?.ToString() ?? "N/A";
+                        col++;
+                    }
+
+                    // Escribir los detalles de la entrada en celdas separadas
+                    foreach (var detalle in entrada.entradaDetalle_DTO)
+                    {
+                        worksheet.Cells[fila, col].Value = detalle.IdProducto;
+                        col++;
+                        worksheet.Cells[fila, col].Value = detalle.Cantidad;
+                        col++;
+                        worksheet.Cells[fila, col].Value = detalle.Precio;
+                        col++;
+                        worksheet.Cells[fila, col].Value = detalle.SubMontoTotal;
+                        col++;
+
+                        fila++;
+                    }
+                }
+
+                ep.SaveAs(ms);
+                byte[] buffer = ms.ToArray();
+                string base64 = Convert.ToBase64String(buffer);
+                string excel = "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64," + base64;
+                jsruntime.InvokeVoidAsync("descargarExcel", excel);
+            }
+        }
     }
 
-    // Método para eliminar una entrada
-    private void EliminarEntrada(Entradass entrada)
+    public async Task ExportarEntradasPDF()
     {
-        Entradas.Remove(entrada);
+        if (listentrada_DTO2 == null || !listentrada_DTO2.Any())
+        {
+            Console.WriteLine("No hay entradas para exportar.");
+            return;
+        }
+
+        string empresaNombre = empresa.Nombre;
+        string empresaDireccion = empresa.Direccion;
+        string empresaTelefono = empresa.Telefono;
+        string empresaRNC = empresa.RNC;
+        string logoBase64 = empresa.Logo;
+
+        using (MemoryStream ms = new MemoryStream())
+        {
+            PdfWriter writer = new PdfWriter(ms);
+            using (var pdfDoc = new PdfDocument(writer))
+            {
+                Document doc = new Document(pdfDoc, PageSize.A4);
+                doc.SetMargins(40, 40, 60, 40);
+
+                if (!string.IsNullOrEmpty(logoBase64))
+                {
+                    try
+                    {
+                        byte[] logoBytes = Convert.FromBase64String(logoBase64);
+                        ImageData logoImage = ImageDataFactory.Create(logoBytes);
+                        Image logo = new Image(logoImage)
+                            .SetWidth(120)
+                            .SetHeight(60);
+                        logo.SetFixedPosition(30, 780);
+                        doc.Add(logo);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error al cargar el logo: {ex.Message}");
+                    }
+                }
+
+                Paragraph empresaInfo = new Paragraph()
+                    .Add(new Text(empresaNombre).SetBold().SetFontSize(18))
+                    .Add(new Text("\n" + empresaDireccion).SetFontSize(12))
+                    .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(12))
+                    .Add(new Text("\nEmail: " + empresaRNC).SetFontSize(12))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
+                    .SetMarginTop(40)
+                    .SetMarginBottom(25);
+                doc.Add(empresaInfo);
+
+                Paragraph p1 = new Paragraph("Reporte de Entradas")
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetFontSize(24)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(0, 123, 255))
+                    .SetMarginBottom(15);
+                doc.Add(p1);
+
+                Paragraph fechaExportacion = new Paragraph("Fecha de Exportación: " + DateTime.Now.ToString("dd/MM/yyyy"))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
+                    .SetFontSize(12)
+                    .SetFontColor(new DeviceRgb(169, 169, 169))
+                    .SetMarginBottom(25);
+                doc.Add(fechaExportacion);
+
+                Table table = new Table(6, true); // 6 columnas
+                table.SetWidthPercent(100);
+                table.SetMarginBottom(30);
+
+                // Cabeceras de tabla
+                table.AddHeaderCell(new Cell().Add(new Paragraph("Fecha"))
+                    .SetBackgroundColor(new DeviceRgb(173, 216, 230))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(255, 255, 255))
+                    .SetPadding(10));
+                table.AddHeaderCell(new Cell().Add(new Paragraph("Monto Total"))
+                    .SetBackgroundColor(new DeviceRgb(173, 216, 230))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(255, 255, 255))
+                    .SetPadding(10));
+                table.AddHeaderCell(new Cell().Add(new Paragraph("Producto"))
+                    .SetBackgroundColor(new DeviceRgb(173, 216, 230))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(255, 255, 255))
+                    .SetPadding(10));
+                table.AddHeaderCell(new Cell().Add(new Paragraph("Cantidad"))
+                    .SetBackgroundColor(new DeviceRgb(173, 216, 230))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(255, 255, 255))
+                    .SetPadding(10));
+                table.AddHeaderCell(new Cell().Add(new Paragraph("Precio"))
+                    .SetBackgroundColor(new DeviceRgb(173, 216, 230))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(255, 255, 255))
+                    .SetPadding(10));
+                table.AddHeaderCell(new Cell().Add(new Paragraph("Sub Monto Total"))
+                    .SetBackgroundColor(new DeviceRgb(173, 216, 230))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(255, 255, 255))
+                    .SetPadding(10));
+
+                decimal totalEntradas = 0;
+
+                // Escribir filas de entradas
+                foreach (var entrada in listentrada_DTO2) // 'entradas' es tu lista de entradas
+            {
+                    // Verifica si es la primera vez que estás añadiendo la fila de la entrada (para fecha y monto total)
+                    bool esPrimeraEntrada = true;
+
+                    foreach (var detalle in entrada.entradaDetalle_DTO) // Itera sobre los detalles de cada entrada
+                    {
+                        // Solo agregar fecha y monto total en la primera iteración de los detalles de la entrada
+                        if (esPrimeraEntrada)
+                        {
+                            table.AddCell(new Cell().Add(new Paragraph(entrada.Fecha.ToString("dd/MM/yyyy")))
+                                .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                                .SetPadding(10));
+                            table.AddCell(new Cell().Add(new Paragraph(entrada.MontoTotal.ToString("C")))
+                                .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                                .SetPadding(10));
+                            esPrimeraEntrada = false; // Después de la primera iteración, marca que ya no es la primera
+                        }
+                        else
+                        {
+                            // Si no es la primera entrada, agregar celdas vacías para la fecha y monto total
+                            table.AddCell(new Cell().Add(new Paragraph("")).SetPadding(10));
+                            table.AddCell(new Cell().Add(new Paragraph("")).SetPadding(10));
+                        }
+
+                        // Añadir los detalles de la entrada (Producto, Cantidad, Precio, Sub Monto Total)
+                        table.AddCell(new Cell().Add(new Paragraph(detalle.IdProducto.ToString()))
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                            .SetPadding(10));
+                        table.AddCell(new Cell().Add(new Paragraph(detalle.Cantidad.ToString()))
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                            .SetPadding(10));
+                        table.AddCell(new Cell().Add(new Paragraph(detalle.Precio.ToString("C")))
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                            .SetPadding(10));
+                        table.AddCell(new Cell().Add(new Paragraph(detalle.SubMontoTotal?.ToString("C") ?? "N/A"))
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                            .SetPadding(10));
+                            entrada.MontoTotal = Convert.ToDecimal(detalle.SubMontoTotal);
+                        totalEntradas += entrada.MontoTotal;
+
+                    }
+
+                }
+
+
+                doc.Add(table);
+
+                Paragraph total = new Paragraph($"Total General: {totalEntradas:C}")
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
+                    .SetFontSize(14)
+                    .SetBold()
+                    .SetFontColor(new DeviceRgb(0, 123, 255))
+                    .SetMarginBottom(20);
+                doc.Add(total);
+
+                // Pie de página
+                Paragraph piePagina = new Paragraph()
+                    .Add(new Text($"{empresaNombre} | Todos los derechos reservados").SetFontSize(8).SetFontColor(new DeviceRgb(169, 169, 169)))
+                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                    .SetFixedPosition(0, 30, PageSize.A4.GetWidth())
+                    .SetMarginTop(10);
+                doc.Add(piePagina);
+
+                doc.Close();
+                writer.Close();
+
+                byte[] buffer = ms.ToArray();
+                string base64 = Convert.ToBase64String(buffer);
+                string pdf = "data:application/pdf;base64," + base64;
+
+                jsruntime.InvokeVoidAsync("descargarEntradas", pdf);
+            }
+        }
+    }
+
+
+    // Método para eliminar una entrada
+    private void EliminarEntrada()
+    {
+       
     }
 
     // Clase modelo para una entrada

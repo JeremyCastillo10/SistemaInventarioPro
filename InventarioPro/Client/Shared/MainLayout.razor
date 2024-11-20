@@ -1,43 +1,83 @@
-﻿@inherits LayoutComponentBase
+﻿﻿@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@inherits LayoutComponentBase
 @inject NavigationManager nav
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject AuthenticationService AuthenticationService
+
 <MudThemeProvider />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <RadzenComponents />
 
-<RadzenLayout
-    Style="grid-template-columns: auto 1fr; grid-template-areas: 'rz-header rz-header' 'rz-sidebar rz-body'; ">
-    <RadzenHeader Style="background-color:#002050; color:white">
+<RadzenLayout Style="grid-template-columns: auto 1fr; grid-template-areas: 'rz-header rz-header' 'rz-sidebar rz-body';">
+
+    <!-- Navbar con fondo azul oscuro y texto blanco -->
+    <RadzenHeader Style="background-color:#002050; color:white;">
         <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0">
             <RadzenSidebarToggle Click="@(() => leftSidebarExpanded = !leftSidebarExpanded)" />
-            <RadzenLabel Text="Control de Inventario" />
+            <RadzenLabel Text="Control de Inventario" Style="color:white;" />
+
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="25px" Style="margin-left:auto;">
+                <MudAvatar>
+                    <MudImage Src="imagenes/avatar.png"></MudImage>
+                </MudAvatar>
+                <RadzenText Text="@user?.Identity?.Name" Style="color:white;" />
+                <RadzenButton Icon="logout" Click="CerrarSesion" Style="color:white; background-color:transparent;" />
+            </RadzenStack>
         </RadzenStack>
     </RadzenHeader>
 
     <RadzenSidebar @bind-Expanded="@leftSidebarExpanded"
-        Style="grid-area: rz-sidebar; height: 100vh; background-color:#002050; color:white;">
+                   Style="grid-area: rz-sidebar; height: 100vh; background-color:#002050; color:white;">
         <RadzenPanelMenu Style="background-color: transparent; color:white;">
-            <RadzenPanelMenuItem Text="Home" Icon="home" Path="/" />
-            <RadzenPanelMenuItem Text="Usuarios" Icon="account_box" Path="/Counter" />
-            <RadzenPanelMenuItem Text="Productos" Icon="inventory" Path="/ListProductos" />
-            <RadzenPanelMenuItem Text="Entrada" Icon="inventory" Path="/ListaEntrada" />
-            <RadzenPanelMenuItem Text="Suplidores" Icon="business" />
-            <RadzenPanelMenuItem Text="Ventas" Icon="assignment" Path="/ListVentas" />
-            <RadzenPanelMenuItem Text="Reportes" Icon="assessment" />
+            <RadzenPanelMenuItem Text="Home" Icon="home" Path="/" Style="color: white;" />
+            <RadzenPanelMenuItem Text="Categorias" Icon="account_box" Path="/ListCategoria" Style="color: white;" />
+            <RadzenPanelMenuItem Text="Productos" Icon="inventory" Path="/ListProductos" Style="color: white;" />
+            <RadzenPanelMenuItem Text="Entrada" Icon="inventory" Path="/ListaEntrada" Style="color: white;" />
+            <RadzenPanelMenuItem Text="Suplidores" Icon="business" Style="color: white;" />
+            <RadzenPanelMenuItem Text="Ventas" Icon="assignment" Path="/ListVentas" Style="color: white;" />
+            <RadzenPanelMenuItem Text="Reportes" Icon="assessment" Style="color: white;" />
+            <RadzenPanelMenuItem Icon="settings" Text="Configuración" Style="background-color: transparent; color: white;">
+                <RadzenPanelMenu Style="background-color: #002050; color: white;">
+                    <RadzenPanelMenuItem Text="Usuarios" Icon="person" Path="/Usuarios" Class="menu-item" />
+                    <RadzenPanelMenuItem Text="Roles" Icon="assignment_ind" Path="/Roles" Class="menu-item" />
+                    <RadzenPanelMenuItem Text="Empresa" Icon="business" Path="/FormEmpresa" Class="menu-item" />
+                </RadzenPanelMenu>
+            </RadzenPanelMenuItem>
+
         </RadzenPanelMenu>
     </RadzenSidebar>
 
-    <RadzenBody Style="grid-area: rz-body">
+    <!-- Body mantiene estilos predeterminados -->
+    <RadzenBody Style="grid-area: rz-body;">
         @Body
     </RadzenBody>
 </RadzenLayout>
+<style>
+
+</style>
 
 @code {
-    bool leftSidebarExpanded = true;
+    private bool leftSidebarExpanded = true;
+    private ClaimsPrincipal user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        user = authState.User;
+    }
 
     public void IrDash()
     {
-        nav.NavigateTo("/Dashboard");
+        nav.NavigateTo("/");
     }
+
+    private async Task CerrarSesion()
+    {
+        await AuthenticationService.LogoutAsync();
+        nav.NavigateTo("/login");
+    }
+
 }

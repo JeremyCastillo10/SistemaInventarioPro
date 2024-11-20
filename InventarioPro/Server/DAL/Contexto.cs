@@ -15,6 +15,7 @@ namespace InventarioPro.Server.DAL
         public DbSet<Entrada> Entradas { get; set; }
         public DbSet<EntradaDetalle> EntradaDetalles { get; set; }
         public DbSet<Categoria> Categorias { get; set; }
+        public DbSet<Empresa> Empresas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -23,9 +24,9 @@ namespace InventarioPro.Server.DAL
 
             // Seeding de datos iniciales (opcional)
             modelBuilder.Entity<Categoria>().HasData(
-                 new Categoria { Id = 1, Nombre = "Bebidas" },
-                 new Categoria { Id = 2, Nombre = "Ropa" },
-                 new Categoria { Id = 3, Nombre = "Lacteos" }
+                 new Categoria { Id = 1, Nombre = "Bebidas", Eliminado= false },
+                 new Categoria { Id = 2, Nombre = "Ropa", Eliminado = false },
+                 new Categoria { Id = 3, Nombre = "Lacteos", Eliminado = false }
                 );
         }
 

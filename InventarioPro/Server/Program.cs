@@ -1,6 +1,10 @@
 using InventarioPro.Server.DAL;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +20,31 @@ builder.Services.AddCors(o => o.AddPolicy("AllowAnyOrigin",
                                  .AllowAnyMethod()
                                  .AllowAnyHeader();
                       }));
+#pragma warning disable CS8604 // Posible argumento de referencia nulo
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(opciones => opciones.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration[""])),
+        ClockSkew = TimeSpan.Zero,
+
+    });
+#pragma warning restore CS8604 // Posible argumento de referencia nulo
+builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+    .AddEntityFrameworkStores<Contexto>()
+    .AddDefaultTokenProviders();
+
+builder.Services.AddAuthorization(opciones =>
+{
+    opciones.AddPolicy("esAdmin", politica => politica.RequireClaim("Admin"));
+    opciones.AddPolicy("User", politica => politica.RequireClaim("User"));
+
+});
+
 
 var app = builder.Build();
 
