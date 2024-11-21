@@ -1,0 +1,61 @@
+﻿@page "/ListUsuario"
+@using Microsoft.AspNetCore.Components
+@using Radzen
+@using System.Collections.Generic
+@using System.Linq
+@using InventarioPro.Shared.DTOs
+@inject SweetAlertService swal
+@inject HttpClient Http
+@inject Radzen.DialogService DialogService
+<PageTitle>Lista de Usuarios</PageTitle>
+
+<div class="header">
+    <h2>Usuarios Registrados</h2>
+    <RadzenButton Text="Agregar Usuario" Click="OpenAddUsuarioDialog" Style="margin-bottom: 10px;" />
+</div>
+
+<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true"
+                AllowSorting="true" PageSize="5" AllowPaging="true" Data="@listUsuarios" ShowPagingSummary="true">
+    <Columns>
+        <RadzenDataGridColumn Property="@nameof(UserRegister.Email)" Title="Correo Electrónico" />
+        <RadzenDataGridColumn Width="200px" Title="Acciones">
+            <Template Context="usuario">
+                <button class="btn btn-warning btn-sm" @onclick="() => EditarUsuario(usuario.Email)" style="margin-right: 10px;">
+                    <i class="bi bi-pencil"></i> Editar
+                </button>
+                <button class="btn btn-danger btn-sm">
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+    
+</RadzenDataGrid>
+
+@code {
+    private List<UserRegister> listUsuarios = new List<UserRegister>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await Http.GetAsync("api/cuentas/listar");
+        listUsuarios = await response.Content.ReadFromJsonAsync<List<UserRegister>>();
+    }
+
+    private async Task OpenAddUsuarioDialog()
+    {
+        var result = await DialogService.OpenAsync<FormUsuarios>("Registro Usuarios");
+        if (result != null) { }
+    }
+
+    private async Task EditarUsuario(string email)
+    {
+        var usuario = listUsuarios.FirstOrDefault(u => u.Email == email);
+        if (usuario != null)
+        {
+            await DialogService.OpenAsync<FormUsuarios>(
+                null,
+                new Dictionary<string, object> { { "usuarioDTO", usuario } }
+            );
+        }
+    }
+}

@@ -1,0 +1,79 @@
+﻿@page "/FormUsuario"
+@using CurrieTechnologies.Razor.SweetAlert2
+@using InventarioPro.Shared.DTOs
+@inject SweetAlertService swal
+@inject HttpClient Http
+@inject Radzen.DialogService DialogService
+@inject NavigationManager Navigation
+@using System.ComponentModel.DataAnnotations
+
+                <EditForm Model="@usuarioDTO" OnValidSubmit="Guardar">
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label font-weight-bold">Correo Electrónico</label>
+                        <RadzenTextBox id="email" @bind-Value="usuarioDTO.Email" Placeholder="Ingrese su correo electrónico" class="form-control" />
+                        <ValidationMessage For="@(() => usuarioDTO.Email)" class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label font-weight-bold">Contraseña</label>
+                        <RadzenPassword id="password" @bind-Value="usuarioDTO.Password" Placeholder="Ingrese su contraseña" class="form-control" />
+                        <ValidationMessage For="@(() => usuarioDTO.Password)" class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label font-weight-bold">Confirmar Contraseña</label>
+                        <RadzenPassword id="confirmPassword" @bind-Value="usuarioDTO.ConfirmPassword" Placeholder="Confirme su contraseña" class="form-control" />
+                        <ValidationMessage For="@(() => usuarioDTO.ConfirmPassword)" class="text-danger" />
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Guardar" Icon="save" class="btn btn-primary" />
+                        <RadzenButton Text="Cancelar" Icon="cancel" Click="@Cancelar" class="btn btn-secondary" />
+                    </div>
+                </EditForm>
+
+@code {
+    [Parameter]
+    public UserRegister usuarioDTO { get; set; } = new UserRegister();
+
+    private async Task Guardar()
+    {
+
+
+        if (usuarioDTO.Password != usuarioDTO.ConfirmPassword)
+        {
+            await ShowAlert("Éxito", "El usuario se ha registrado con éxito!", SweetAlertIcon.Success);
+
+        }
+
+        var response = await Http.PostAsJsonAsync("api/cuentas/registrar", usuarioDTO);
+        if (response.IsSuccessStatusCode)
+        {
+            await ShowAlert("Éxito", "Registro exitoso, por favor inicia sesión.", SweetAlertIcon.Success);
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            await ShowAlert("Error", "Hubo un error al registrar el usuario.", SweetAlertIcon.Error);
+        }
+
+    }
+
+    private async Task ShowAlert(string title, string text, SweetAlertIcon icon)
+    {
+        await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = title,
+                Text = text,
+                Icon = icon,
+                ConfirmButtonText = "OK"
+            });
+    }
+
+    private void Cancelar()
+    {
+        DialogService.Close(null);
+    }
+}
