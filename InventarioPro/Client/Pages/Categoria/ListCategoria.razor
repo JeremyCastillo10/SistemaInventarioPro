@@ -11,8 +11,8 @@
 <PageTitle>Lista de Categorias</PageTitle>
 
 <div class="header">
-    <h2>Inventario de Entrada</h2>
-    <RadzenButton Text="Agregar Producto" Click="OpenAddCategoriDialog" Style="margin-bottom: 10px;" />
+    <h2>Lista Categorias</h2>
+    <RadzenButton Text="Agregar Categoria" Click="OpenAddCategoriDialog" Style="margin-bottom: 10px;" />
 </div>
 <!-- Contenedor para el formulario de búsqueda -->
 <div class="mb-3">
@@ -91,7 +91,7 @@
     private async Task OpenAddCategoriDialog()
     {
 
-        var result = await DialogService.OpenAsync<FormCategoria>(null);
+        var result = await DialogService.OpenAsync<FormCategoria>("Registro Categorias");
 
 
         if (result != null)
