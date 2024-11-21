@@ -103,7 +103,7 @@ namespace InventarioPro.Server.Controllers
             // Crear el token JWT
             var llave = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JwtKey"]));
             var creds = new SigningCredentials(llave, SecurityAlgorithms.HmacSha256);
-            var expiracion = DateTime.UtcNow.AddDays(1);
+            var expiracion = DateTime.UtcNow.AddMinutes(1);
 
             var securityToken = new JwtSecurityToken(
                 issuer: null,
@@ -117,6 +117,19 @@ namespace InventarioPro.Server.Controllers
                 Token = new JwtSecurityTokenHandler().WriteToken(securityToken),
                 FechaExpiracion = expiracion
             };
+        }
+        [HttpGet("listar")]
+        public async Task<ActionResult<List<CredencialesUsuario>>> ListarUsuarios()
+        {
+            var usuarios = userManager.Users.ToList();
+
+            var usuariosDTO = usuarios.Select(u => new CredencialesUsuario
+            {
+                Email = u.Email,
+
+            }).ToList();
+
+            return Ok(usuariosDTO);
         }
     }
 }
