@@ -1,0 +1,223 @@
+﻿@page "/FormRoles"
+@using CurrieTechnologies.Razor.SweetAlert2
+@using InventarioPro.Shared.DTOS.Roles
+@using InventarioPro.Shared.DTOS.Permiso
+@inject SweetAlertService swal
+@inject HttpClient Http
+@inject Radzen.DialogService DialogService
+@using System.ComponentModel.DataAnnotations
+
+
+
+<EditForm Model="@permiso_DTO" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <label for="nombre" class="form-label font-weight-bold">Nombre</label>
+        <RadzenTextBox id="nombre" @bind-Value="permiso_DTO.Nombre" Placeholder="Nombre" class="form-control" />
+        <ValidationMessage For="@(() => permiso_DTO.Nombre)" class="text-danger" />
+    </div>
+    <!-- Permisos -->
+    <div class="mb-4">
+        <label class="form-label font-weight-bold">Permisos</label>
+
+        <!-- Fila 1 -->
+        <div class="row mb-3">
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.VerEstadistica" />
+                    <label class="form-check-label">Ver Estadísticas</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.VerReportes" />
+                    <label class="form-check-label">Ver Reportes</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.ExportalExcel" />
+                    <label class="form-check-label">Exportar a Excel</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fila 2 -->
+        <div class="row mb-3">
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.ExportalPdf" />
+                    <label class="form-check-label">Exportar a PDF</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.CrearEntrada" />
+                    <label class="form-check-label">Crear Entrada</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.EditarEntrada" />
+                    <label class="form-check-label">Editar Entrada</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fila 3 -->
+        <div class="row mb-3">
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.VerEntrada" />
+                    <label class="form-check-label">Ver Entrada</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.EliminarEntrada" />
+                    <label class="form-check-label">Eliminar Entrada</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.CrearProducto" />
+                    <label class="form-check-label">Crear Producto</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fila 4 -->
+        <div class="row mb-3">
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.VerProducto" />
+                    <label class="form-check-label">Ver Producto</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.EditarProducto" />
+                    <label class="form-check-label">Editar Producto</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.EliminarProducto" />
+                    <label class="form-check-label">Eliminar Producto</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fila 5 -->
+        <div class="row mb-3">
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.CrearCategoria" />
+                    <label class="form-check-label">Crear Categoría</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.VerCategoria" />
+                    <label class="form-check-label">Ver Categoría</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.EditarCategoria" />
+                    <label class="form-check-label">Editar Categoría</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fila 6 -->
+        <div class="row mb-3">
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.EliminarCategoria" />
+                    <label class="form-check-label">Eliminar Categoría</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.CrearUsuario" />
+                    <label class="form-check-label">Crear Usuario</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.VerUsuario" />
+                    <label class="form-check-label">Ver Usuario</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fila 7 -->
+        <div class="row mb-3">
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.EditarUsuario" />
+                    <label class="form-check-label">Editar Usuario</label>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="form-check">
+                    <RadzenCheckBox @bind-Value="permiso_DTO.EliminarUsuario" />
+                    <label class="form-check-label">Eliminar Usuario</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+        <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Guardar" Icon="save" class="btn btn-primary" />
+        <RadzenButton Text="Cancelar" Icon="cancel" Click="@Cancelar" class="btn btn-secondary" />
+    </div>
+</EditForm>
+                            
+
+
+@code {
+    [Parameter]
+    public Roles_DTO roles_DTO { get; set; }= new Roles_DTO();
+
+    public Permiso_DTO permiso_DTO { get; set; } = new Permiso_DTO();
+
+
+
+  
+    private async void Guardar()
+    {
+       
+        var response = await Http.PostAsJsonAsync("api/roles/createRole", permiso_DTO);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await ShowAlert("Éxito", "El rol se ha creado con éxito!", SweetAlertIcon.Success);
+        }
+        else
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Error: {errorContent}");
+            await ShowAlert("Error", "No se pudo crear el rol.", SweetAlertIcon.Error);
+        }
+    }
+
+
+    private async Task ShowAlert(string title, string text, SweetAlertIcon icon)
+    {
+        await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = title,
+                Text = text,
+                Icon = icon,
+                ConfirmButtonText = "OK"
+            });
+    }
+
+    private void Cancelar()
+    {
+        DialogService.Close(null);
+    }
+}

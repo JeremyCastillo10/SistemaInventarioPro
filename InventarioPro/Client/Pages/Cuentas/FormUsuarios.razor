@@ -37,6 +37,17 @@
 @code {
     [Parameter]
     public UserRegister usuarioDTO { get; set; } = new UserRegister();
+    protected override async Task OnInitializedAsync()
+    {
+        /*var response = await Http.GetAsync($"api/producto/getproductos");
+        listproducto_DTO = await response.Content.ReadFromJsonAsync<List<Producto_DTO>>();
+
+        if (entrada_DTO.entradaDetalle_DTO.Count > 0)
+        {
+            estado = true;
+            listentradaDetalle_DTO.AddRange(entrada_DTO.entradaDetalle_DTO);
+        }*/
+    }
 
     private async Task Guardar()
     {
