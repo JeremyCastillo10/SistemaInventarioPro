@@ -189,6 +189,7 @@
         if(roles_DTO!=null)
         {
             permiso_DTO.Nombre = roles_DTO.Nombre;
+
         }
         var response = await Http.GetAsync("/api/roles/GetAllRoles");
         listroles_DTO= await response.Content.ReadFromJsonAsync<List<Roles_DTO>>();
