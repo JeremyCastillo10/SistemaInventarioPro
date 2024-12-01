@@ -73,25 +73,28 @@
                                     <th scope="col">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <!-- Itera sobre la lista de entradas, asumiendo que se llama listentradaDetalle_DTO -->
-                                @foreach (var item in listentradaDetalle_DTO)
-                                {
-                                    var producto = listproducto_DTO.FirstOrDefault(p => p.Id == item.IdProducto);
 
-                                    <tr style="height: 40px;">
-                                        <td>@producto.Nombre</td>
-                                        <td>@item.Cantidad</td>
-                                        <td>@item.Precio.ToString("C")</td> <!-- Formato de moneda -->
-                                        <td>@item.SubMontoTotal</td> <!-- Formato de moneda -->
-                                        <td>
-                                            <!-- Botón de eliminar en rojo -->
-                                            <button type="button" @onclick="() => EliminarEntrada(item.IdProducto)"
-                                                class="btn btn-danger btn-sm">Eliminar</button>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
+                            <tbody>
+                                      <!-- Itera sobre la lista de entradas, asumiendo que se llama listentradaDetalle_DTO -->
+                                    @foreach (var item in listentradaDetalle_DTO)
+                                     {
+                                         var producto = listproducto_DTO.FirstOrDefault(p => p.Id == item.IdProducto);
+
+                                         <tr style="height: 40px;">
+                                                <td>@producto?.Nombre</td>
+                                                <td>@item.Cantidad</td>
+                                                <td>@item.Precio.ToString("C")</td> <!-- Formato de moneda -->
+                                                <td>@item.SubMontoTotal</td> <!-- Formato de moneda -->
+                                                <td>
+                                                    <!-- Botón de eliminar en rojo -->
+                                                    <button type="button" @onclick="() => EliminarEntrada(item.IdProducto)"
+                                                            class="btn btn-danger btn-sm">
+                                                        Eliminar
+                                                    </button>
+                                                </td>
+                                         </tr>
+                                    }
+                             </tbody>
                         </table>
                     </div>
 
