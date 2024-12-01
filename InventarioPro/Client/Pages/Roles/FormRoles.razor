@@ -181,26 +181,47 @@
 @code {
     [Parameter]
     public Roles_DTO roles_DTO { get; set; }= new Roles_DTO();
-
+    public List<Roles_DTO> listroles_DTO { get; set; }  = new List<Roles_DTO>();
     public Permiso_DTO permiso_DTO { get; set; } = new Permiso_DTO();
 
+    protected override async Task OnInitializedAsync()
+    {
+        if(roles_DTO!=null)
+        {
+            permiso_DTO.Nombre = roles_DTO.Nombre;
+        }
+        var response = await Http.GetAsync("/api/roles/GetAllRoles");
+        listroles_DTO= await response.Content.ReadFromJsonAsync<List<Roles_DTO>>();
 
 
-  
+
+    }
+
+
+
     private async void Guardar()
     {
-       
-        var response = await Http.PostAsJsonAsync("api/roles/createRole", permiso_DTO);
-
-        if (response.IsSuccessStatusCode)
+        var rolEncontrado = listroles_DTO.FirstOrDefault(p => p.Nombre.Contains(permiso_DTO.Nombre, StringComparison.OrdinalIgnoreCase));
+        if (rolEncontrado == null)
         {
-            await ShowAlert("Éxito", "El rol se ha creado con éxito!", SweetAlertIcon.Success);
+
+            var response = await Http.PostAsJsonAsync("api/roles/createRole", permiso_DTO);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await ShowAlert("Éxito", "El rol se ha creado con éxito!", SweetAlertIcon.Success);
+                OnInitializedAsync();
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error: {errorContent}");
+                await ShowAlert("Error", "No se pudo crear el rol.", SweetAlertIcon.Error);
+            }
         }
         else
         {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Error: {errorContent}");
-            await ShowAlert("Error", "No se pudo crear el rol.", SweetAlertIcon.Error);
+            await ShowAlert("Advertencia", "El rol éxite!", SweetAlertIcon.Warning);
         }
     }
 

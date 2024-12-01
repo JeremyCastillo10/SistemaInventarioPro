@@ -107,15 +107,19 @@
 
     private async Task EditarCategoria( string id)
     {
-       /* var item = listroles_DTO.FirstOrDefault(p => p.Id == id);
-        * 
-         await DialogService.OpenAsync<FormRoles>(
-        null,
-             new Dictionary<string, object> { { "categoria_DTO", item } }
-         );
-         */
+        Console.WriteLine(id);
+
+        var item = listroles_DTO.FirstOrDefault(p => p.Id == id);
+
+        await DialogService.OpenAsync<FormRoles>(
+       null,
+            new Dictionary<string, object> { { "roles_DTO", item } }
+        );
+
+
 
     }
+  
 
     private void FiltrarPorNombre()
     {
