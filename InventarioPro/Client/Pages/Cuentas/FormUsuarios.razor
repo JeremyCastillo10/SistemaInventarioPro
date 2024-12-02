@@ -5,71 +5,83 @@
 @inject HttpClient Http
 @inject Radzen.DialogService DialogService
 @inject NavigationManager Navigation
-@using System.ComponentModel.DataAnnotations
 
-                <EditForm Model="@usuarioDTO" OnValidSubmit="Guardar">
-                    <DataAnnotationsValidator />
+<EditForm Model="@usuarioDTO" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <label for="email" class="form-label font-weight-bold">Nombres</label>
+        <RadzenTextBox id="email" @bind-Value="usuarioDTO.FirstName" Placeholder="Nombre" class="form-control" />
+        <ValidationMessage For="@(() => usuarioDTO.FirstName)" class="text-danger" />
+    </div>
+    <div class="mb-3">
+        <label for="email" class="form-label font-weight-bold">Apellidos</label>
+        <RadzenTextBox id="email" @bind-Value="usuarioDTO.LastName" Placeholder="Apellido" class="form-control" />
+        <ValidationMessage For="@(() => usuarioDTO.LastName)" class="text-danger" />
+    </div>
+    <div class="mb-3">
+        <label for="email" class="form-label font-weight-bold">Correo Electrónico</label>
+        <RadzenTextBox id="email" @bind-Value="usuarioDTO.Email" Placeholder="Ingrese su correo electrónico" class="form-control" />
+        <ValidationMessage For="@(() => usuarioDTO.Email)" class="text-danger" />
+    </div>
 
-                    <div class="mb-3">
-                        <label for="email" class="form-label font-weight-bold">Correo Electrónico</label>
-                        <RadzenTextBox id="email" @bind-Value="usuarioDTO.Email" Placeholder="Ingrese su correo electrónico" class="form-control" />
-                        <ValidationMessage For="@(() => usuarioDTO.Email)" class="text-danger" />
-                    </div>
+    <div class="mb-3">
+        <label for="password" class="form-label font-weight-bold">Contraseña</label>
+        <RadzenPassword id="password" @bind-Value="usuarioDTO.Password" Placeholder="Ingrese su contraseña" class="form-control" />
+        <ValidationMessage For="@(() => usuarioDTO.Password)" class="text-danger" />
+    </div>
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label font-weight-bold">Contraseña</label>
-                        <RadzenPassword id="password" @bind-Value="usuarioDTO.Password" Placeholder="Ingrese su contraseña" class="form-control" />
-                        <ValidationMessage For="@(() => usuarioDTO.Password)" class="text-danger" />
-                    </div>
+    <div class="mb-3">
+        <label for="confirmPassword" class="form-label font-weight-bold">Confirmar Contraseña</label>
+        <RadzenPassword id="confirmPassword" @bind-Value="usuarioDTO.ConfirmPassword" Placeholder="Confirme su contraseña" class="form-control" />
+        <ValidationMessage For="@(() => usuarioDTO.ConfirmPassword)" class="text-danger" />
+    </div>
 
-                    <div class="mb-3">
-                        <label for="confirmPassword" class="form-label font-weight-bold">Confirmar Contraseña</label>
-                        <RadzenPassword id="confirmPassword" @bind-Value="usuarioDTO.ConfirmPassword" Placeholder="Confirme su contraseña" class="form-control" />
-                        <ValidationMessage For="@(() => usuarioDTO.ConfirmPassword)" class="text-danger" />
-                    </div>
+    <div class="mb-3">
+        <label for="rolId" class="form-label font-weight-bold">Rol</label>
+        <RadzenDropDown @bind-Value="usuarioDTO.RolId" Data="@roles" TextProperty="Text" ValueProperty="Value" Placeholder="Seleccione un rol" class="form-control" />
+        <ValidationMessage For="@(() => usuarioDTO.RolId)" class="text-danger" />
+    </div>
 
-                    <div class="d-flex justify-content-between mt-4">
-                        <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Guardar" Icon="save" class="btn btn-primary" />
-                        <RadzenButton Text="Cancelar" Icon="cancel" Click="@Cancelar" class="btn btn-secondary" />
-                    </div>
-                </EditForm>
+    <div class="d-flex justify-content-between mt-4">
+        <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Guardar" Icon="save" class="btn btn-primary" />
+        <RadzenButton Text="Cancelar" Icon="cancel" Click="@Cancelar" class="btn btn-secondary" />
+    </div>
+</EditForm>
 
 @code {
     [Parameter]
     public UserRegister usuarioDTO { get; set; } = new UserRegister();
+    private List<DropdownOption> roles = new List<DropdownOption>();
+
     protected override async Task OnInitializedAsync()
     {
-        /*var response = await Http.GetAsync($"api/producto/getproductos");
-        listproducto_DTO = await response.Content.ReadFromJsonAsync<List<Producto_DTO>>();
-
-        if (entrada_DTO.entradaDetalle_DTO.Count > 0)
+        // Obtener los roles disponibles del backend
+        var response = await Http.GetAsync("api/cuentas/roles");
+        if (response.IsSuccessStatusCode)
         {
-            estado = true;
-            listentradaDetalle_DTO.AddRange(entrada_DTO.entradaDetalle_DTO);
-        }*/
+            roles = await response.Content.ReadFromJsonAsync<List<DropdownOption>>();
+        }
     }
 
     private async Task Guardar()
     {
-
-
         if (usuarioDTO.Password != usuarioDTO.ConfirmPassword)
         {
-            await ShowAlert("Éxito", "El usuario se ha registrado con éxito!", SweetAlertIcon.Success);
-
+            await ShowAlert("Error", "Las contraseñas no coinciden.", SweetAlertIcon.Error);
+            return;
         }
 
         var response = await Http.PostAsJsonAsync("api/cuentas/registrar", usuarioDTO);
         if (response.IsSuccessStatusCode)
         {
             await ShowAlert("Éxito", "Registro exitoso, por favor inicia sesión.", SweetAlertIcon.Success);
-            Navigation.NavigateTo("/");
+            DialogService.Close(usuarioDTO);
+            StateHasChanged(); DialogService.Close(usuarioDTO);
         }
         else
         {
             await ShowAlert("Error", "Hubo un error al registrar el usuario.", SweetAlertIcon.Error);
         }
-
     }
 
     private async Task ShowAlert(string title, string text, SweetAlertIcon icon)
@@ -86,5 +98,11 @@
     private void Cancelar()
     {
         DialogService.Close(null);
+    }
+
+    private class DropdownOption
+    {
+        public string Value { get; set; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
     }
 }

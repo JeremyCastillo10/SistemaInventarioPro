@@ -26,6 +26,16 @@ public class AuthenticationService
         var userNameClaim = jwtToken?.Claims.FirstOrDefault(c => c.Type == "email");
         return userNameClaim?.Value;
     }
+    public string GetUserIdFromToken(string token)
+    {
+        if (string.IsNullOrEmpty(token))
+            return null;
+
+        var jwtToken = new JwtSecurityToken(token);
+        var userIdClaim = jwtToken?.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier); 
+        return userIdClaim?.Value;
+    }
+
     public async Task RemoveTokenAsync()
     {
         try

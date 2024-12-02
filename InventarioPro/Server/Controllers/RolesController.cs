@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace InventarioPro.Server.Controllers
 {
@@ -18,7 +19,6 @@ namespace InventarioPro.Server.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly UserManager<IdentityUser> _userManager;
 
-        // Inyección de dependencias
         public RolesController(Contexto db, RoleManager<IdentityRole> roleManager, UserManager<IdentityUser> userManager)
         {
             _db = db;
@@ -26,11 +26,9 @@ namespace InventarioPro.Server.Controllers
             _userManager = userManager;
         }
 
-        // Crear un nuevo rol si no existe
         [HttpPost("createRole")]
         public async Task<IActionResult> CreateRole([FromBody] Permiso_DTO permiso_DTO)
         {
-           
             if (string.IsNullOrWhiteSpace(permiso_DTO.Nombre))
                 return BadRequest("El nombre del rol no puede estar vacío.");
 
@@ -63,18 +61,32 @@ namespace InventarioPro.Server.Controllers
                         CrearUsuario = permiso_DTO.CrearUsuario,
                         VerUsuario = permiso_DTO.VerUsuario,
                         EditarUsuario = permiso_DTO.EditarUsuario,
-                        EliminarUsuario = permiso_DTO.EliminarUsuario
+                        EliminarUsuario = permiso_DTO.EliminarUsuario,
+                        CrearVenta = permiso_DTO.CrearVenta,
+                        EditarVenta = permiso_DTO.EditarVenta,
+                        VerVenta = permiso_DTO.VerVenta,
+                        EliminarVenta = permiso_DTO.EliminarVenta,
+                        CrearSuplidor = permiso_DTO.CrearSuplidor,
+                        VerSuplidor = permiso_DTO.VerSuplidor,
+                        EditarSuplidor = permiso_DTO.EditarSuplidor,
+                        EliminarSuplidor = permiso_DTO.EliminarSuplidor,
+                        VerRoles = permiso_DTO.VerRoles,
+                        CrearRoles = permiso_DTO.CrearRoles,
+                        EditarRoles = permiso_DTO.EditarRoles,
+                        EliminarRoles = permiso_DTO.EliminarRoles,
+                        VerEmpresa = permiso_DTO.VerEmpresa,
+                        CrearEmpresa = permiso_DTO.CrearEmpresa,
+                        EditarEmpresa = permiso_DTO.EditarEmpresa
                     };
 
                     _db.Permisos.Add(permiso);
                     await _db.SaveChangesAsync();
                 }
             }
-            
 
             return Ok("Rol creado exitosamente.");
         }
-
+      
         // Agregar un usuario a un rol específico
         [HttpPost("AddUserToRole")]
         public async Task<IActionResult> AddUserToRole(string userId, string roleName)
@@ -115,13 +127,10 @@ namespace InventarioPro.Server.Controllers
         [HttpGet("GetAllRoles")]
         public IActionResult GetAllRoles()
         {
-            // Lista para almacenar los roles en formato DTO
             List<Roles_DTO> listroles_DTO = new List<Roles_DTO>();
 
-            // Obtener los roles desde el RoleManager
             var roles = _roleManager.Roles.ToList();
 
-            // Iterar sobre los roles y convertirlos en DTOs
             foreach (var role in roles)
             {
                 listroles_DTO.Add(new Roles_DTO()
@@ -131,8 +140,117 @@ namespace InventarioPro.Server.Controllers
                 });
             }
 
-            // Devolver la lista de roles en formato DTO
             return Ok(listroles_DTO);
         }
+        [HttpGet("getPermisos/{userId}")]
+        public async Task<ActionResult<Permiso_DTO>> GetPermisosPorUsuario(string userId)
+        {
+            var usuario = await _userManager.FindByIdAsync(userId);
+            if (usuario == null)
+            {
+                return NotFound("Usuario no encontrado.");
+            }
+
+            var roles = await _userManager.GetRolesAsync(usuario);
+            if (roles.Count == 0)
+            {
+                return BadRequest("El usuario no tiene roles asignados.");
+            }
+
+            var permisos = await (from rol in _db.Roles
+                                  join permiso in _db.Permisos on rol.Id equals permiso.IdRol
+                                  where roles.Contains(rol.Name) 
+                                  select new
+                                  {
+                                      rol.Id,
+                                      rol.Name,
+                                      permiso.VerEstadistica,
+                                      permiso.VerReportes,
+                                      permiso.ExportalExcel,
+                                      permiso.ExportalPdf,
+                                      permiso.CrearEntrada,
+                                      permiso.EditarEntrada,
+                                      permiso.VerEntrada,
+                                      permiso.EliminarEntrada,
+                                      permiso.CrearVenta,
+                                      permiso.EditarVenta,
+                                      permiso.VerVenta,
+                                      permiso.EliminarVenta,
+                                      permiso.CrearProducto,
+                                      permiso.VerProducto,
+                                      permiso.EditarProducto,
+                                      permiso.EliminarProducto,
+                                      permiso.CrearCategoria,
+                                      permiso.VerCategoria,
+                                      permiso.EditarCategoria,
+                                      permiso.EliminarCategoria,
+                                      permiso.CrearUsuario,
+                                      permiso.VerUsuario,
+                                      permiso.EditarUsuario,
+                                      permiso.EliminarUsuario,
+                                      permiso.CrearSuplidor,
+                                      permiso.VerSuplidor,
+                                      permiso.EditarSuplidor,
+                                      permiso.EliminarSuplidor,
+                                      permiso.VerRoles,
+                                      permiso.CrearRoles,
+                                      permiso.EditarRoles,
+                                      permiso.EliminarRoles,
+                                      permiso.VerEmpresa,
+                                      permiso.CrearEmpresa,
+                                      permiso.EditarEmpresa
+                                  })
+                                  .FirstOrDefaultAsync();
+
+            if (permisos == null)
+            {
+                return NotFound("Permisos no encontrados para el rol asociado.");
+            }
+
+            var permisosDto = new Permiso_DTO
+            {
+                IdRol = permisos.Id,
+                Nombre = permisos.Name,
+                VerEstadistica = permisos.VerEstadistica,
+                VerReportes = permisos.VerReportes,
+                ExportalExcel = permisos.ExportalExcel,
+                ExportalPdf = permisos.ExportalPdf,
+                CrearEntrada = permisos.CrearEntrada,
+                EditarEntrada = permisos.EditarEntrada,
+                VerEntrada = permisos.VerEntrada,
+                EliminarEntrada = permisos.EliminarEntrada,
+                CrearVenta = permisos.CrearVenta,
+                EditarVenta = permisos.EditarVenta,
+                VerVenta = permisos.VerVenta,
+                EliminarVenta = permisos.EliminarVenta,
+                CrearProducto = permisos.CrearProducto,
+                VerProducto = permisos.VerProducto,
+                EditarProducto = permisos.EditarProducto,
+                EliminarProducto = permisos.EliminarProducto,
+                CrearCategoria = permisos.CrearCategoria,
+                VerCategoria = permisos.VerCategoria,
+                EditarCategoria = permisos.EditarCategoria,
+                EliminarCategoria = permisos.EliminarCategoria,
+                CrearUsuario = permisos.CrearUsuario,
+                VerUsuario = permisos.VerUsuario,
+                EditarUsuario = permisos.EditarUsuario,
+                EliminarUsuario = permisos.EliminarUsuario,
+                CrearSuplidor = permisos.CrearSuplidor,
+                VerSuplidor = permisos.VerSuplidor,
+                EditarSuplidor = permisos.EditarSuplidor,
+                EliminarSuplidor = permisos.EliminarSuplidor,
+                VerRoles = permisos.VerRoles,
+                CrearRoles = permisos.CrearRoles,
+                EditarRoles = permisos.EditarRoles,
+                EliminarRoles = permisos.EliminarRoles,
+                VerEmpresa = permisos.VerEmpresa,
+                CrearEmpresa = permisos.CrearEmpresa,
+                EditarEmpresa = permisos.EditarEmpresa
+            };
+
+            return Ok(permisosDto);
+        }
+
+
     }
 }

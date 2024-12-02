@@ -4,6 +4,7 @@
 @using InventarioPro.Shared.DTOS.Permiso
 @inject SweetAlertService swal
 @inject HttpClient Http
+@inject NavigationManager Navigation
 @inject Radzen.DialogService DialogService
 @using System.ComponentModel.DataAnnotations
 
@@ -169,6 +170,111 @@
             </div>
         </div>
     </div>
+    <!-- Fila 8 (Venta) -->
+    <div class="row mb-3">
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.CrearVenta" />
+                <label class="form-check-label">Crear Venta</label>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.EditarVenta" />
+                <label class="form-check-label">Editar Venta</label>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.VerVenta" />
+                <label class="form-check-label">Ver Venta</label>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.EliminarVenta" />
+                <label class="form-check-label">Eliminar Venta</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fila 9 (Suplidor) -->
+    <div class="row mb-3">
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.CrearSuplidor" />
+                <label class="form-check-label">Crear Suplidor</label>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.VerSuplidor" />
+                <label class="form-check-label">Ver Suplidor</label>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.EditarSuplidor" />
+                <label class="form-check-label">Editar Suplidor</label>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.EliminarSuplidor" />
+                <label class="form-check-label">Eliminar Suplidor</label>
+            </div>
+        </div>
+    </div>
+    <!-- Fila 10 (Roles) -->
+    <div class="row mb-3">
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.VerRoles" />
+                <label class="form-check-label">Ver Roles</label>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.CrearRoles" />
+                <label class="form-check-label">Crear Roles</label>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.EditarRoles" />
+                <label class="form-check-label">Editar Roles</label>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.EliminarRoles" />
+                <label class="form-check-label">Eliminar Roles</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fila 11 (Empresa) -->
+    <div class="row mb-3">
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.VerEmpresa" />
+                <label class="form-check-label">Ver Empresa</label>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.CrearEmpresa" />
+                <label class="form-check-label">Crear Empresa</label>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="form-check">
+                <RadzenCheckBox @bind-Value="permiso_DTO.EditarEmpresa" />
+                <label class="form-check-label">Editar Empresa</label>
+            </div>
+        </div>
+    </div>
+
 
     <div class="d-flex justify-content-between mt-4">
         <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Guardar" Icon="save" class="btn btn-primary" />
@@ -203,15 +309,16 @@
     private async void Guardar()
     {
         var rolEncontrado = listroles_DTO.FirstOrDefault(p => p.Nombre.Contains(permiso_DTO.Nombre, StringComparison.OrdinalIgnoreCase));
+
         if (rolEncontrado == null)
         {
-
             var response = await Http.PostAsJsonAsync("api/roles/createRole", permiso_DTO);
 
             if (response.IsSuccessStatusCode)
             {
-                await ShowAlert("Éxito", "El rol se ha creado con éxito!", SweetAlertIcon.Success);
-                OnInitializedAsync();
+                await ShowAlert("Éxito", (permiso_DTO.Id == 0) ? "Producto creado con éxito!" : "Producto actualizado con éxito!", SweetAlertIcon.Success);
+                DialogService.Close(roles_DTO);
+                StateHasChanged();
             }
             else
             {
@@ -222,9 +329,10 @@
         }
         else
         {
-            await ShowAlert("Advertencia", "El rol éxite!", SweetAlertIcon.Warning);
+            await ShowAlert("Advertencia", "El rol existe!", SweetAlertIcon.Warning);
         }
     }
+
 
 
     private async Task ShowAlert(string title, string text, SweetAlertIcon icon)
