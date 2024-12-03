@@ -81,7 +81,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var response = await Http.GetAsync($"api/categoria");
+        var response = await Http.GetAsync("api/categoria");
         listcategoria_DTO= await response.Content.ReadFromJsonAsync<List<Categoria_DTO>>();
 
         listcategoria_DTO2 = listcategoria_DTO;

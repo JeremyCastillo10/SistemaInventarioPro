@@ -1,80 +1,123 @@
-﻿﻿@using System.Security.Claims
+﻿@using System.Security.Claims
+@using InventarioPro.Shared.DTOS.Permiso
 @using Microsoft.AspNetCore.Components.Authorization
 @inherits LayoutComponentBase
 @inject NavigationManager nav
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject AuthenticationService AuthenticationService
-
+@inject HttpClient Http
 <MudThemeProvider />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <RadzenComponents />
-
 <RadzenLayout Style="grid-template-columns: auto 1fr; grid-template-areas: 'rz-header rz-header' 'rz-sidebar rz-body';">
-
-    <!-- Navbar con fondo azul oscuro y texto blanco -->
+    <!-- Cabecera -->
     <RadzenHeader Style="background-color:#002050; color:white;">
         <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0">
             <RadzenSidebarToggle Click="@(() => leftSidebarExpanded = !leftSidebarExpanded)" />
             <RadzenLabel Text="Control de Inventario" Style="color:white;" />
-
             <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="25px" Style="margin-left:auto;">
-                <MudAvatar>
-                    <MudImage Src="imagenes/avatar.png"></MudImage>
-                </MudAvatar>
-                <RadzenText Text="@user?.Identity?.Name" Style="color:white;" />
+                <MudHidden SmUp>
+                    <MudAvatar>
+                        <MudImage Src="imagenes/avatar.png"></MudImage>
+                    </MudAvatar>
+                    <RadzenText Text="@user?.Identity?.Name" Style="color:white;" />
+                </MudHidden>
                 <RadzenButton Icon="logout" Click="CerrarSesion" Style="color:white; background-color:transparent;" />
             </RadzenStack>
         </RadzenStack>
     </RadzenHeader>
 
-    <RadzenSidebar @bind-Expanded="@leftSidebarExpanded"
-                   Style="grid-area: rz-sidebar; height: 100vh; background-color:#002050; color:white;">
+    <!-- Sidebar con permisos -->
+    <RadzenSidebar @bind-Expanded="@leftSidebarExpanded" Style="grid-area: rz-sidebar; height: 100vh; background-color:#002050; color:white;">
         <RadzenPanelMenu Style="background-color: transparent; color:white;">
             <RadzenPanelMenuItem Text="Home" Icon="home" Path="/" Style="color: white;" />
-            <RadzenPanelMenuItem Text="Categorias" Icon="account_box" Path="/ListCategoria" Style="color: white;" />
-            <RadzenPanelMenuItem Text="Productos" Icon="inventory" Path="/ListProductos" Style="color: white;" />
-            <RadzenPanelMenuItem Text="Entrada" Icon="inventory" Path="/ListaEntrada" Style="color: white;" />
-            <RadzenPanelMenuItem Text="Suplidores" Icon="business" Style="color: white;" />
-            <RadzenPanelMenuItem Text="Ventas" Icon="assignment" Path="/ListVentas" Style="color: white;" />
-            <RadzenPanelMenuItem Text="Reportes" Icon="assessment" Style="color: white;" />
+
+            @if (permisosUsuario?.VerCategoria ?? false)
+            {
+                <RadzenPanelMenuItem Text="Categorias" Icon="account_box" Path="/ListCategoria" Style="color: white;" />
+            }
+
+            @if (permisosUsuario?.VerProducto ?? false)
+            {
+                <RadzenPanelMenuItem Text="Productos" Icon="inventory" Path="/ListProductos" Style="color: white;" />
+            }
+
+            @if (permisosUsuario?.VerEntrada ?? false)
+            {
+                <RadzenPanelMenuItem Text="Entrada" Icon="inventory" Path="/ListaEntrada" Style="color: white;" />
+            }
+
+            @if (permisosUsuario?.VerSuplidor ?? false)
+            {
+                <RadzenPanelMenuItem Text="Suplidores" Icon="business" Style="color: white;" />
+            }
+
+            @if (permisosUsuario?.VerVenta ?? false)
+            {
+                <RadzenPanelMenuItem Text="Ventas" Icon="assignment" Path="/ListVentas" Style="color: white;" />
+            }
+
+            @if (permisosUsuario?.VerReportes ?? false)
+            {
+                <RadzenPanelMenuItem Text="Reportes" Icon="assessment" Style="color: white;" />
+            }
             <RadzenPanelMenuItem Icon="settings" Text="Configuración" Style="background-color: transparent; color: white;">
                 <RadzenPanelMenu Style="background-color: #002050; color: blue;">
                     <RadzenPanelMenuItem Text="Usuarios" Icon="person" Path="/ListUsuario" Class="menu-item" />
-                    <RadzenPanelMenuItem Text="Roles" Icon="assignment_ind" Path="/Roles" Class="menu-item" />
+                    <RadzenPanelMenuItem Text="Roles" Icon="assignment_ind" Path="/ListRoles" Class="menu-item" />
                     <RadzenPanelMenuItem Text="Empresa" Icon="business" Path="/FormEmpresa" Class="menu-item" />
                 </RadzenPanelMenu>
             </RadzenPanelMenuItem>
         </RadzenPanelMenu>
     </RadzenSidebar>
 
-
+    <!-- Cuerpo de la página -->
     <RadzenBody Style="grid-area: rz-body;">
         @Body
+
+      
     </RadzenBody>
 </RadzenLayout>
 
-
+<!-- Código C# para la lógica -->
 @code {
     private bool leftSidebarExpanded = true;
     private ClaimsPrincipal user;
+    private Permiso_DTO permisosUsuario;
+    public string userId;
 
+    // Al cargar el componente, obtenemos los permisos del usuario
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         user = authState.User;
+
+        if (user != null)
+        {
+            userId = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value; // Obtener userId desde el claim
+            if (!string.IsNullOrEmpty(userId))
+            {
+                // Obtener los permisos del usuario
+                permisosUsuario = await ObtenerPermisos(userId);
+                Console.WriteLine($"Permisos recibidos: {permisosUsuario.VerEstadistica}, {permisosUsuario.VerReportes}, {permisosUsuario.VerProducto}");
+            }
+        }
     }
 
-    public void IrDash()
+    // Método para obtener los permisos del usuario desde el backend
+    private async Task<Permiso_DTO> ObtenerPermisos(string UserId)
     {
-        nav.NavigateTo("/");
+        UserId = userId;
+        var response = await Http.GetFromJsonAsync<Permiso_DTO>($"api/roles/getPermisos/{UserId}");
+        return response;
     }
 
+    // Método para cerrar sesión
     private async Task CerrarSesion()
     {
         await AuthenticationService.LogoutAsync();
         nav.NavigateTo("/login");
     }
-
 }

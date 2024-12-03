@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace InventarioPro.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class inicial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -100,6 +100,39 @@ namespace InventarioPro.Server.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Entradas", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Permisos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    IdRol = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    VerEstadistica = table.Column<bool>(type: "bit", nullable: false),
+                    VerReportes = table.Column<bool>(type: "bit", nullable: false),
+                    ExportalExcel = table.Column<bool>(type: "bit", nullable: false),
+                    ExportalPdf = table.Column<bool>(type: "bit", nullable: false),
+                    CrearEntrada = table.Column<bool>(type: "bit", nullable: false),
+                    EditarEntrada = table.Column<bool>(type: "bit", nullable: false),
+                    VerEntrada = table.Column<bool>(type: "bit", nullable: false),
+                    EliminarEntrada = table.Column<bool>(type: "bit", nullable: false),
+                    CrearProducto = table.Column<bool>(type: "bit", nullable: false),
+                    VerProducto = table.Column<bool>(type: "bit", nullable: false),
+                    EditarProducto = table.Column<bool>(type: "bit", nullable: false),
+                    EliminarProducto = table.Column<bool>(type: "bit", nullable: false),
+                    CrearCategoria = table.Column<bool>(type: "bit", nullable: false),
+                    VerCategoria = table.Column<bool>(type: "bit", nullable: false),
+                    EditarCategoria = table.Column<bool>(type: "bit", nullable: false),
+                    EliminarCategoria = table.Column<bool>(type: "bit", nullable: false),
+                    CrearUsuario = table.Column<bool>(type: "bit", nullable: false),
+                    VerUsuario = table.Column<bool>(type: "bit", nullable: false),
+                    EditarUsuario = table.Column<bool>(type: "bit", nullable: false),
+                    EliminarUsuario = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Permisos", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -375,6 +408,9 @@ namespace InventarioPro.Server.Migrations
 
             migrationBuilder.DropTable(
                 name: "EntradaDetalles");
+
+            migrationBuilder.DropTable(
+                name: "Permisos");
 
             migrationBuilder.DropTable(
                 name: "Productos");

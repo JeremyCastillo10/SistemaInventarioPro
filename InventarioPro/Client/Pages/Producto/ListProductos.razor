@@ -33,7 +33,6 @@
 <div class="filters" style="display: flex; flex-wrap: wrap; margin-bottom: 20px;">
     <div style="display: flex; align-items: center; flex-wrap: wrap; width: 100%; margin-bottom: 10px;">
         <RadzenDropDown @bind-Value="selectedCategory" Data="@categorias" TextProperty="Nombre" ValueProperty="Id" Placeholder="Categoría" Style="margin-right: 10px; flex: 1 1 150px;" />
-        <RadzenDropDown @bind-Value="selectedWarehouse" Data="@warehouses" TextProperty="Name" ValueProperty="Id" Placeholder="Almacén" Style="margin-right: 10px; flex: 1 1 150px;" />
         <label style="margin-right: 5px;">Fecha Inicio:</label>
         <RadzenDatePicker @bind-Value=@value1 DateFormat="dd/MM/yyyy" Style="margin-right: 10px; flex: 1 1 150px;" />
         <label style="margin-right: 5px;">Fecha Fin:</label>
@@ -147,13 +146,6 @@
         filteredProducts = products;
     }
 
-    private List<Warehouse> warehouses = new List<Warehouse>
-    {
-        new Warehouse { Id = 1, Name = "Almacén A" },
-        new Warehouse { Id = 2, Name = "Almacén B" },
-        new Warehouse { Id = 3, Name = "Almacén C" }
-    };
-
     private async Task LoadProducts()
     {
         products = await Http.GetFromJsonAsync<List<Producto_DTO>>("api/producto/GetProductos");
@@ -164,7 +156,7 @@
     {
         var newProduct = new Producto_DTO(); 
         var options = new Radzen.DialogOptions { Style = "width: 900px;" };
-        var result = await DialogService.OpenAsync<FormProducto>("Agregar Nuevo Producto", new Dictionary<string, object> { { "Product", newProduct } }, options);
+        var result = await DialogService.OpenAsync<FormProducto>("", new Dictionary<string, object> { { "Product", newProduct } }, options);
 
         if (result != null)
         {
@@ -353,7 +345,7 @@
                     Image logo = new Image(logoImage)
                         .SetWidth(150) // Ancho de la imagen
                         .SetHeight(75); // Alto de la imagen
-                    logo.SetFixedPosition(30, 780); // Posición fija, ajustada a 780 para evitar que se corte
+                    logo.SetFixedPosition(30, 750); // Posición fija, ajustada a 780 para evitar que se corte
                     doc.Add(logo);
                 }
 

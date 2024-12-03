@@ -1,6 +1,7 @@
 ﻿@page "/login"
 @layout LoginLayout
 
+@using InventarioPro.Shared.DTOS.Cuenta
 @using InventarioPro.Shared.DTOs
 @inject HttpClient Http
 @inject NavigationManager Navigation
@@ -43,7 +44,7 @@
 }
 
 @code {
-    private CredencialesUsuario credencialesUsuario = new CredencialesUsuario();
+    private UsuarioAutenticado credencialesUsuario = new UsuarioAutenticado();
     private bool isSubmitting = false;
     private string errorMessage = null;
 

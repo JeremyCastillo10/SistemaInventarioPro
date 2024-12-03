@@ -12,153 +12,167 @@
 </RadzenText>
 
 <RadzenStack Gap="0.5rem">
+    <RadzenCard class="rz-my-4 rz-p-4">
+        <RadzenText TextStyle="TextStyle.H5" class="rz-mb-4">Resumen del Inventario</RadzenText>
 
-    <RadzenCard class="rz-my-8">
-        <RadzenText TextStyle="TextStyle.H5">Resumen del Inventario</RadzenText>
-        <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween">
-            <RadzenColumn Size="3">
+        <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween" class="rz-mb-4">
+            <RadzenColumn SizeSM="6" SizeMD="4" SizeLG="3" class="rz-mb-3 rz-mb-sm-0">
                 <RadzenCard Variant="Radzen.Variant.Outlined"
-                            Style="height: 100%; padding: 10px; background-color: #e0f7fa;">
-                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
+                            class="rz-p-3 rz-h-100 rz-text-center rz-text-sm-left"
+                            Style="background-color: #e0f7fa;">
+                    <RadzenStack Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween" class="rz-h-100">
                         <RadzenText TextStyle="TextStyle.H6" Style="color: #00796b;">Total de Productos</RadzenText>
                         <RadzenText TextStyle="TextStyle.H4" Style="color: #004d40;">@totalProducts</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="3">
+
+            <RadzenColumn SizeSM="6" SizeMD="4" SizeLG="3" class="rz-mb-3 rz-mb-sm-0">
                 <RadzenCard Variant="Radzen.Variant.Outlined"
-                            Style="height: 100%; padding: 10px; background-color: #ffe0b2;">
-                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
+                            class="rz-p-3 rz-h-100 rz-text-center rz-text-sm-left"
+                            Style="background-color: #ffe0b2;">
+                    <RadzenStack Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween" class="rz-h-100">
                         <RadzenText TextStyle="TextStyle.H6" Style="color: #e65100;">Productos en Stock</RadzenText>
                         <RadzenText TextStyle="TextStyle.H4" Style="color: #e65100;">@inStock</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="3">
+
+            <RadzenColumn SizeSM="6" SizeMD="4" SizeLG="3" class="rz-mb-3 rz-mb-md-0">
                 <RadzenCard Variant="Radzen.Variant.Outlined"
-                            Style="height: 100%; padding: 10px; background-color: #ffccbc;">
-                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
+                            class="rz-p-3 rz-h-100 rz-text-center rz-text-sm-left"
+                            Style="background-color: #ffccbc;">
+                    <RadzenStack Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween" class="rz-h-100">
                         <RadzenText TextStyle="TextStyle.H6" Style="color: #c62828;">Productos Agotados</RadzenText>
                         <RadzenText TextStyle="TextStyle.H4" Style="color: #c62828;">@outOfStock</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="3">
+
+            <RadzenColumn SizeSM="6" SizeMD="4" SizeLG="3" class="rz-mb-3 rz-mb-lg-0">
                 <RadzenCard Variant="Radzen.Variant.Outlined"
-                            Style="height: 100%; padding: 10px; background-color: #c8e6c9;">
-                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
-                        <RadzenText TextStyle="TextStyle.H6" Style="color: #388e3c;">
-                            Valor Total del Inventario
-                        </RadzenText>
-                        <RadzenText TextStyle="TextStyle.H4" Style="color: #1b5e20;">
-                            @(totalInventoryValue?.ToString("F2") ?? "0.00")
-                        </RadzenText>
+                            class="rz-p-3 rz-h-100 rz-text-center rz-text-sm-left"
+                            Style="background-color: #c8e6c9;">
+                    <RadzenStack Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween" class="rz-h-100">
+                        <RadzenText TextStyle="TextStyle.H6" Style="color: #388e3c;">Valor Total del Inventario</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4" Style="color: #1b5e20;">@(totalInventoryValue?.ToString("F2") ?? "0.00")</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="3">
+
+            <RadzenColumn SizeSM="6" SizeMD="4" SizeLG="3" class="rz-mb-3 rz-mb-sm-0">
                 <RadzenCard Variant="Radzen.Variant.Outlined"
-                            Style="height: 100%; padding: 10px; background-color: #fff9c4;">
-                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
+                            class="rz-p-3 rz-h-100 rz-text-center rz-text-sm-left"
+                            Style="background-color: #fff9c4;">
+                    <RadzenStack Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween" class="rz-h-100">
                         <RadzenText TextStyle="TextStyle.H6" Style="color: #f57f17;">Promedio de Precio</RadzenText>
-                        <RadzenText TextStyle="TextStyle.H4" Style="color: #f57f17;">
-                            @(averagePrice?.ToString("F2") ??
-                                "0.00")
-                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4" Style="color: #f57f17;">@(averagePrice?.ToString("F2") ?? "0.00")</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="3">
+
+            <RadzenColumn SizeSM="6" SizeMD="4" SizeLG="3" class="rz-mb-3 rz-mb-sm-0">
                 <RadzenCard Variant="Radzen.Variant.Outlined"
-                            Style="height: 100%; padding: 10px; background-color: #ffe0b2;">
-                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
+                            class="rz-p-3 rz-h-100 rz-text-center rz-text-sm-left"
+                            Style="background-color: #ffe0b2;">
+                    <RadzenStack Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween" class="rz-h-100">
                         <RadzenText TextStyle="TextStyle.H6" Style="color: #e65100;">Número de Categorías</RadzenText>
                         <RadzenText TextStyle="TextStyle.H4" Style="color: #e65100;">@totalCategories</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="3">
+
+            <RadzenColumn SizeSM="6" SizeMD="4" SizeLG="3" class="rz-mb-3 rz-mb-sm-0">
                 <RadzenCard Variant="Radzen.Variant.Outlined"
-                            Style="height: 100%; padding: 10px; background-color: #e0e0e0;">
-                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
+                            class="rz-p-3 rz-h-100 rz-text-center rz-text-sm-left"
+                            Style="background-color: #e0e0e0;">
+                    <RadzenStack Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween" class="rz-h-100">
                         <RadzenText TextStyle="TextStyle.H6" Style="color: #757575;">Número de Proveedores</RadzenText>
                         <RadzenText TextStyle="TextStyle.H4" Style="color: #757575;">2</RadzenText>
-                        <!-- Nueva tarjeta -->
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="3">
+
+            <RadzenColumn SizeSM="12" SizeMD="4" SizeLG="3">
                 <RadzenCard Variant="Radzen.Variant.Outlined"
-                            Style="height: 100%; padding: 10px; background-color: #e0f7fa;">
-                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="height: 100%;">
-                        <RadzenText TextStyle="TextStyle.H6" Style="color: #00796b;">
-                            Último Producto Agregado
-                        </RadzenText>
+                            class="rz-p-3 rz-h-100 rz-text-center rz-text-sm-left"
+                            Style="background-color: #e0f7fa;">
+                    <RadzenStack Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween" class="rz-h-100">
+                        <RadzenText TextStyle="TextStyle.H6" Style="color: #00796b;">Último Producto Agregado</RadzenText>
                         <RadzenText TextStyle="TextStyle.H4" Style="color: #004d40;">@ultimoProductoNombre</RadzenText>
-                        <!-- Nueva tarjeta -->
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
         </RadzenRow>
     </RadzenCard>
-    <RadzenCard class="rz-my-8"
-                Style="background-color: #f9f9f9; border: 1px solid #ddd; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
-        <RadzenText TextStyle="TextStyle.H5">Resumen de Ventas</RadzenText>
-        <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="margin-top: 20px;">
-            <RadzenColumn Size="4">
+    <RadzenCard class="rz-my-4 rz-p-4">
+        <RadzenText TextStyle="TextStyle.H5" class="rz-mb-4">Resumen de Ventas</RadzenText>
+
+        <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween" class="rz-mb-4">
+            <RadzenColumn SizeMD="6" SizeLG="4" class="rz-mb-3 rz-mb-md-0">
                 <RadzenCard Variant="Radzen.Variant.Filled"
-                            Style="padding: 20px; background-color: #a8d8ea; color: #2c3e50; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
-                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween">
-                        <RadzenText TextStyle="TextStyle.H6" Style="font-weight: bold;">Total de Ventas</RadzenText>
-                        <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold;">@(totalVentas?.ToString("F2") ?? "0.00")</RadzenText>
+                            class="rz-p-3 rz-text-center rz-text-md-left"
+                            Style="background-color: #a8d8ea; color: #2c3e50; border-radius: 8px;">
+                    <RadzenStack Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween">
+                        <RadzenText TextStyle="TextStyle.H6" class="rz-mb-2">Total de Ventas</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4">@(totalVentas?.ToString("F2") ?? "0.00")</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="4">
+
+            <RadzenColumn SizeMD="6" SizeLG="4" class="rz-mb-3 rz-mb-md-0">
                 <RadzenCard Variant="Radzen.Variant.Filled"
-                            Style="padding: 20px; background-color: #ffe0b2; color: #5d4037; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
-                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween">
-                        <RadzenText TextStyle="TextStyle.H6" Style="font-weight: bold;">Número de Transacciones</RadzenText>
-                        <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold;">@numeroTransacciones</RadzenText>
+                            class="rz-p-3 rz-text-center rz-text-md-left"
+                            Style="background-color: #ffe0b2; color: #5d4037; border-radius: 8px;">
+                    <RadzenStack Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween">
+                        <RadzenText TextStyle="TextStyle.H6" class="rz-mb-2">Número de Transacciones</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4">@numeroTransacciones</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="4">
+
+            <RadzenColumn SizeMD="12" SizeLG="4" class="rz-mb-3 rz-mb-lg-0">
                 <RadzenCard Variant="Radzen.Variant.Filled"
-                            Style="padding: 20px; background-color: #d1c4e9; color: #4a148c; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
-                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween">
-                        <RadzenText TextStyle="TextStyle.H6" Style="font-weight: bold;">Promedio por Venta</RadzenText>
-                        <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold;">@(promedioVenta?.ToString("F2") ?? "0.00")</RadzenText>
+                            class="rz-p-3 rz-text-center rz-text-md-left"
+                            Style="background-color: #d1c4e9; color: #4a148c; border-radius: 8px;">
+                    <RadzenStack Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween">
+                        <RadzenText TextStyle="TextStyle.H6" class="rz-mb-2">Promedio por Venta</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4">@(promedioVenta?.ToString("F2") ?? "0.00")</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
         </RadzenRow>
 
-        <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween" Style="margin-top: 20px;">
-            <RadzenColumn Size="4">
+        <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween">
+            <RadzenColumn SizeMD="6" SizeLG="4" class="rz-mb-3 rz-mb-md-0">
                 <RadzenCard Variant="Radzen.Variant.Filled"
-                            Style="padding: 20px; background-color: #ef9a9a; color: #b71c1c; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
-                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween">
-                        <RadzenText TextStyle="TextStyle.H6" Style="font-weight: bold;">Ventas Canceladas</RadzenText>
-                        <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold;">@ventasCanceladas</RadzenText>
+                            class="rz-p-3 rz-text-center rz-text-md-left"
+                            Style="background-color: #ef9a9a; color: #b71c1c; border-radius: 8px;">
+                    <RadzenStack Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween">
+                        <RadzenText TextStyle="TextStyle.H6" class="rz-mb-2">Ventas Canceladas</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4">@ventasCanceladas</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="4">
+
+            <RadzenColumn SizeMD="6" SizeLG="4" class="rz-mb-3 rz-mb-md-0">
                 <RadzenCard Variant="Radzen.Variant.Filled"
-                            Style="padding: 20px; background-color: #e1bee7; color: #6a1b9a; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
-                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween">
-                        <RadzenText TextStyle="TextStyle.H6" Style="font-weight: bold;">Devoluciones</RadzenText>
-                        <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold;">@devoluciones</RadzenText>
+                            class="rz-p-3 rz-text-center rz-text-md-left"
+                            Style="background-color: #e1bee7; color: #6a1b9a; border-radius: 8px;">
+                    <RadzenStack Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween">
+                        <RadzenText TextStyle="TextStyle.H6" class="rz-mb-2">Devoluciones</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4">@devoluciones</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="4">
+
+            <RadzenColumn SizeMD="12" SizeLG="4">
                 <RadzenCard Variant="Radzen.Variant.Filled"
-                            Style="padding: 20px; background-color: #cfd8dc; color: #37474f; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
-                    <RadzenStack JustifyContent="Radzen.JustifyContent.SpaceBetween">
-                        <RadzenText TextStyle="TextStyle.H6" Style="font-weight: bold;">Última Venta</RadzenText>
-                        <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold;">@(ultimaVenta?.ToString("F2") ?? "0.00")</RadzenText>
+                            class="rz-p-3 rz-text-center rz-text-md-left"
+                            Style="background-color: #cfd8dc; color: #37474f; border-radius: 8px;">
+                    <RadzenStack Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween">
+                        <RadzenText TextStyle="TextStyle.H6" class="rz-mb-2">Última Venta</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4">@(ultimaVenta?.ToString("F2") ?? "0.00")</RadzenText>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>

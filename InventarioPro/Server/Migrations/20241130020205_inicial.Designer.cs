@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventarioPro.Server.Migrations
 {
     [DbContext(typeof(Contexto))]
-    [Migration("20241119173418_Init")]
-    partial class Init
+    [Migration("20241130020205_inicial")]
+    partial class inicial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -166,6 +166,83 @@ namespace InventarioPro.Server.Migrations
                     b.HasIndex("EntradaId");
 
                     b.ToTable("EntradaDetalles");
+                });
+
+            modelBuilder.Entity("InventarioPro.Server.Models.Permiso", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("CrearCategoria")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CrearEntrada")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CrearProducto")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CrearUsuario")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EditarCategoria")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EditarEntrada")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EditarProducto")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EditarUsuario")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EliminarCategoria")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EliminarEntrada")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EliminarProducto")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EliminarUsuario")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ExportalExcel")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ExportalPdf")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("IdRol")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("VerCategoria")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("VerEntrada")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("VerEstadistica")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("VerProducto")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("VerReportes")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("VerUsuario")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Permisos");
                 });
 
             modelBuilder.Entity("InventarioPro.Server.Models.Producto", b =>
