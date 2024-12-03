@@ -18,31 +18,31 @@
     <div class="custom-dialog" style="margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: white;">
         <h3 class="text-center">@((Product.Id == 0) ? "Agregar Nuevo Producto" : "Modificar Producto")</h3>
 
-        <div style="display: flex; gap: 20px;">
-            <div style="flex: 1;">
-                <RadzenTextBox @bind-Value="Product.Nombre" Id="nombre" Placeholder="Nombre del Producto" Style="width: 100%; margin-bottom: 10px;" />
+        <div class="row">
+            <div class="col-12 col-md-8">
+                <RadzenTextBox @bind-Value="Product.Nombre" Id="nombre" Placeholder="Nombre del Producto" class="form-control mb-3" />
                 <ValidationMessage For="@(() => Product.Nombre)" />
 
-                <RadzenTextBox @bind-Value="Product.Descripcion" Id="descripcion" Placeholder="Descripción" Style="width: 100%; margin-bottom: 10px;" TextMode="TextMode.MultiLine" Rows="3" />
+                <RadzenTextBox @bind-Value="Product.Descripcion" Id="descripcion" Placeholder="Descripción" class="form-control mb-3" TextMode="TextMode.MultiLine" Rows="3" />
                 <ValidationMessage For="@(() => Product.Descripcion)" />
 
-                <RadzenDropDown @bind-Value="Product.CategoriaId" Id="categoria" Data="@categories" TextProperty="Nombre" ValueProperty="Id" Placeholder="Selecciona una Categoría" Style="width: 100%; margin-bottom: 10px;" />
+                <RadzenDropDown @bind-Value="Product.CategoriaId" Id="categoria" Data="@categories" TextProperty="Nombre" ValueProperty="Id" Placeholder="Selecciona una Categoría" class="form-control mb-3" />
                 <ValidationMessage For="@(() => Product.CategoriaId)" />
 
                 <label for="precio">Precio</label>
-                <RadzenNumeric @bind-Value="Product.Precio" Id="precio" Placeholder="Precio" Style="width: 100%; margin-bottom: 10px;" />
+                <RadzenNumeric @bind-Value="Product.Precio" Id="precio" Placeholder="Precio" class="form-control mb-3" />
                 <ValidationMessage For="@(() => Product.Precio)" />
 
                 <label for="costo">Costo</label>
-                <RadzenNumeric @bind-Value="Product.Costo" Id="costo" Placeholder="Costo" Style="width: 100%; margin-bottom: 10px;" />
+                <RadzenNumeric @bind-Value="Product.Costo" Id="costo" Placeholder="Costo" class="form-control mb-3" />
                 <ValidationMessage For="@(() => Product.Costo)" />
 
-                <RadzenTextBox @bind-Value="Product.Codigo" Id="codigo" Placeholder="Código del Producto" Style="width: 100%; margin-bottom: 10px;" />
+                <RadzenTextBox @bind-Value="Product.Codigo" Id="codigo" Placeholder="Código del Producto" class="form-control mb-3" />
                 <ValidationMessage For="@(() => Product.Codigo)" />
                 <ValidationSummary></ValidationSummary>
             </div>
 
-            <div style="flex: 0 0 300px; display: flex; flex-direction: column; align-items: center;">
+            <div class="col-12 col-md-4 d-flex flex-column align-items-center">
                 @if (string.IsNullOrEmpty(base64Image))
                 {
                     <MudIcon Icon=@Icons.Material.Filled.Inventory Style="font-size: 250px; color: #4a4848; margin-bottom: 8px;" />
@@ -52,7 +52,7 @@
                     <img src="data:image/jpeg;base64,@base64Image" alt="Imagen del Producto" style="max-width: 250px; margin-bottom: 8px;" />
                 }
 
-                <InputFile OnChange="HandleFileSelected" accept="image/*" style="width: 100%;" />
+                <InputFile OnChange="HandleFileSelected" accept="image/*" class="form-control mb-3" />
 
                 @if (!string.IsNullOrEmpty(invalidFileMessage))
                 {
@@ -62,8 +62,8 @@
         </div>
 
         <div class="d-flex justify-content-between mt-4">
-            <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Style="width: 48%;">@((Product.Id == 0) ? "Guardar Producto" : "Actualizar Producto")</MudButton>
-            <MudButton Color="Color.Secondary" OnClick="Cancel" Style="width: 48%;">Cancelar</MudButton>
+            <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" class="w-48">@((Product.Id == 0) ? "Guardar Producto" : "Actualizar Producto")</MudButton>
+            <MudButton Color="Color.Secondary" OnClick="Cancel" class="w-48">Cancelar</MudButton>
         </div>
     </div>
 </EditForm>

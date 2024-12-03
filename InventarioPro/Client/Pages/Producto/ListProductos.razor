@@ -156,7 +156,7 @@
     {
         var newProduct = new Producto_DTO(); 
         var options = new Radzen.DialogOptions { Style = "width: 900px;" };
-        var result = await DialogService.OpenAsync<FormProducto>("Agregar Nuevo Producto", new Dictionary<string, object> { { "Product", newProduct } }, options);
+        var result = await DialogService.OpenAsync<FormProducto>("", new Dictionary<string, object> { { "Product", newProduct } }, options);
 
         if (result != null)
         {
