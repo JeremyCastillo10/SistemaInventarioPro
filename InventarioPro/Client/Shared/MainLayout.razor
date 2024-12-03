@@ -18,10 +18,12 @@
             <RadzenSidebarToggle Click="@(() => leftSidebarExpanded = !leftSidebarExpanded)" />
             <RadzenLabel Text="Control de Inventario" Style="color:white;" />
             <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="25px" Style="margin-left:auto;">
-                <MudAvatar>
-                    <MudImage Src="imagenes/avatar.png"></MudImage>
-                </MudAvatar>
-                <RadzenText Text="@user?.Identity?.Name" Style="color:white;" />
+                <MudHidden SmUp>
+                    <MudAvatar>
+                        <MudImage Src="imagenes/avatar.png"></MudImage>
+                    </MudAvatar>
+                    <RadzenText Text="@user?.Identity?.Name" Style="color:white;" />
+                </MudHidden>
                 <RadzenButton Icon="logout" Click="CerrarSesion" Style="color:white; background-color:transparent;" />
             </RadzenStack>
         </RadzenStack>
