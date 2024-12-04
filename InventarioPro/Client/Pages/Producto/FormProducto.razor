@@ -31,11 +31,7 @@
 
                 <label for="precio">Precio</label>
                 <RadzenNumeric @bind-Value="Product.Precio" Id="precio" Placeholder="Precio" class="form-control mb-3" />
-                <ValidationMessage For="@(() => Product.Precio)" />
-
-                <label for="costo">Costo</label>
-                <RadzenNumeric @bind-Value="Product.Costo" Id="costo" Placeholder="Costo" class="form-control mb-3" />
-                <ValidationMessage For="@(() => Product.Costo)" />
+                <ValidationMessage For="@(() => Product.Precio)" />   
 
                 <RadzenTextBox @bind-Value="Product.Codigo" Id="codigo" Placeholder="Código del Producto" class="form-control mb-3" />
                 <ValidationMessage For="@(() => Product.Codigo)" />

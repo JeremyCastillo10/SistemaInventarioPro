@@ -59,7 +59,9 @@
                                                     Filterable="true"
                                                     AllowClear="true"
                                                     AriaLabel="Buscar producto"
-                                                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" />
+                                                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                                    Change="OnProductoChange" />
+
                         </div>
 
                         <div class="col-md-3 col-sm-6">
@@ -229,6 +231,7 @@
         }
     }
 
+
     private async void RemoveDetalle(VentaDetalle_DTO detalle)
     {
         if (venta.Id == 0)
@@ -286,9 +289,9 @@
                 exportarVentaPDF();
 
             }
-
-
             Cancel();
+            DialogService.Close(venta);
+            StateHasChanged();
         }
         else
         {
@@ -296,7 +299,25 @@
         }
     }
 
+    private void OnProductoChange(object value)
+    {
+        // Obtén el Id del producto seleccionado
+        int productoId = Convert.ToInt32(value);
 
+        // Busca el producto en la lista
+        var productoSeleccionado = productos.FirstOrDefault(p => p.Id == productoId);
+
+        if (productoSeleccionado != null)
+        {
+            // Asigna el precio del producto seleccionado
+            nuevoDetalle.Precio = productoSeleccionado.Precio;
+
+            // Si quieres asignar automáticamente una cantidad inicial, puedes hacerlo aquí
+            // nuevoDetalle.Cantidad = 1;
+        }
+
+        StateHasChanged(); // Refresca la interfaz para reflejar el cambio
+    }
     public async Task exportarVentaPDF()
     {
         if (venta == null)

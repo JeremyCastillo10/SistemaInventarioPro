@@ -6,6 +6,7 @@
 @using Radzen
 @inject HttpClient Http
 @inject Radzen.DialogService DialogService
+@inject NavigationManager navi
 @using System.ComponentModel.DataAnnotations
 
 
@@ -50,10 +51,10 @@
                             <ValidationMessage For="@(() => entradaDetalle_DTO.Cantidad)" class="text-danger" />
                         </div>
                         <div class="col-md-3 col-sm-6">
-                            <label>Precio</label>
-                            <RadzenNumeric TValue="decimal" Placeholder="Precio" @bind-Value="entradaDetalle_DTO.Precio"
+                            <label>Costo</label>
+                            <RadzenNumeric TValue="decimal" Placeholder="Costo" @bind-Value="entradaDetalle_DTO.Costo"
                                 Class="form-control" />
-                            <ValidationMessage For="@(() => entradaDetalle_DTO.Precio)" class="text-danger" />
+                            <ValidationMessage For="@(() => entradaDetalle_DTO.Costo)" class="text-danger" />
                         </div>
                     </div>
                     <div class="d-flex justify-content-end mb-3">
@@ -68,7 +69,7 @@
                                 <tr>
                                     <th scope="col">Producto</th>
                                     <th scope="col">Cantidad</th>
-                                    <th scope="col">Precio</th>
+                                    <th scope="col">Costo</th>
                                     <th scope="col">Subtotal</th> <!-- Nueva columna para las acciones -->
                                     <th scope="col">Acciones</th>
                                 </tr>
@@ -83,7 +84,7 @@
                                          <tr style="height: 40px;">
                                                 <td>@producto?.Nombre</td>
                                                 <td>@item.Cantidad</td>
-                                                <td>@item.Precio.ToString("C")</td> <!-- Formato de moneda -->
+                                                <td>@item.Costo.ToString("C")</td> <!-- Formato de moneda -->
                                                 <td>@item.SubMontoTotal</td> <!-- Formato de moneda -->
                                                 <td>
                                                     <!-- Botón de eliminar en rojo -->
@@ -139,7 +140,7 @@
 
     private async Task HandleValidSubmit()
     {
-       
+
         entrada_DTO.entradaDetalle_DTO = listentradaDetalle_DTO;
         var response = await Http.PostAsJsonAsync("api/entrada", entrada_DTO);
 
@@ -156,27 +157,28 @@
             entrada_DTO = new Entrada_DTO();
             listentradaDetalle_DTO = new List<EntradaDetalle_DTO>();
             total = 0;
-
+            StateHasChanged();
         }
         else
         {
             await ShowAlert("Error","No se puedo enviar el dato corretamente ", SweetAlertIcon.Error);
         }
+        navi.NavigateTo("/ListaEntrada");
 
     }
 
     private void AgregarEntrada()
     {
 
-        if (entradaDetalle_DTO.IdProducto > 0 && entradaDetalle_DTO.Cantidad > 0 && entradaDetalle_DTO.Precio > 0)
+        if (entradaDetalle_DTO.IdProducto > 0 && entradaDetalle_DTO.Cantidad > 0 && entradaDetalle_DTO.Costo > 0)
         {
             var item = listentradaDetalle_DTO.FirstOrDefault(p => p.IdProducto == entradaDetalle_DTO.IdProducto);
             if (item == null)
             {
-                entradaDetalle_DTO.SubMontoTotal = entradaDetalle_DTO.Cantidad * entradaDetalle_DTO.Precio;
+                entradaDetalle_DTO.SubMontoTotal = entradaDetalle_DTO.Cantidad * entradaDetalle_DTO.Costo;
                 listentradaDetalle_DTO.Add(entradaDetalle_DTO);
 
-                entrada_DTO.MontoTotal += entradaDetalle_DTO.Cantidad*entradaDetalle_DTO.Precio;
+                entrada_DTO.MontoTotal += entradaDetalle_DTO.Cantidad * entradaDetalle_DTO.Costo;
                 entradaDetalle_DTO = new EntradaDetalle_DTO();
 
                 
@@ -186,7 +188,7 @@
         }
         else
         { 
-            if (entradaDetalle_DTO.IdProducto <= 0 && entradaDetalle_DTO.Cantidad <= 0 && entradaDetalle_DTO.Precio <= 0)
+            if (entradaDetalle_DTO.IdProducto <= 0 && entradaDetalle_DTO.Cantidad <= 0 && entradaDetalle_DTO.Costo <= 0)
             {
                 ShowAlert("Informacion", "Tiene que llenar todo los datos para agregar una entrada ", SweetAlertIcon.Info);
             }
@@ -198,7 +200,7 @@
             {
                 ShowAlert("Informacion", "Tiene que colocar la cantidad ", SweetAlertIcon.Info);
             }
-            else if (entradaDetalle_DTO.Precio <= 0)
+            else if (entradaDetalle_DTO.Costo <= 0)
             {
                 ShowAlert("Informacion", "Tiene que colocar el precio ", SweetAlertIcon.Info);
             }

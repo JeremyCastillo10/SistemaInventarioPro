@@ -41,10 +41,15 @@ namespace InventarioPro.Server.Controllers
                             EntradaId = item.EntradaId,
                             IdProducto = item.IdProducto,
                             Cantidad = item.Cantidad,
-                            Precio = item.Precio,
+                            Costo = item.Costo,
 
                         });
+                        //decimal costoPonderado = (decimal)(((productoExistente.Costo * productoExistente.Existencia) +
+                        //                              (item.Costo * item.Cantidad)) /
+                        //                             (productoExistente.Existencia + item.Cantidad));
 
+                        //// Actualizar el producto con el nuevo costo ponderado
+                        //productoExistente.Costo = costoPonderado;
                     }
 
                     entrada.entradaDetalle = listEntradadestalle;
@@ -68,7 +73,7 @@ namespace InventarioPro.Server.Controllers
                             EntradaId = item.EntradaId,
                             IdProducto = item.IdProducto,
                             Cantidad = item.Cantidad,
-                            Precio = item.Precio,
+                            Costo = item.Costo,
 
                         });
 
@@ -121,8 +126,8 @@ namespace InventarioPro.Server.Controllers
                         EntradaId = entradadetalle.EntradaId,
                         IdProducto = entradadetalle.IdProducto,
                         Cantidad = entradadetalle.Cantidad,
-                        Precio = entradadetalle.Precio,
-                        SubMontoTotal = entradadetalle.Cantidad * entradadetalle.Precio,
+                        Costo = entradadetalle.Costo,
+                        SubMontoTotal = entradadetalle.Cantidad * entradadetalle.Costo,
 
                     };
                     listEntradadetaller_Dto.Add(entradaDetalle_dto);
@@ -145,25 +150,34 @@ namespace InventarioPro.Server.Controllers
         {
             try
             {
-
                 foreach (var item in entradaDetalle_DTO)
                 {
                     var producto = await _db.Productos.FindAsync(item.IdProducto);
-                    producto.Existencia += item.Cantidad;
-                    producto.FechaActualizacion = DateTime.Now;
-                }
 
+                    if (producto != null)
+                    {
+                        // Cálculo del costo ponderado
+                        decimal nuevoCostoPonderado = (decimal)(((producto.Costo * producto.Existencia) + (item.Costo * item.Cantidad)) /
+                                                      (producto.Existencia + item.Cantidad));
+
+                        // Actualizar datos del producto
+                        producto.Costo = nuevoCostoPonderado;
+                        producto.Existencia += item.Cantidad;
+                        producto.FechaActualizacion = DateTime.Now;
+                    }
+                }
 
                 await _db.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                // Aquí puedes loggear el error o revisarlo en tiempo de ejecución
                 Console.WriteLine(ex.Message);
-                return -1; // O cualquier código de error que prefieras
+                return -1; // Código de error
             }
+
             return 0;
         }
+
 
     }
 }
