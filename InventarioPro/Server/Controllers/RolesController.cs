@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace InventarioPro.Server.Controllers
 {
@@ -110,8 +111,60 @@ namespace InventarioPro.Server.Controllers
             var roles = await _userManager.GetRolesAsync(usuario);
             return Ok(roles);
         }
+        [HttpGet("GetPermiso/{IdRol}")]
+        public async Task<IActionResult> GetPermiso(string IdRol)
+        {
+            Console.WriteLine($"IdRol recibido: '{IdRol}'");
 
-        // Obtener todos los roles existentes en el sistema
+            var rolesExistentes = await _db.Permisos
+                .Select(p => p.IdRol)
+                .ToListAsync();
+
+            Console.WriteLine("Roles existentes en la base de datos:");
+            foreach (var rol in rolesExistentes)
+            {
+                Console.WriteLine($"'{rol}'");
+            }
+
+            var permiso = await _db.Permisos
+                .Where(p => p.IdRol.ToLower().Trim() == IdRol.ToLower().Trim())
+                .Select(p => new Permiso_DTO
+                {
+                    Id = p.Id,
+                    IdRol = p.IdRol,
+                    VerEstadistica = p.VerEstadistica,
+                    VerReportes = p.VerReportes,
+                    ExportalExcel = p.ExportalExcel,
+                    ExportalPdf = p.ExportalPdf,
+                    CrearEntrada = p.CrearEntrada,
+                    EditarEntrada = p.EditarEntrada,
+                    VerEntrada = p.VerEntrada,
+                    EliminarEntrada = p.EliminarEntrada,
+                    CrearProducto = p.CrearProducto,
+                    VerProducto = p.VerProducto,
+                    EditarProducto = p.EditarProducto,
+                    EliminarProducto = p.EliminarProducto,
+                    CrearCategoria = p.CrearCategoria,
+                    VerCategoria = p.VerCategoria,
+                    EditarCategoria = p.EditarCategoria,
+                    EliminarCategoria = p.EliminarCategoria,
+                    CrearUsuario = p.CrearUsuario,
+                    VerUsuario = p.VerUsuario,
+                    EditarUsuario = p.EditarUsuario,
+                    EliminarUsuario = p.EliminarUsuario
+                })
+                .FirstOrDefaultAsync();
+
+            if (permiso == null)
+            {
+                return NotFound(new { Message = $"No se encontró un permiso para el IdRol: '{IdRol}'" });
+            }
+
+            return Ok(permiso);
+        }
+
+
+
         [HttpGet("GetAllRoles")]
         public IActionResult GetAllRoles()
         {
