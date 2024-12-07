@@ -22,9 +22,10 @@
 <PageTitle>Entrada de Productos</PageTitle>
 
 <div class="header">
-    <h2>Entrada de Productosa</h2>
-    <RadzenButton Text="Nueva Entrada"  Click="OpenAddProductDialog"  Style="margin-bottom: 10px;" />
+    <h2>Entrada de Productos</h2>
+    <RadzenButton Text="Nueva Entrada" Click="OpenAddProductDialog" Style="margin-bottom: 10px;" />
 </div>
+
 <!-- Contenedor para el formulario de búsqueda -->
 <div class="mb-3">
     <label>Fecha Inicio:</label>
@@ -35,28 +36,78 @@
 
     <RadzenButton Text="Buscar" Icon="search" Click="FiltrarPorFecha" ButtonStyle="ButtonStyle.Primary" Style="margin-left: 10px;" />
 </div>
+
 <RadzenButton Text="Exportar a Excel" Click="exportarEntradasExcel" Icon="folder_open" />
 <RadzenButton Text="Exportar a PDF" Click="ExportarEntradasPDF" Icon="picture_as_pdf" />
 
-<!-- RadzenDataGrid -->
 <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true"
-                AllowSorting="true" PageSize="5" AllowPaging="true" Data="@listentrada_DTO2" ColumnWidth="300px" ShowPagingSummary="true">
+                AllowSorting="true" PageSize="5" AllowPaging="true" Data="@listentrada_DTO"
+                ColumnWidth="300px" ShowPagingSummary="true">
     <Columns>
-        <!-- Columna de Fecha usando @nameof -->
-        <RadzenDataGridColumn Property="@nameof(Entrada_DTO.Fecha)" Title="Fecha" Width="160px" />
+        <!-- Columna de Fecha -->
+        <RadzenDataGridColumn Property="Fecha" Title="Fecha" Width="160px" />
 
-        <!-- Columna de Monto Total usando @nameof -->
-        <RadzenDataGridColumn Property="@nameof(Entrada_DTO.MontoTotal)" Title="Monto Total" Width="200px" />
+        <!-- Columna de Monto Total -->
+        <RadzenDataGridColumn Property="MontoTotal" Title="Monto Total" Width="200px">
+            <Template Context="entrada">
+                @String.Format("RD$ {0:N2}", entrada.MontoTotal)
+            </Template>
+        </RadzenDataGridColumn>
+
+        <!-- Columna de Producto -->
+        <RadzenDataGridColumn Title="Producto" Width="200px">
+            <Template Context="entrada">
+                @foreach (var productoDetalle in entrada.entradaDetalle_DTO)
+                {
+                    // Buscar el producto por su IdProducto
+                    var producto = productos.FirstOrDefault(p => p.Id == productoDetalle.IdProducto);
+                    if (producto != null)
+                    {
+                        <div>@producto.Nombre</div>
+                    }
+                    else
+                    {
+                        <div>Producto no encontrado</div>
+                    }
+                }
+            </Template>
+        </RadzenDataGridColumn>
+
+        <!-- Columna de Cantidad -->
+        <RadzenDataGridColumn Title="Cantidad" Width="150px">
+            <Template Context="entrada">
+                @foreach (var productoDetalle in entrada.entradaDetalle_DTO)
+                {
+                    <div>@productoDetalle.Cantidad</div>
+                }
+            </Template>
+        </RadzenDataGridColumn>
+
+        <!-- Columna de Costo -->
+        <RadzenDataGridColumn Title="Costo" Width="150px">
+            <Template Context="entrada">
+                @foreach (var productoDetalle in entrada.entradaDetalle_DTO)
+                {
+                    // Buscar el producto por su IdProducto
+                    var producto = productos.FirstOrDefault(p => p.Id == productoDetalle.IdProducto);
+                    if (producto != null)
+                    {
+                        <div>@String.Format("RD$ {0:N2}", producto.Costo)</div> <!-- Muestra el costo formateado como moneda -->
+                    }
+                    else
+                    {
+                        <div>No disponible</div>
+                    }
+                }
+            </Template>
+        </RadzenDataGridColumn>
 
         <!-- Columna de Acciones -->
         <RadzenDataGridColumn Width="200px" Title="Acciones">
-            <Template Context="entrada_DTO">
-                <!-- Botón Editar -->
-                <button class="btn btn-warning btn-sm" @onclick="() => EditarEntrada(entrada_DTO.Id)" style="margin-right: 10px;">
+            <Template Context="entrada">
+                <button class="btn btn-warning btn-sm" @onclick="() => EditarEntrada(entrada.Id)" style="margin-right: 10px;">
                     <i class="bi bi-pencil"></i> Editar
                 </button>
-
-                <!-- Botón Eliminar -->
                 <button class="btn btn-danger btn-sm" @onclick="() => EliminarEntrada()">
                     <i class="bi bi-trash"></i> Eliminar
                 </button>
@@ -64,7 +115,6 @@
         </RadzenDataGridColumn>
     </Columns>
 </RadzenDataGrid>
-
 
 <style>
     .header {
@@ -84,11 +134,13 @@
     }
 </style>
 
+
+
 @code {
 
-    private List<Entradass> Entradas = new List<Entradass>();
+    private List<Entrada_DTO> Entradas = new List<Entrada_DTO>();
     private Entrada_DTO entrada_DTO = new Entrada_DTO();
-    private Entradass NuevaEntrada = new Entradass();
+    private Entrada_DTO NuevaEntrada = new Entrada_DTO();
     private List<Entrada_DTO> listentrada_DTO = new List<Entrada_DTO>();
     private List<Entrada_DTO> listentrada_DTO2 = new List<Entrada_DTO>();
     private DateTime? fechaInicio;
@@ -103,9 +155,8 @@
     {
         try
         {
-            var response = await Http.GetAsync("api/entrada/getentrada");
-            response.EnsureSuccessStatusCode(); 
-            listentrada_DTO = await response.Content.ReadFromJsonAsync<List<Entrada_DTO>>();
+            listentrada_DTO = await Http.GetFromJsonAsync<List<Entrada_DTO>>("api/entrada/getentrada");
+
             listentrada_DTO2 = listentrada_DTO;
 
             var empresaResponse = await Http.GetAsync("api/empresa/1");
@@ -201,6 +252,25 @@
         {
             Console.WriteLine($"Error al obtener productos: {ex.Message}");
         }
+    }
+    // Función que devuelve una lista de productos con el detalle de la cantidad
+    private List<(int IdProducto, string NombreProducto)> ObtenerDetallesProductos()
+    {
+        var detalles = new List<(int, string)>();
+
+        foreach (var entrada in listentrada_DTO)
+        {
+            foreach (var detalle in entrada.entradaDetalle_DTO)
+            {
+                var producto = productos.FirstOrDefault(p => p.Id == detalle.IdProducto);
+                if (producto != null && !detalles.Any(d => d.Item1 == producto.Id))
+                {
+                    detalles.Add((producto.Id, producto.Nombre));
+                }
+            }
+        }
+
+        return detalles;
     }
     // Método para cerrar el formulario
     private void CerrarFormulario()
@@ -337,18 +407,12 @@
                     .SetMarginBottom(25);
                 doc.Add(fechaExportacion);
 
-                Table table = new Table(6, true); // 6 columnas
+                Table table = new Table(5, true); // 5 columnas (sin Monto Total)
                 table.SetWidthPercent(100);
                 table.SetMarginBottom(30);
 
                 // Cabeceras de tabla
                 table.AddHeaderCell(new Cell().Add(new Paragraph("Fecha"))
-                    .SetBackgroundColor(new DeviceRgb(173, 216, 230))
-                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                    .SetBold()
-                    .SetFontColor(new DeviceRgb(255, 255, 255))
-                    .SetPadding(10));
-                table.AddHeaderCell(new Cell().Add(new Paragraph("Monto Total"))
                     .SetBackgroundColor(new DeviceRgb(173, 216, 230))
                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
                     .SetBold()
@@ -382,56 +446,52 @@
                 decimal totalEntradas = 0;
 
                 // Escribir filas de entradas
-                foreach (var entrada in listentrada_DTO2) // 'entradas' es tu lista de entradas
-            {
-                    // Verifica si es la primera vez que estás añadiendo la fila de la entrada (para fecha y monto total)
+                foreach (var entrada in listentrada_DTO2)
+                {
+                    // Verifica si es la primera vez que estás añadiendo la fila de la entrada (para fecha)
                     bool esPrimeraEntrada = true;
 
-                    foreach (var detalle in entrada.entradaDetalle_DTO) // Itera sobre los detalles de cada entrada
+                    foreach (var detalle in entrada.entradaDetalle_DTO)
                     {
-                        // Solo agregar fecha y monto total en la primera iteración de los detalles de la entrada
+                        // Solo agregar fecha en la primera iteración de los detalles de la entrada
                         if (esPrimeraEntrada)
                         {
                             table.AddCell(new Cell().Add(new Paragraph(entrada.Fecha.ToString("dd/MM/yyyy")))
                                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
                                 .SetPadding(10));
-                            table.AddCell(new Cell().Add(new Paragraph(entrada.MontoTotal.ToString("C")))
-                                .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                                .SetPadding(10));
-                            esPrimeraEntrada = false; // Después de la primera iteración, marca que ya no es la primera
+                            esPrimeraEntrada = false;
                         }
                         else
                         {
-                            // Si no es la primera entrada, agregar celdas vacías para la fecha y monto total
-                            table.AddCell(new Cell().Add(new Paragraph("")).SetPadding(10));
+                            // Si no es la primera entrada, agregar celda vacía para la fecha
                             table.AddCell(new Cell().Add(new Paragraph("")).SetPadding(10));
                         }
+
                         Producto_DTO producto = productos.FirstOrDefault(p => p.Id == detalle.IdProducto);
                         string nombreProducto = producto?.Nombre ?? "Producto no encontrado";
+
                         // Añadir los detalles de la entrada (Producto, Cantidad, Precio, Sub Monto Total)
                         table.AddCell(new Cell().Add(new Paragraph(nombreProducto))
-    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-    .SetPadding(10));
+                            .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+                            .SetPadding(10));
                         table.AddCell(new Cell().Add(new Paragraph(detalle.Cantidad.ToString()))
                             .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
                             .SetPadding(10));
-                        table.AddCell(new Cell().Add(new Paragraph(detalle.Costo.ToString("C")))
+                        table.AddCell(new Cell().Add(new Paragraph($"RD$ {detalle.Costo.ToString("N2")}")
                             .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                            .SetPadding(10));
-                        table.AddCell(new Cell().Add(new Paragraph(detalle.SubMontoTotal?.ToString("C") ?? "N/A"))
+                            .SetPadding(10)));
+                        table.AddCell(new Cell().Add(new Paragraph($"RD$ {detalle.SubMontoTotal?.ToString("N2") ?? "N/A"}")
                             .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                            .SetPadding(10));
-                            entrada.MontoTotal = Convert.ToDecimal(detalle.SubMontoTotal);
-                        totalEntradas += entrada.MontoTotal;
+                            .SetPadding(10)));
 
+                        // Sumar el SubMontoTotal al total de las entradas
+                        totalEntradas += detalle.SubMontoTotal ?? 0;
                     }
-
                 }
-
 
                 doc.Add(table);
 
-                Paragraph total = new Paragraph($"Total General: {totalEntradas:C}")
+                Paragraph total = new Paragraph($"Total General: RD$ {totalEntradas.ToString("N2")}")
                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
                     .SetFontSize(14)
                     .SetBold()

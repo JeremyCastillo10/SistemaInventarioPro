@@ -148,7 +148,6 @@ namespace InventarioPro.Server.Controllers
         public async Task<ActionResult<ResumenVentasDTO>> GetResumenVentas()
         {
             var totalVentas = await _db.Ventas.CountAsync(v => v.Eliminado != true);
-
             var numeroDeTransacciones = await _db.VentaDetalles
                 .Where(vd => vd.Eliminado != true)
                 .CountAsync();
@@ -159,26 +158,64 @@ namespace InventarioPro.Server.Controllers
                     .AverageAsync(v => v.MontoTotal.Value)
                 : 0;
 
-            var ventasCanceladas = await _db.Ventas.CountAsync(v => v.Eliminado != true && v.MontoTotal == null); // Ejemplo de criterio
-
-            var devoluciones = await _db.VentaDetalles
-                .Where(vd => vd.Eliminado != true && vd.Cantidad < 0) // Si la cantidad es negativa, se trata como devolución
-                .CountAsync();
-
             var ultimaVenta = await _db.Ventas
                 .Where(v => v.Eliminado != true && v.MontoTotal.HasValue)
                 .OrderBy(v => v.Fecha)
                 .Select(v => v.MontoTotal)
                 .FirstOrDefaultAsync();
 
+            // Ventas promedio por día en el mes actual
+            var ventasPromedioPorDia = await _db.Ventas
+                .Where(v => v.Fecha.Month == DateTime.Now.Month && v.Eliminado != true)
+                .SumAsync(v => v.MontoTotal ?? 0) / DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+
+            // Ventas totales en el último mes
+            var ventasTotalesUltimoMes = await _db.Ventas
+                .Where(v => v.Fecha.Month == DateTime.Now.AddMonths(-1).Month && v.Eliminado != true)
+                .SumAsync(v => v.MontoTotal ?? 0);
+
+            // Promedio de ventas por transacción
+            var ventasPromedioPorTransaccion = totalVentas > 0
+                ? await _db.Ventas
+                    .Where(v => v.Eliminado != true && v.MontoTotal.HasValue)
+                    .AverageAsync(v => v.MontoTotal.Value)
+                : 0;
+
+            // Ventas acumuladas desde el inicio del año
+            var ventasAcumuladasYTD = await _db.Ventas
+                .Where(v => v.Fecha.Year == DateTime.Now.Year && v.Eliminado != true)
+                .SumAsync(v => v.MontoTotal ?? 0);
+
+            // Producto más vendido (ID del producto más vendido)
+            var productoMasVendidoId = await _db.VentaDetalles
+                .Where(vd => vd.Eliminado != true)
+                .GroupBy(vd => vd.IdProducto)
+                .OrderByDescending(g => g.Count())
+                .Select(g => g.Key)
+                .FirstOrDefaultAsync();
+
+            // Obtener el nombre del producto más vendido usando su ID
+            var productoMasVendido = await _db.Productos
+                .Where(p => p.Id == productoMasVendidoId && p.Eliminado != true)
+                .Select(p => p.Nombre)
+                .FirstOrDefaultAsync();
+            // Total de productos vendidos
+            var totalProductosVendidos = await _db.VentaDetalles
+                .Where(vd => vd.Eliminado != true)
+                .SumAsync(vd => vd.Cantidad);
+
             var resumen = new ResumenVentasDTO
             {
                 TotalVentas = totalVentas,
                 NumeroDeTransacciones = numeroDeTransacciones,
                 PromedioPorVenta = promedioPorVenta,
-                VentasCanceladas = ventasCanceladas,
-                Devoluciones = devoluciones,
-                UltimaVenta = ultimaVenta
+                UltimaVenta = ultimaVenta,
+                VentasPromedioPorDia = ventasPromedioPorDia,
+                VentasTotalesUltimoMes = ventasTotalesUltimoMes,
+                VentasPromedioPorTransaccion = ventasPromedioPorTransaccion,
+                VentasAcumuladasYTD = ventasAcumuladasYTD,
+                TotalProductosVendidos = totalProductosVendidos,
+                ProductoMasVendido = productoMasVendido // Aquí se incluye el nombre del producto más vendido
             };
 
             return Ok(resumen);

@@ -140,32 +140,43 @@
 
     private async Task HandleValidSubmit()
     {
-
-        entrada_DTO.entradaDetalle_DTO = listentradaDetalle_DTO;
-        var response = await Http.PostAsJsonAsync("api/entrada", entrada_DTO);
-
-
-
-
-
-
-        var response2 = Http.PutAsJsonAsync("api/entrada/modificarproducto", listentradaDetalle_DTO);
-
-        if (response.IsSuccessStatusCode)
+        try
         {
-            await ShowAlert("Éxito", entrada_DTO.Id == 0 ? "La entrada creado con éxito!" : "La entrada actualizado con éxito!", SweetAlertIcon.Success);
-            entrada_DTO = new Entrada_DTO();
-            listentradaDetalle_DTO = new List<EntradaDetalle_DTO>();
-            total = 0;
-            StateHasChanged();
-        }
-        else
-        {
-            await ShowAlert("Error","No se puedo enviar el dato corretamente ", SweetAlertIcon.Error);
-        }
-        navi.NavigateTo("/ListaEntrada");
+            // Asigna los detalles a la DTO principal
+            entrada_DTO.entradaDetalle_DTO = listentradaDetalle_DTO;
 
+            // Realiza las solicitudes HTTP
+            var response = await Http.PostAsJsonAsync("api/entrada", entrada_DTO);
+            var response2 = await Http.PutAsJsonAsync("api/entrada/modificarproducto", listentradaDetalle_DTO);
+
+            // Verifica si la respuesta fue exitosa
+            if (response.IsSuccessStatusCode)
+            {
+                await ShowAlert("Éxito", entrada_DTO.Id == 0 ? "¡Entrada creada con éxito!" : "¡Entrada actualizada con éxito!", SweetAlertIcon.Success);
+
+                // Resetea los datos
+                entrada_DTO = new Entrada_DTO();
+                listentradaDetalle_DTO = new List<EntradaDetalle_DTO>();
+                total = 0;
+                DialogService.Close(entrada_DTO);
+                StateHasChanged();
+
+
+            }
+            else
+            {
+                await ShowAlert("Error", "No se pudo enviar el dato correctamente.", SweetAlertIcon.Error);
+            }
+            navi.NavigateTo("/ListaEntrada");
+
+        }
+        catch (Exception ex)
+        {
+            // Manejo del error
+            await ShowAlert("Error", $"Ocurrió un error: {ex.Message}", SweetAlertIcon.Error);
+        }
     }
+
 
     private void AgregarEntrada()
     {

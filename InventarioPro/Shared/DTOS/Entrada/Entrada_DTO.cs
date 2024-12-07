@@ -11,7 +11,7 @@ namespace InventarioPro.Shared.DTOS.Entrada
         {
 
                 public int Id { get; set; }
-                public DateTime Fecha { get; set; }
+        public DateTime Fecha { get; set; } = DateTime.Now;
                 public decimal MontoTotal { get; set; }
 
                 public virtual ICollection<EntradaDetalle_DTO> entradaDetalle_DTO { get; set; } = new List<EntradaDetalle_DTO>();
