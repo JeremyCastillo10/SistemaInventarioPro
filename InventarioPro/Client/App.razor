@@ -1,6 +1,7 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
+
 <Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
@@ -13,13 +14,13 @@
         </LayoutView>
     </NotFound>
 </Router>
-@code{
-     protected override async Task OnInitializedAsync()
+
+@code {
+    protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
-        // Si el usuario no está autenticado, redirigimos a login
         if (!user.Identity.IsAuthenticated)
         {
             Navigation.NavigateTo("/login");

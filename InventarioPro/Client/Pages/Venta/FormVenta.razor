@@ -2,12 +2,14 @@
 @using InventarioPro.Shared.DTOS.Producto
 @using InventarioPro.Shared.DTOS.Venta
 @using System.Globalization
+@using Radzen
 @using iText.IO.Image
 @using iText.Kernel.Geom
 @using iText.Kernel.Pdf
 @using iText.Layout
 @using iText.Layout.Borders
 @using iText.Layout.Element
+@using iText.Layout.Properties
 @inject HttpClient Http
 @inject Radzen.DialogService DialogService
 @inject SweetAlertService swal
@@ -16,47 +18,118 @@
 
 <EditForm Model="@venta" OnValidSubmit="HandleValidSubmit">
     <DataAnnotationsValidator />
-    <div style="padding: 20px;">
-        <RadzenDatePicker @bind-Value="venta.Fecha" DateFormat="dd/MM/yyyy" Placeholder="Fecha" Style="width: 100%; margin-bottom: 10px;" />
-        <RadzenTextBox @bind-Value="venta.Nombre" Placeholder="Nombre del Cliente" Style="width: 100%; margin-bottom: 10px;" />
-        <RadzenTextBox @bind-Value="venta.Cedula" Placeholder="Cédula del Cliente" Style="width: 100%; margin-bottom: 10px;" />
+    <div class="modal show d-block pad" style="background-color: rgba(0, 0, 0, 0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content p-3">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Venta</h5>
+                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Click="Cancel" />
+                </div>
+                <div class="modal-body">
+                    <div class="form-group mb-3">
+                        <label>Fecha</label>
+                        <RadzenDatePicker @bind-Value="venta.Fecha" DateFormat="dd/MM/yyyy" Placeholder="Fecha"
+                                          Style="width: 100%;" />
+                        <ValidationMessage For="@( () => venta.Fecha)" class="text-danger" />
+                    </div>
 
-        <h5 class="badge-success">DETALLES DE LA VENTA:</h5>
+                    <div class="form-group mb-3">
+                        <label>Nombre del Cliente</label>
+                        <RadzenTextBox @bind-Value="venta.Nombre" Placeholder="Nombre del Cliente" Style="width: 100%;" />
+                        <ValidationMessage For="@( () => venta.Nombre)" class="text-danger" />
+                    </div>
 
-        <div class="form-group d-flex align-items-center" style="gap: 10px;">
-            <RadzenDropDown @bind-Value="nuevoDetalle.IdProducto" Data="@productos" TextProperty="Nombre" ValueProperty="Id" Placeholder="Seleccionar Producto" Style="flex: 1;" />
-            <label for="costo">Cantidad:</label>
-            <RadzenNumeric @bind-Value="nuevoDetalle.Cantidad" Placeholder="Cantidad" Style="flex: 1;" />
-            <label for="costo">Precio:</label>
-            <RadzenNumeric @bind-Value="nuevoDetalle.Precio" Placeholder="Precio" Style="flex: 1;" Decimal="true" />
-            <button class="btn btn-secondary" type="button" @onclick="AddDetalle">Agregar</button>
-        </div>
+                    <div class="form-group mb-3">
+                        <label>Cédula del Cliente</label>
+                        <RadzenTextBox @bind-Value="venta.Cedula" Placeholder="Cédula del Cliente" Style="width: 100%;" />
+                        <ValidationMessage For="@( () => venta.Cedula)" class="text-danger" />
+                    </div>
 
-        <RadzenDataGrid AllowSorting="true" PageSize="5" AllowPaging="true" Data="@detalles.Where(d => !d.Eliminado)">
-            <Columns>
-                <RadzenDataGridColumn Property="@nameof(VentaDetalle_DTO.Cantidad)" Title="Cantidad" />
-                <RadzenDataGridColumn Property="@nameof(VentaDetalle_DTO.Precio)" Title="Precio" />
-                <RadzenDataGridColumn Title="Producto">
-                    <Template Context="data">
-                        @((productos.FirstOrDefault(p => p.Id == data.IdProducto)?.Nombre) ?? "Sin Producto")
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn Title="Acciones">
-                    <Template Context="data">
-                        <button class="btn btn-danger" type="button" @onclick="@(() => RemoveDetalle(data))">Remover</button>
-                    </Template>
-                </RadzenDataGridColumn>
-            </Columns>
-        </RadzenDataGrid>
+                    <h5 class="badge-success">DETALLES DE LA VENTA:</h5>
 
-        <h5 class="mt-3">Monto Total: @MontoTotal</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-3 col-sm-6">
+                            <label>Producto</label>
+                            <RadzenDropDownDataGrid Placeholder="Producto"
+                                                    TextProperty="Nombre"
+                                                    ValueProperty="Id"
+                                                    Data="@productos"
+                                                    @bind-Value="nuevoDetalle.IdProducto"
+                                                    Class="form-select form-control-lg"
+                                                    Style="border-radius: .375rem; font-size: 14px; padding: .5rem; background-color: #f8f9fa;"
+                                                    Filterable="true"
+                                                    AllowClear="true"
+                                                    AriaLabel="Buscar producto"
+                                                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                                    Change="OnProductoChange" />
 
-        <div class="d-flex justify-content-between mt-4">
-            <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Guardar Venta" />
-            <RadzenButton Text="Cancelar" Click="Cancel" />
+                        </div>
+
+                        <div class="col-md-3 col-sm-6">
+                            <label>Cantidad</label>
+                            <RadzenNumeric @bind-Value="nuevoDetalle.Cantidad" Placeholder="Cantidad" Class="form-control" />
+                        </div>
+
+                        <div class="col-md-3 col-sm-6">
+                            <label>Precio</label>
+                            <RadzenNumeric @bind-Value="nuevoDetalle.Precio" Placeholder="Precio" Class="form-control" Decimal="true" />
+                        </div>
+
+                        <div class="col-md-3 col-sm-6 d-flex align-items-end">
+                            <button class="btn btn-secondary" type="button" @onclick="AddDetalle">Agregar</button>
+                        </div>
+                    </div>
+
+                    <!-- Tabla para mostrar los detalles de la venta -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover"
+                               style="width: 100%; border-collapse: separate; border-spacing: 0 10px;">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th scope="col">Producto</th>
+                                    <th scope="col">Cantidad</th>
+                                    <th scope="col">Precio</th>
+                                    <th scope="col">Acciones</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <!-- Itera sobre la lista de detalles de la venta -->
+                                @foreach (var item in detalles)
+                                {
+                                    var producto = productos.FirstOrDefault(p => p.Id == item.IdProducto);
+
+                                    <tr style="height: 40px;">
+                                        <td>@producto?.Nombre</td>
+                                        <td>@item.Cantidad</td>
+                                        <td>@item.Precio.ToString("C")</td> <!-- Formato de moneda -->
+                                        <td>
+                                            <!-- Botón de eliminar en rojo -->
+                                            <button type="button" @onclick="() => RemoveDetalle(item)"
+                                                    class="btn btn-danger btn-sm">
+                                                Eliminar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-2">
+                        <h5>Total: @MontoTotal.ToString("C")</h5>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-center gap-2 mt-4 mb-2">
+                    <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Secondary" Click="Cancel" />
+                    <RadzenButton Text="Guardar Venta" ButtonType="Radzen.ButtonType.Submit" ButtonStyle="ButtonStyle.Primary" />
+                </div>
+            </div>
         </div>
     </div>
 </EditForm>
+
 
 
 @code {
@@ -96,7 +169,7 @@
             venta.Fecha = ventaDetails.Fecha;
             venta.MontoTotal = ventaDetails.MontoTotal;
 
-            StateHasChanged(); 
+            StateHasChanged();
         }
         else
         {
@@ -144,7 +217,7 @@
 
                 nuevoDetalle = new VentaDetalle_DTO();
 
-                StateHasChanged(); 
+                StateHasChanged();
             }
             else
             {
@@ -159,24 +232,25 @@
         }
     }
 
+
     private async void RemoveDetalle(VentaDetalle_DTO detalle)
     {
-        if (venta.Id == 0) 
+        if (venta.Id == 0)
         {
             detalles.Remove(detalle);
-            detalles = detalles.ToList(); 
-            StateHasChanged(); 
+            detalles = detalles.ToList();
+            StateHasChanged();
         }
-        else 
+        else
         {
 
             await swal.FireAsync(new SweetAlertOptions
-                        {
-                            Title = "Error",
-                            Text = "No se pudo eliminar el detalle. Inténtalo de nuevo.",
-                            Icon = SweetAlertIcon.Error,
-                            ConfirmButtonText = "OK"
-                        });
+                {
+                    Title = "Error",
+                    Text = "No se pudo eliminar el detalle. Inténtalo de nuevo.",
+                    Icon = SweetAlertIcon.Error,
+                    ConfirmButtonText = "OK"
+                });
 
         }
 
@@ -213,12 +287,12 @@
 
             if (result.IsConfirmed)
             {
-                exportarVentaPDF();
+                ExportarFacturaComercialPDF();
 
             }
-
-
             Cancel();
+            DialogService.Close(venta);
+            StateHasChanged();
         }
         else
         {
@@ -226,8 +300,216 @@
         }
     }
 
+    private void OnProductoChange(object value)
+    {
+        // Obtén el Id del producto seleccionado
+        int productoId = Convert.ToInt32(value);
 
-    public async Task exportarVentaPDF()
+        // Busca el producto en la lista
+        var productoSeleccionado = productos.FirstOrDefault(p => p.Id == productoId);
+
+        if (productoSeleccionado != null)
+        {
+            // Asigna el precio del producto seleccionado
+            nuevoDetalle.Precio = productoSeleccionado.Precio;
+
+            // Si quieres asignar automáticamente una cantidad inicial, puedes hacerlo aquí
+            // nuevoDetalle.Cantidad = 1;
+        }
+
+        StateHasChanged(); // Refresca la interfaz para reflejar el cambio
+    }
+    // public async Task exportarVentaPDF()
+    // {
+    //     if (venta == null)
+    //     {
+    //         Console.WriteLine("No hay venta para exportar.");
+    //         return;
+    //     }
+
+    //     string empresaNombre = empresa.Nombre;
+    //     string empresaDireccion = empresa.Direccion;
+    //     string empresaTelefono = empresa.Telefono;
+    //     string empresaEmail = empresa.RNC;
+    //     string logoBase64 = empresa.Logo;
+
+    //     string[] cabecerasTabla = { "Producto", "Cantidad", "Precio Unitario", "Total" };
+
+    //     var cultura = new CultureInfo("es-DO");
+
+    //     using (MemoryStream ms = new MemoryStream())
+    //     {
+    //         PdfWriter writer = new PdfWriter(ms);
+    //         using (var pdfDoc = new PdfDocument(writer))
+    //         {
+    //             Document doc = new Document(pdfDoc, PageSize.A4);
+    //             doc.SetMargins(40, 40, 40, 40);
+
+    //             pdfDoc.AddNewPage();
+
+    //             if (!string.IsNullOrEmpty(logoBase64))
+    //             {
+    //                 try
+    //                 {
+    //                     byte[] logoBytes = Convert.FromBase64String(logoBase64);
+    //                     ImageData logoImage = ImageDataFactory.Create(logoBytes);
+    //                     Image logo = new Image(logoImage)
+    //                         .SetWidth(120)
+    //                         .SetHeight(60);
+    //                     logo.SetFixedPosition(30, 780);
+    //                     doc.Add(logo);
+    //                 }
+    //                 catch (Exception ex)
+    //                 {
+    //                     Console.WriteLine($"Error al cargar el logo: {ex.Message}");
+    //                 }
+    //             }
+
+    //             Paragraph espacio = new Paragraph().SetMarginBottom(20);
+    //             doc.Add(espacio);
+
+    //             Paragraph empresaInfo = new Paragraph()
+    //                 .Add(new Text(empresaNombre).SetBold().SetFontSize(16).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
+    //                 .Add(new Text("\n" + empresaDireccion).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
+    //                 .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
+    //                 .Add(new Text("\nEmail: " + empresaEmail).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
+    //                 .Add(new Text("\nRNC: " + empresaEmail).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
+    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
+    //                 .SetMarginBottom(30);
+    //             doc.Add(empresaInfo);
+
+    //             Paragraph p1 = new Paragraph("FACTURA DE VENTA")
+    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+    //                 .SetFontSize(22)
+    //                 .SetBold()
+    //                 .SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK)
+    //                 .SetMarginBottom(10);
+    //             doc.Add(p1);
+    //             string numeroFactura = $"00{venta.Id}-{DateTime.Now.Year}";
+
+    //             string fechaHora = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"); // dd/MM/yyyy para la fecha, HH:mm:ss para la hora
+    //             Paragraph facturaInfo = new Paragraph()
+    //                 .Add(new Text($"Número de factura: {numeroFactura}").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
+    //             .Add(new Text($"\nFecha y hora: {fechaHora}").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
+    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
+    //                 .SetMarginBottom(20);
+    //             doc.Add(facturaInfo);
+
+    //             Paragraph clienteInfo = new Paragraph()
+    //                 .Add(new Text("CLIENTE").SetBold().SetFontSize(14).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
+    //                 .Add(new Text("\nNombre: " + venta.Nombre).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
+    //                 .Add(new Text("\nCédula/RNC: " + venta.Cedula).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
+    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
+    //                 .SetMarginBottom(20);
+    //             doc.Add(clienteInfo);
+
+    //             Paragraph detalleTitulo = new Paragraph("DETALLE DE LA VENTA")
+    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+    //                 .SetFontSize(14)
+    //                 .SetBold()
+    //                 .SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK)
+    //                 .SetMarginBottom(10);
+    //             doc.Add(detalleTitulo);
+
+    //             Table table = new Table(cabecerasTabla.Length, true);
+    //             table.SetWidthPercent(100);
+    //             table.SetMarginBottom(30);
+
+    //             foreach (var cabecera in cabecerasTabla)
+    //             {
+    //                 var headerCell = new Cell().Add(new Paragraph(cabecera))
+    //                     .SetBackgroundColor(iText.Kernel.Colors.ColorConstants.LIGHT_GRAY)
+    //                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+    //                     .SetBold()
+    //                     .SetFontColor(iText.Kernel.Colors.ColorConstants.DARK_GRAY)
+    //                     .SetPadding(8)
+    //                     .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.DARK_GRAY, 1));
+    //                 table.AddHeaderCell(headerCell);
+    //             }
+
+    //             var detalles = venta.VentaDetalle_DTOs.Select(d =>
+    //             {
+    //                 var producto = productos.FirstOrDefault(p => p.Id == d.IdProducto);
+    //                 var nombreProducto = producto != null ? producto.Nombre : "Producto desconocido";
+    //                 decimal precioTotal = d.Cantidad * d.Precio;
+    //                 return new { Producto = nombreProducto, Cantidad = d.Cantidad, PrecioUnitario = d.Precio, Total = precioTotal };
+    //             }).ToArray();
+
+    //             foreach (var detalle in detalles)
+    //             {
+    //                 table.AddCell(new Cell().Add(new Paragraph(detalle.Producto))
+    //                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
+    //                     .SetPadding(8)
+    //                     .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.GRAY, 1)));
+
+    //                 table.AddCell(new Cell().Add(new Paragraph(detalle.Cantidad.ToString()))
+    //                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+    //                     .SetPadding(8)
+    //                     .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.GRAY, 1)));
+
+    //                 table.AddCell(new Cell().Add(new Paragraph(detalle.PrecioUnitario.ToString("C", cultura)))
+    //                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
+    //                     .SetPadding(8)
+    //                     .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.GRAY, 1)));
+
+    //                 table.AddCell(new Cell().Add(new Paragraph(detalle.Total.ToString("C", cultura)))
+    //                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
+    //                     .SetPadding(8)
+    //                     .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.GRAY, 1)));
+    //             }
+
+    //             int filasFaltantes = 10 - detalles.Length;
+    //             for (int i = 0; i < filasFaltantes; i++)
+    //             {
+    //                 table.AddCell(new Cell().SetBorder(iText.Layout.Borders.Border.NO_BORDER));
+    //                 table.AddCell(new Cell().SetBorder(iText.Layout.Borders.Border.NO_BORDER));
+    //                 table.AddCell(new Cell().SetBorder(iText.Layout.Borders.Border.NO_BORDER));
+    //                 table.AddCell(new Cell().SetBorder(iText.Layout.Borders.Border.NO_BORDER));
+    //             }
+
+    //             doc.Add(table);
+
+    //             decimal subtotal = venta.MontoTotal;
+    //             decimal impuestos = subtotal * 0.18m;
+    //             decimal totalConImpuestos = subtotal + impuestos;
+
+    //             Paragraph resumen = new Paragraph()
+    //                 .Add(new Text($"Subtotal:").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
+    //                 .Add(new Text($" RD$ {subtotal.ToString("F2", cultura)}").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
+    //                 .Add(new Text($"\nIVA (18%):").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
+    //                 .Add(new Text($" RD$ {impuestos.ToString("F2", cultura)}").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
+    //                 .Add(new Text($"\nTotal a Pagar:").SetFontSize(14).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK).SetBold())
+    //                 .Add(new Text($" RD$ {totalConImpuestos.ToString("F2", cultura)}").SetFontSize(14).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK).SetBold())
+    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
+    //                 .SetMarginTop(20);
+    //             doc.Add(resumen);
+
+    //             // Notas
+    //             Paragraph notas = new Paragraph()
+    //                 .Add(new Text("Notas:").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
+    //                 .Add(new Text("\n - Gracias por su compra.").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
+    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
+    //                 .SetMarginTop(10);
+    //             doc.Add(notas);
+
+    //             // Pie de página
+    //             Paragraph piePagina = new Paragraph()
+    //                 .Add(new Text("Empresa XYZ S.A. | Todos los derechos reservados").SetFontSize(8).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
+    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
+    //                 .SetMarginTop(30);
+    //             doc.Add(piePagina);
+
+    //             doc.Close();
+    //         }
+
+    //         byte[] buffer = ms.ToArray();
+    //         string base64 = Convert.ToBase64String(buffer);
+    //         string pdf = "data:application/pdf;base64," + base64;
+
+    //         await jsruntime.InvokeVoidAsync("descargarFactura", pdf);
+    //     }
+    // }
+    public async Task ExportarFacturaComercialPDF()
     {
         if (venta == null)
         {
@@ -236,181 +518,90 @@
         }
 
         string empresaNombre = empresa.Nombre;
+        string empresaRNC = empresa.RNC;
         string empresaDireccion = empresa.Direccion;
         string empresaTelefono = empresa.Telefono;
-        string empresaEmail = empresa.RNC;
-        string logoBase64 = empresa.Logo;  
+        string ncf = "B00001234"; // Número de comprobante fiscal
 
-        string[] cabecerasTabla = { "Producto", "Cantidad", "Precio Unitario", "Total" };
-
-        var cultura = new CultureInfo("es-DO"); 
+        var cultura = new CultureInfo("es-DO");
 
         using (MemoryStream ms = new MemoryStream())
         {
             PdfWriter writer = new PdfWriter(ms);
+
+            // Definir tamaño de página para impresora térmica con altura más limitada
+            var pageSize = new PageSize(164.57f, 400f); // Reducir altura significativamente
             using (var pdfDoc = new PdfDocument(writer))
             {
-                Document doc = new Document(pdfDoc, PageSize.A4);
-                doc.SetMargins(40, 40, 40, 40);  
+                Document doc = new Document(pdfDoc, pageSize);
+                doc.SetMargins(5, 5, 5, 5); // Márgenes compactos
 
-                pdfDoc.AddNewPage();  
+                pdfDoc.GetCatalog().SetPageMode(PdfName.UseNone);
 
-                if (!string.IsNullOrEmpty(logoBase64))
-                {
-                    try
-                    {
-                        byte[] logoBytes = Convert.FromBase64String(logoBase64);
-                        ImageData logoImage = ImageDataFactory.Create(logoBytes);
-                        Image logo = new Image(logoImage)
-                            .SetWidth(120) 
-                            .SetHeight(60); 
-                        logo.SetFixedPosition(30, 780); 
-                        doc.Add(logo);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error al cargar el logo: {ex.Message}");
-                    }
-                }
-
-                Paragraph espacio = new Paragraph().SetMarginBottom(20);
-                doc.Add(espacio);
-
-                Paragraph empresaInfo = new Paragraph()
-                    .Add(new Text(empresaNombre).SetBold().SetFontSize(16).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                    .Add(new Text("\n" + empresaDireccion).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-                    .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-                    .Add(new Text("\nEmail: " + empresaEmail).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-                    .Add(new Text("\nRNC: " + empresaEmail).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-                    .SetMarginBottom(30);
-                doc.Add(empresaInfo);
-
-                Paragraph p1 = new Paragraph("FACTURA DE VENTA")
+                // Encabezado de la empresa
+                Paragraph encabezadoEmpresa = new Paragraph()
+                    .Add(new Text("FACTURA COMERCIAL").SetFontSize(10).SetBold())
+                    .Add(new Text($"\n{empresaNombre}").SetFontSize(10))
+                    .Add(new Text($"\nRNC: {empresaRNC}").SetFontSize(8))
+                    .Add(new Text($"\nDir: {empresaDireccion}").SetFontSize(8))
+                    .Add(new Text($"\nTel: {empresaTelefono}").SetFontSize(8))
                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                    .SetFontSize(22)
-                    .SetBold()
-                    .SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK)
                     .SetMarginBottom(10);
-                doc.Add(p1);
-                string numeroFactura = $"00{venta.Id}-{DateTime.Now.Year}";
+                doc.Add(encabezadoEmpresa);
 
-                string fechaHora = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"); // dd/MM/yyyy para la fecha, HH:mm:ss para la hora
-                Paragraph facturaInfo = new Paragraph()
-                    .Add(new Text($"Número de factura: {numeroFactura}").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                .Add(new Text($"\nFecha y hora: {fechaHora}").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
+                // Información de la factura (con fecha y hora)
+                string fechaHora = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss", cultura);
+                Paragraph datosFactura = new Paragraph()
+                    .Add(new Text($"Fecha: {fechaHora}").SetFontSize(8))
+                    .Add(new Text($"\nNCF: {ncf}").SetFontSize(8))
                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-                    .SetMarginBottom(20);
-                doc.Add(facturaInfo);
-
-                Paragraph clienteInfo = new Paragraph()
-                    .Add(new Text("CLIENTE").SetBold().SetFontSize(14).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                    .Add(new Text("\nNombre: " + venta.Nombre).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                    .Add(new Text("\nCédula/RNC: " + venta.Cedula).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                    .Add(new Text("\nDirección: " + "Dirección del Cliente").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-                    .SetMarginBottom(20);
-                doc.Add(clienteInfo);
-
-                Paragraph detalleTitulo = new Paragraph("DETALLE DE LA VENTA")
-                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                    .SetFontSize(14)
-                    .SetBold()
-                    .SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK)
                     .SetMarginBottom(10);
-                doc.Add(detalleTitulo);
+                doc.Add(datosFactura);
 
-                Table table = new Table(cabecerasTabla.Length, true);
-                table.SetWidthPercent(100);
-                table.SetMarginBottom(30);
+                // Crear la tabla para los detalles de los productos
+                Table table = new Table(UnitValue.CreatePercentArray(new float[] { 0.6f, 0.2f, 0.2f })).UseAllAvailableWidth();
+                table.AddHeaderCell(new Cell().Add(new Paragraph("DESCRIPCIÓN").SetFontSize(8).SetBold()).SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER));
+                table.AddHeaderCell(new Cell().Add(new Paragraph("UND").SetFontSize(8).SetBold()).SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER));
+                table.AddHeaderCell(new Cell().Add(new Paragraph("PRECIO").SetFontSize(8).SetBold()).SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER));
 
-                foreach (var cabecera in cabecerasTabla)
+                // Agregar los productos a la tabla
+                foreach (var detalle in venta.VentaDetalle_DTOs)
                 {
-                    var headerCell = new Cell().Add(new Paragraph(cabecera))
-                        .SetBackgroundColor(iText.Kernel.Colors.ColorConstants.LIGHT_GRAY)
-                        .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                        .SetBold()
-                        .SetFontColor(iText.Kernel.Colors.ColorConstants.DARK_GRAY)
-                        .SetPadding(8)
-                        .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.DARK_GRAY, 1));
-                    table.AddHeaderCell(headerCell);
-                }
-
-                var detalles = venta.VentaDetalle_DTOs.Select(d =>
-                {
-                    var producto = productos.FirstOrDefault(p => p.Id == d.IdProducto);
+                    var producto = productos.FirstOrDefault(p => p.Id == detalle.IdProducto);
                     var nombreProducto = producto != null ? producto.Nombre : "Producto desconocido";
-                    decimal precioTotal = d.Cantidad * d.Precio;
-                    return new { Producto = nombreProducto, Cantidad = d.Cantidad, PrecioUnitario = d.Precio, Total = precioTotal };
-                }).ToArray();
-
-                foreach (var detalle in detalles)
-                {
-                    table.AddCell(new Cell().Add(new Paragraph(detalle.Producto))
-                        .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-                        .SetPadding(8)
-                        .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.GRAY, 1)));
-
-                    table.AddCell(new Cell().Add(new Paragraph(detalle.Cantidad.ToString()))
-                        .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                        .SetPadding(8)
-                        .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.GRAY, 1)));
-
-                    table.AddCell(new Cell().Add(new Paragraph(detalle.PrecioUnitario.ToString("C", cultura)))
-                        .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
-                        .SetPadding(8)
-                        .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.GRAY, 1)));
-
-                    table.AddCell(new Cell().Add(new Paragraph(detalle.Total.ToString("C", cultura)))
-                        .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
-                        .SetPadding(8)
-                        .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.GRAY, 1)));
-                }
-
-                int filasFaltantes = 10 - detalles.Length;
-                for (int i = 0; i < filasFaltantes; i++)
-                {
-                    table.AddCell(new Cell().SetBorder(iText.Layout.Borders.Border.NO_BORDER));
-                    table.AddCell(new Cell().SetBorder(iText.Layout.Borders.Border.NO_BORDER));
-                    table.AddCell(new Cell().SetBorder(iText.Layout.Borders.Border.NO_BORDER));
-                    table.AddCell(new Cell().SetBorder(iText.Layout.Borders.Border.NO_BORDER));
+                    table.AddCell(new Cell().Add(new Paragraph(nombreProducto).SetFontSize(8)).SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT));
+                    table.AddCell(new Cell().Add(new Paragraph(detalle.Cantidad.ToString()).SetFontSize(8)).SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER));
+                    table.AddCell(new Cell().Add(new Paragraph(detalle.Precio.ToString("₱ #,##0.00")).SetFontSize(8)).SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT));
                 }
 
                 doc.Add(table);
 
+                // Calcular totales
                 decimal subtotal = venta.MontoTotal;
-                decimal impuestos = subtotal * 0.18m; 
-                decimal totalConImpuestos = subtotal + impuestos;
+                decimal itbis = subtotal * 0.18m; // 18% ITBIS
+                decimal total = subtotal + itbis;
 
-                Paragraph resumen = new Paragraph()
-                    .Add(new Text($"Subtotal:").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                    .Add(new Text($" RD$ {subtotal.ToString("F2", cultura)}").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                    .Add(new Text($"\nIVA (18%):").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                    .Add(new Text($" RD$ {impuestos.ToString("F2", cultura)}").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                    .Add(new Text($"\nTotal a Pagar:").SetFontSize(14).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK).SetBold())
-                    .Add(new Text($" RD$ {totalConImpuestos.ToString("F2", cultura)}").SetFontSize(14).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK).SetBold())
+                // Mostrar los totales
+                Paragraph totales = new Paragraph()
+                    .Add(new Text($"\nSUBTOTAL: ₱ {subtotal:F2}").SetFontSize(8))
+                    .Add(new Text($"\nITBIS (18%): ₱ {itbis:F2}").SetFontSize(8))
+                    .Add(new Text($"\nTOTAL: ₱ {total:F2}").SetFontSize(10).SetBold())
                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
-                    .SetMarginTop(20);
-                doc.Add(resumen);
-
-                // Notas
-                Paragraph notas = new Paragraph()
-                    .Add(new Text("Notas:").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                    .Add(new Text("\n - Gracias por su compra.").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-                    .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
                     .SetMarginTop(10);
-                doc.Add(notas);
+                doc.Add(totales);
 
-                // Pie de página
-                Paragraph piePagina = new Paragraph()
-                    .Add(new Text("Empresa XYZ S.A. | Todos los derechos reservados").SetFontSize(8).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
+                // Nota de agradecimiento (hasta www.miempresa.com.do)
+                Paragraph nota = new Paragraph()
+                    .Add(new Text("\n¡GRACIAS POR SU COMPRA!").SetFontSize(8))
+                    .Add(new Text("\nwww.miempresa.com.do").SetFontSize(8))
                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-                    .SetMarginTop(30);
-                doc.Add(piePagina);
+                    .SetMarginTop(10);
+                doc.Add(nota);
 
                 doc.Close();
             }
 
+            // Convertir a PDF base64
             byte[] buffer = ms.ToArray();
             string base64 = Convert.ToBase64String(buffer);
             string pdf = "data:application/pdf;base64," + base64;
@@ -418,7 +609,6 @@
             await jsruntime.InvokeVoidAsync("descargarFactura", pdf);
         }
     }
-
 
 
     private async Task ShowAlert(string title, string text, SweetAlertIcon icon)

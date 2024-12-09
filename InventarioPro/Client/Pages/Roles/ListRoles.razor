@@ -1,0 +1,109 @@
+﻿@page "/ListRoles"
+@using Microsoft.AspNetCore.Components
+@using Radzen
+@using System.Collections.Generic
+@using System.Linq
+@using InventarioPro.Shared.DTOS.Roles
+@inject SweetAlertService swal
+@inject HttpClient Http
+@inject Radzen.DialogService DialogService
+<PageTitle>Lista de Roles</PageTitle>
+
+<div class="header">
+    <h2>Lista Roles</h2>
+    <RadzenButton Text="Agregar Roles" Click="OpenAddCategoriDialog" Style="margin-bottom: 10px;" />
+</div>
+<div class="mb-3">
+    <label>Fecha Inicio:</label>
+    <RadzenTextBox @bind-Value="Nombre" Style="margin-right: 10px;" />
+    <RadzenButton Text="Buscar" Icon="search" Click="FiltrarPorNombre" ButtonStyle="ButtonStyle.Primary" Style="margin-left: 10px;" />
+</div>
+
+<!-- RadzenDataGrid -->
+<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true"
+                AllowSorting="true" PageSize="5" AllowPaging="true" Data="@listroles_DTO2" ColumnWidth="300px" ShowPagingSummary="true">
+    <Columns>
+        <RadzenDataGridColumn Property="@nameof(Roles_DTO.Nombre)" Title="Nombre" Width="160px" />
+        <RadzenDataGridColumn Width="200px" Title="Acciones">
+            <Template Context="roles_DTO">
+                <!-- Botón Editar -->
+                <button class="btn btn-warning btn-sm" @onclick="() => EditarCategoria(roles_DTO.Id)" style="margin-right: 10px;">
+                    <i class="bi bi-pencil"></i> Editar
+                </button>
+                <!-- Botón Eliminar -->
+                <button class="btn btn-danger btn-sm">
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+<style>
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    h2 {
+        margin: 0;
+        font-size: 24px;
+    }
+
+    .filters {
+        margin-bottom: 20px;
+    }
+</style>
+
+@code {
+    private Roles_DTO roles_DTO = new Roles_DTO();
+    private List<Roles_DTO> listroles_DTO = new List<Roles_DTO>();
+    private List<Roles_DTO> listroles_DTO2 = new List<Roles_DTO>();
+    private string? Nombre;
+
+    protected override async Task OnInitializedAsync()
+    {
+        StateHasChanged();
+        await LoadRoles();
+    }
+
+    private async Task LoadRoles()
+    {
+        var response = await Http.GetAsync("api/Roles/GetAllRoles");
+        if (response.IsSuccessStatusCode)
+        {
+            listroles_DTO = await response.Content.ReadFromJsonAsync<List<Roles_DTO>>();
+            listroles_DTO2 = listroles_DTO;
+        }
+    }
+
+    private async Task OpenAddCategoriDialog()
+    {
+        var result = await DialogService.OpenAsync<FormRoles>("Registro Categorias");
+        if (result != null)
+        {
+            // Reload roles after adding a new role
+            await LoadRoles();
+        }
+    }
+
+    private async Task EditarCategoria(string id)
+    {
+        var item = listroles_DTO.FirstOrDefault(p => p.Id == id);
+        if (item != null)
+        {
+            await DialogService.OpenAsync<FormRoles>("Editar Rol", new Dictionary<string, object> { { "roles_DTO", item } });
+            // Reload roles after editing a role
+            await LoadRoles();
+        }
+    }
+
+    private void FiltrarPorNombre()
+    {
+        listroles_DTO2 = listroles_DTO
+            .Where(e => e.Nombre.Contains(Nombre, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+}

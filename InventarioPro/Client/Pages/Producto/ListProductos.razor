@@ -33,7 +33,6 @@
 <div class="filters" style="display: flex; flex-wrap: wrap; margin-bottom: 20px;">
     <div style="display: flex; align-items: center; flex-wrap: wrap; width: 100%; margin-bottom: 10px;">
         <RadzenDropDown @bind-Value="selectedCategory" Data="@categorias" TextProperty="Nombre" ValueProperty="Id" Placeholder="Categoría" Style="margin-right: 10px; flex: 1 1 150px;" />
-        <RadzenDropDown @bind-Value="selectedWarehouse" Data="@warehouses" TextProperty="Name" ValueProperty="Id" Placeholder="Almacén" Style="margin-right: 10px; flex: 1 1 150px;" />
         <label style="margin-right: 5px;">Fecha Inicio:</label>
         <RadzenDatePicker @bind-Value=@value1 DateFormat="dd/MM/yyyy" Style="margin-right: 10px; flex: 1 1 150px;" />
         <label style="margin-right: 5px;">Fecha Fin:</label>
@@ -116,17 +115,36 @@
     protected override async Task OnInitializedAsync()
     {
         categorias = await Http.GetFromJsonAsync<List<Categoria_DTO>>("api/categoria");
-        empresa = await Http.GetFromJsonAsync<Empresa_DTO>("api/empresa/1");
+        try
+        {
+          var empresaResponse = await Http.GetAsync("api/empresa/1");
+
+            if (empresaResponse.IsSuccessStatusCode)
+            {
+                empresa = await empresaResponse.Content.ReadFromJsonAsync<Empresa_DTO>();
+            }
+            else
+            {
+                empresa = new Empresa_DTO
+                    {
+                        Id = 0, 
+                        RNC = "Desconocido",  
+                        Nombre = "Desconocido", 
+                        Direccion = "Desconocida", 
+                        Telefono = "Desconocido", 
+                        Logo = string.Empty, 
+                        PermitirCargaData = false 
+                    };
+                Console.WriteLine($"Error al obtener la empresa: {empresaResponse.StatusCode}");
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Error en la solicitud HTTP: {ex.Message}");
+        }
         await LoadProducts();
         filteredProducts = products;
     }
-
-    private List<Warehouse> warehouses = new List<Warehouse>
-    {
-        new Warehouse { Id = 1, Name = "Almacén A" },
-        new Warehouse { Id = 2, Name = "Almacén B" },
-        new Warehouse { Id = 3, Name = "Almacén C" }
-    };
 
     private async Task LoadProducts()
     {
@@ -138,7 +156,7 @@
     {
         var newProduct = new Producto_DTO(); 
         var options = new Radzen.DialogOptions { Style = "width: 900px;" };
-        var result = await DialogService.OpenAsync<FormProducto>("Agregar Nuevo Producto", new Dictionary<string, object> { { "Product", newProduct } }, options);
+        var result = await DialogService.OpenAsync<FormProducto>("", new Dictionary<string, object> { { "Product", newProduct } }, options);
 
         if (result != null)
         {
@@ -327,7 +345,7 @@
                     Image logo = new Image(logoImage)
                         .SetWidth(150) // Ancho de la imagen
                         .SetHeight(75); // Alto de la imagen
-                    logo.SetFixedPosition(30, 780); // Posición fija, ajustada a 780 para evitar que se corte
+                    logo.SetFixedPosition(30, 750); // Posición fija, ajustada a 780 para evitar que se corte
                     doc.Add(logo);
                 }
 

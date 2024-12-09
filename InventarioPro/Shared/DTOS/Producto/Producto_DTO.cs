@@ -34,12 +34,10 @@ namespace InventarioPro.Shared.DTOS.Producto
                 [Range(0.01, double.MaxValue, ErrorMessage = "El {0} debe ser mayor que cero.")]
                 public decimal Precio { get; set; }
 
-                [Display(Name = "Costo")]
-                [Required(ErrorMessage = "El campo {0} es requerido.")]
-                [Range(0.01, double.MaxValue, ErrorMessage = "El {0} debe ser mayor que cero.")]
-                public decimal Costo { get; set; }
 
-                public int Existencia { get; set; } = 0;
+                public decimal Costo { get; set; } = 0;
+
+                 public int Existencia { get; set; } = 0;
 
                 [Display(Name = "Código")]
                 [Required(ErrorMessage = "El campo {0} es requerido.")]

@@ -1,0 +1,127 @@
+﻿@page "/ListCategoria"
+@using Microsoft.AspNetCore.Components
+@using Radzen
+@using System.Collections.Generic
+@using System.Linq
+@using InventarioPro.Shared.DTOS.Categoria
+@inject SweetAlertService swal
+@using Radzen
+@inject HttpClient Http
+@inject Radzen.DialogService DialogService
+<PageTitle>Lista de Categorias</PageTitle>
+
+<div class="header">
+    <h2>Lista Categorias</h2>
+    <RadzenButton Text="Agregar Categoria" Click="OpenAddCategoriDialog" Style="margin-bottom: 10px;" />
+</div>
+<!-- Contenedor para el formulario de búsqueda -->
+<div class="mb-3">
+    <label>Fecha Inicio:</label>
+    <RadzenTextBox @bind-Value="Nombre" Style="margin-right: 10px;" />
+
+
+    <RadzenButton Text="Buscar" Icon="search" Click="FiltrarPorNombre" ButtonStyle="ButtonStyle.Primary" Style="margin-left: 10px;" />
+</div>
+
+<!-- RadzenDataGrid -->
+<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true"
+                AllowSorting="true" PageSize="5" AllowPaging="true" Data="@listcategoria_DTO2" ColumnWidth="300px" ShowPagingSummary="true">
+    <Columns>
+        <!-- Columna de Fecha usando @nameof -->
+        <RadzenDataGridColumn Property="@nameof(categoria_DTO.Nombre)" Title="Fecha" Width="160px" />
+
+
+        <!-- Columna de Acciones -->
+        <RadzenDataGridColumn Width="200px" Title="Acciones">
+            <Template Context="categoria_DTO">
+                <!-- Botón Editar -->
+                <button class="btn btn-warning btn-sm" @onclick="() => EditarCategoria(categoria_DTO.Id)" style="margin-right: 10px;">
+                    <i class="bi bi-pencil"></i> Editar
+                </button>
+
+                <!-- Botón Eliminar -->
+                <button class="btn btn-danger btn-sm" >
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+
+<style>
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    h2 {
+        margin: 0;
+        font-size: 24px;
+    }
+
+    .filters {
+        margin-bottom: 20px;
+    }
+</style>
+
+@code {
+
+
+    private Categoria_DTO categoria_DTO = new Categoria_DTO();
+    private List<Categoria_DTO> listcategoria_DTO = new List<Categoria_DTO>();
+    private List<Categoria_DTO> listcategoria_DTO2 = new List<Categoria_DTO>();
+
+    private string? Nombre;
+
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await Http.GetAsync("api/categoria");
+        listcategoria_DTO= await response.Content.ReadFromJsonAsync<List<Categoria_DTO>>();
+
+        listcategoria_DTO2 = listcategoria_DTO;
+
+    }
+
+    private async Task OpenAddCategoriDialog()
+    {
+
+        var result = await DialogService.OpenAsync<FormCategoria>("Registro Categorias");
+
+
+        if (result != null)
+        {
+
+
+        }
+
+
+    }
+
+
+    private async Task EditarCategoria(int id)
+    {
+        var item = listcategoria_DTO.FirstOrDefault(p => p.Id == id);
+
+        await DialogService.OpenAsync<FormCategoria>(
+       null,
+            new Dictionary<string, object> { { "categoria_DTO", item } }
+        );
+
+    }
+
+    private void FiltrarPorNombre()
+    {
+        listcategoria_DTO2 = listcategoria_DTO
+      .Where(e => e.Nombre.Contains(Nombre, StringComparison.OrdinalIgnoreCase))
+      .ToList();
+
+
+
+    }
+  }

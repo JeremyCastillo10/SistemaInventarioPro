@@ -5,17 +5,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace InventarioPro.Shared.DTOS.Categoria
+namespace InventarioPro.Shared.DTOS.Roles
 {
-    public class Categoria_DTO
+    public class Roles_DTO
     {
-        public int Id { get; set; }
+        public string ?Id { get; set; }
+
         [Required(ErrorMessage = "El campo es obligatorio")]
         [StringLength(50, MinimumLength = 3, ErrorMessage = "La longitud debe estar entre 5 y 50 caracteres")]
         public string? Nombre { get; set; }
-        public bool Eliminado { get; set; } = false;
-        public DateTime FechaCreacion { get; set; }
-        public DateTime FechaActualizacion { get; set; }
-
     }
 }

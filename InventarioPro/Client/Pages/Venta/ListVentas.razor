@@ -3,6 +3,7 @@
 @using InventarioPro.Shared.DTOS.Producto
 @using InventarioPro.Shared.DTOS.Venta
 @using OfficeOpenXml
+@using System.Globalization
 @using iText.IO.Image
 @using iText.Kernel.Colors
 @using iText.Kernel.Geom
@@ -34,7 +35,6 @@
         <RadzenButton Text="Exportar a Excel" Click="exportarVentasExcel" Icon="folder_open" />
         <RadzenButton Text="Exportar a PDF" Click="ExportarVentasPDF" Icon="picture_as_pdf" />
     </div>
-
 </div>
 
 <div style="max-height: 450px; overflow-y: auto;">
@@ -50,7 +50,11 @@
                         Data="@filteredVentas" ColumnWidth="300px" ShowPagingSummary="true" @bind-Value="@selectedVentas">
             <Columns>
                 <RadzenDataGridColumn Property="@nameof(Venta_DTO.Fecha)" Title="Fecha" FormatString="{0:dd/MM/yyyy}" />
-                <RadzenDataGridColumn Property="@nameof(Venta_DTO.MontoTotal)" Title="Monto Total" FormatString="{0:C}" />
+                <RadzenDataGridColumn Title="Monto Total">
+                    <Template Context="venta">
+                        @String.Format("RD$ {0:N2}", venta.MontoTotal) <!-- Formato de peso dominicano -->
+                    </Template>
+                </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="@nameof(Venta_DTO.Nombre)" Title="Cliente" />
                 <RadzenDataGridColumn Title="Acciones">
                     <Template Context="data">
@@ -88,10 +92,33 @@
         filteredVentas = ventas;  
         isLoading = false;  
         await ObtenerProductosDesdeApi();
-        empresa = await Http.GetFromJsonAsync<Empresa_DTO>("api/empresa/1");
+    try{
+        var empresaResponse = await Http.GetAsync("api/empresa/1");
 
-
+        if (empresaResponse.IsSuccessStatusCode)
+        {
+            empresa = await empresaResponse.Content.ReadFromJsonAsync<Empresa_DTO>();
+        }
+        else
+        {
+            empresa = new Empresa_DTO
+                {
+                    Id = 0,
+                    RNC = "Desconocido",
+                    Nombre = "Desconocido",
+                    Direccion = "Desconocida",
+                    Telefono = "Desconocido",
+                    Logo = string.Empty,
+                    PermitirCargaData = false
+                };
+            Console.WriteLine($"Error al obtener la empresa: {empresaResponse.StatusCode}");
+        }
     }
+catch (HttpRequestException ex)
+{
+    Console.WriteLine($"Error en la solicitud HTTP: {ex.Message}");
+}
+}
 
     private async Task LoadVentas()
     {
@@ -268,7 +295,7 @@
                         Image logo = new Image(logoImage)
                             .SetWidth(120) // Ajusta el tamaño del logo
                             .SetHeight(60); // Ajusta el tamaño del logo
-                        logo.SetFixedPosition(30, 780); // Posición fija, ajustada a 780 para evitar que se corte
+                        logo.SetFixedPosition(30, 750); // Posición fija, ajustada a 780 para evitar que se corte
                         doc.Add(logo);
                     }
                     catch (Exception ex)
@@ -345,21 +372,23 @@
                         table.AddCell(cell);
                     }
 
-                    // Detalles de la venta (productos y cantidades)
+
+
+                    // Mostrar los detalles de los productos
+                    // Detalles de los productos vendidos
                     var detalles = venta.VentaDetalle_DTOs.Select(d =>
                     {
-                        // Buscar el producto por IdProducto
                         Producto_DTO producto = productos.FirstOrDefault(p => p.Id == d.IdProducto);
                         string nombreProducto = producto?.Nombre ?? "Producto no encontrado";
-                        string precio = producto?.Precio.ToString("C") ?? "Precio no disponible";
+                        string precio = producto?.Precio.ToString("C", new CultureInfo("es-DO")) ?? "Precio no disponible";
                         return $"{nombreProducto} x {d.Cantidad} a {precio}";
                     }).ToArray();
 
-                    // Mostrar los detalles de los productos
+                    // Mostrar los detalles de la venta en la última columna
                     var detallesCell = new Cell().Add(new Paragraph(string.Join("\n", detalles))) // Cada detalle en una línea nueva
                         .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
                         .SetPadding(10)
-                        .SetBorder(new SolidBorder(0.5f)); // Bordes finos
+                        .SetBorder(new SolidBorder(0.5f));
                     table.AddCell(detallesCell);
 
                     // Acumular el total de la venta

@@ -61,11 +61,11 @@ namespace InventarioPro.Server.Controllers
 
                             _db.VentaDetalles.Add(ventaDetalle);
 
-                          
+
                             var producto = await _db.Productos.FindAsync(detalle.IdProducto);
                             if (producto != null)
                             {
-                                producto.Existencia -= detalle.Cantidad; 
+                                producto.Existencia -= detalle.Cantidad;
                                 _db.Productos.Update(producto);
                             }
                         }
@@ -110,13 +110,13 @@ namespace InventarioPro.Server.Controllers
                         var producto = await _db.Productos.FindAsync(detalle.IdProducto);
                         if (producto != null)
                         {
-                            producto.Existencia -= (detalle.Cantidad - ventaDetalle.Cantidad); 
+                            producto.Existencia -= (detalle.Cantidad - ventaDetalle.Cantidad);
                             _db.Productos.Update(producto);
                         }
                     }
                     else
                     {
-                
+
                         ventaDetalle = new VentaDetalle
                         {
                             IdProducto = detalle.IdProducto,
@@ -130,7 +130,7 @@ namespace InventarioPro.Server.Controllers
 
                         _db.VentaDetalles.Add(ventaDetalle);
 
-         
+
                         var producto = await _db.Productos.FindAsync(detalle.IdProducto);
                         if (producto != null)
                         {
@@ -148,7 +148,6 @@ namespace InventarioPro.Server.Controllers
         public async Task<ActionResult<ResumenVentasDTO>> GetResumenVentas()
         {
             var totalVentas = await _db.Ventas.CountAsync(v => v.Eliminado != true);
-
             var numeroDeTransacciones = await _db.VentaDetalles
                 .Where(vd => vd.Eliminado != true)
                 .CountAsync();
@@ -159,26 +158,64 @@ namespace InventarioPro.Server.Controllers
                     .AverageAsync(v => v.MontoTotal.Value)
                 : 0;
 
-            var ventasCanceladas = await _db.Ventas.CountAsync(v => v.Eliminado != true && v.MontoTotal == null); // Ejemplo de criterio
-
-            var devoluciones = await _db.VentaDetalles
-                .Where(vd => vd.Eliminado != true && vd.Cantidad < 0) // Si la cantidad es negativa, se trata como devolución
-                .CountAsync();
-
             var ultimaVenta = await _db.Ventas
                 .Where(v => v.Eliminado != true && v.MontoTotal.HasValue)
                 .OrderBy(v => v.Fecha)
                 .Select(v => v.MontoTotal)
                 .FirstOrDefaultAsync();
 
+            // Ventas promedio por día en el mes actual
+            var ventasPromedioPorDia = await _db.Ventas
+                .Where(v => v.Fecha.Month == DateTime.Now.Month && v.Eliminado != true)
+                .SumAsync(v => v.MontoTotal ?? 0) / DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+
+            // Ventas totales en el último mes
+            var ventasTotalesUltimoMes = await _db.Ventas
+                .Where(v => v.Fecha.Month == DateTime.Now.AddMonths(-1).Month && v.Eliminado != true)
+                .SumAsync(v => v.MontoTotal ?? 0);
+
+            // Promedio de ventas por transacción
+            var ventasPromedioPorTransaccion = totalVentas > 0
+                ? await _db.Ventas
+                    .Where(v => v.Eliminado != true && v.MontoTotal.HasValue)
+                    .AverageAsync(v => v.MontoTotal.Value)
+                : 0;
+
+            // Ventas acumuladas desde el inicio del año
+            var ventasAcumuladasYTD = await _db.Ventas
+                .Where(v => v.Fecha.Year == DateTime.Now.Year && v.Eliminado != true)
+                .SumAsync(v => v.MontoTotal ?? 0);
+
+            // Producto más vendido (ID del producto más vendido)
+            var productoMasVendidoId = await _db.VentaDetalles
+                .Where(vd => vd.Eliminado != true)
+                .GroupBy(vd => vd.IdProducto)
+                .OrderByDescending(g => g.Count())
+                .Select(g => g.Key)
+                .FirstOrDefaultAsync();
+
+            // Obtener el nombre del producto más vendido usando su ID
+            var productoMasVendido = await _db.Productos
+                .Where(p => p.Id == productoMasVendidoId && p.Eliminado != true)
+                .Select(p => p.Nombre)
+                .FirstOrDefaultAsync();
+            // Total de productos vendidos
+            var totalProductosVendidos = await _db.VentaDetalles
+                .Where(vd => vd.Eliminado != true)
+                .SumAsync(vd => vd.Cantidad);
+
             var resumen = new ResumenVentasDTO
             {
                 TotalVentas = totalVentas,
                 NumeroDeTransacciones = numeroDeTransacciones,
                 PromedioPorVenta = promedioPorVenta,
-                VentasCanceladas = ventasCanceladas,
-                Devoluciones = devoluciones,
-                UltimaVenta = ultimaVenta
+                UltimaVenta = ultimaVenta,
+                VentasPromedioPorDia = ventasPromedioPorDia,
+                VentasTotalesUltimoMes = ventasTotalesUltimoMes,
+                VentasPromedioPorTransaccion = ventasPromedioPorTransaccion,
+                VentasAcumuladasYTD = ventasAcumuladasYTD,
+                TotalProductosVendidos = totalProductosVendidos,
+                ProductoMasVendido = productoMasVendido // Aquí se incluye el nombre del producto más vendido
             };
 
             return Ok(resumen);
@@ -188,7 +225,7 @@ namespace InventarioPro.Server.Controllers
         public async Task<ActionResult<List<Venta_DTO>>> GetVentas()
         {
             var ventas = await _db.Ventas
-                .Where(v => v.Eliminado != true) 
+                .Where(v => v.Eliminado != true)
                 .ToListAsync();
 
             var ventasDto = new List<Venta_DTO>();
@@ -232,7 +269,7 @@ namespace InventarioPro.Server.Controllers
         public async Task<ActionResult<Venta_DTO>> GetVentaById(int id)
         {
             var venta = await (from v in _db.Ventas
-                               where v.Id == id && v.Eliminado != true  
+                               where v.Id == id && v.Eliminado != true
                                select new Venta_DTO
                                {
                                    Id = v.Id,
@@ -247,11 +284,11 @@ namespace InventarioPro.Server.Controllers
                                                         where d.IdVenta == v.Id && d.Eliminado != true
                                                         select new VentaDetalle_DTO
                                                         {
-                                                            Id = d.Id,  
-                                                            IdProducto = d.IdProducto,  
-                                                            Cantidad = d.Cantidad,  
-                                                            Precio = Convert.ToDecimal(d.Precio),  
-                                                            IdVenta = d.IdVenta,  
+                                                            Id = d.Id,
+                                                            IdProducto = d.IdProducto,
+                                                            Cantidad = d.Cantidad,
+                                                            Precio = Convert.ToDecimal(d.Precio),
+                                                            IdVenta = d.IdVenta,
                                                             FechaCreacion = d.FechaCreacion,
                                                             FechaActualizacion = d.FechaActualizacion
 

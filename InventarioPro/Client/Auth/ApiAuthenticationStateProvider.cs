@@ -25,9 +25,10 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         }
 
         var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, _authenticationService.GetUserNameFromToken(token))
-        };
+    {
+        new Claim(ClaimTypes.Name, _authenticationService.GetUserNameFromToken(token)),
+        new Claim(ClaimTypes.NameIdentifier, _authenticationService.GetUserIdFromToken(token)) 
+    };
 
         var identity = new ClaimsIdentity(claims, "jwt");
         var user = new ClaimsPrincipal(identity);
@@ -35,6 +36,7 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         return new AuthenticationState(user);
     }
 
- 
+
+
 
 }

@@ -1,6 +1,7 @@
 ﻿@page "/login"
 @layout LoginLayout
 
+@using InventarioPro.Shared.DTOS.Cuenta
 @using InventarioPro.Shared.DTOs
 @inject HttpClient Http
 @inject NavigationManager Navigation
@@ -30,9 +31,6 @@
                 <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Iniciar sesión" Style="width: 100%;" />
             </EditForm>
 
-            <RadzenText Align="Align.Center" class="rz-mt-4">
-                ¿No tienes cuenta? <RadzenLink Href="/registrarse" class="rz-text-primary">Regístrate aquí</RadzenLink>
-            </RadzenText>
             <RadzenText Align="Align.Center" class="rz-mt-2">
                 ¿Olvidaste tu contraseña? <RadzenLink Href="/forgot-password" class="rz-text-primary">Recupérala aquí</RadzenLink>
             </RadzenText>
@@ -46,7 +44,7 @@
 }
 
 @code {
-    private CredencialesUsuario credencialesUsuario = new CredencialesUsuario();
+    private UsuarioAutenticado credencialesUsuario = new UsuarioAutenticado();
     private bool isSubmitting = false;
     private string errorMessage = null;
 

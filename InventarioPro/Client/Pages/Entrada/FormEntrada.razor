@@ -1,0 +1,251 @@
+@page "/Entrada"
+@using CurrieTechnologies.Razor.SweetAlert2
+@using InventarioPro.Shared.DTOS.Entrada
+@using InventarioPro.Shared.DTOS.Producto
+@inject SweetAlertService swal
+@using Radzen
+@inject HttpClient Http
+@inject Radzen.DialogService DialogService
+@inject NavigationManager navi
+@using System.ComponentModel.DataAnnotations
+
+
+
+<EditForm Model="@entrada_DTO" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <div class="modal show d-block pad" style="background-color: rgba(0, 0, 0, 0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content p-3">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Entrada</h5>
+                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Click=" Cancel" />
+                </div>
+                <div class="modal-body">
+                    <div class="form-group mb-3">
+                        <label>Fecha</label>
+                        <RadzenDatePicker TValue="DateTime" @bind-Value="entrada_DTO.Fecha"  Disabled="@estado" Style="width: 100%;" />
+                        <ValidationMessage For="@(() => entrada_DTO.Fecha)" class="text-danger" />
+
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-3 col-sm-6">
+                            <label>Producto</label>
+                            <RadzenDropDownDataGrid Placeholder="Selecciona un producto"
+                                                    TextProperty="Nombre" ValueProperty="Id"
+                                                    Data="@listproducto_DTO" @bind-Value="entradaDetalle_DTO.IdProducto"
+                                                    Class="form-select form-control-lg"
+                                                    Style="border-radius: .375rem; font-size: 14px; padding: .5rem; background-color: #f8f9fa;"
+                                                    Filterable="true"
+                                                    AllowClear="true"
+                                                    AriaLabel="Buscar producto"
+                                                    FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" />
+
+
+
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <label>Cantidad</label>
+                            <RadzenNumeric TValue="int" Placeholder="Cantidad" @bind-Value="entradaDetalle_DTO.Cantidad"
+                                Class="form-control" />
+                            <ValidationMessage For="@(() => entradaDetalle_DTO.Cantidad)" class="text-danger" />
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <label>Costo</label>
+                            <RadzenNumeric TValue="decimal" Placeholder="Costo" @bind-Value="entradaDetalle_DTO.Costo"
+                                Class="form-control" />
+                            <ValidationMessage For="@(() => entradaDetalle_DTO.Costo)" class="text-danger" />
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end mb-3">
+                        <RadzenButton Text="Agregar" ButtonStyle="ButtonStyle.Primary" Click="AgregarEntrada" />
+                    </div>
+
+                    <!-- Tabla para mostrar las entradas agregadas con datos ficticios -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover"
+                            style="width: 100%; border-collapse: separate; border-spacing: 0 10px;">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th scope="col">Producto</th>
+                                    <th scope="col">Cantidad</th>
+                                    <th scope="col">Costo</th>
+                                    <th scope="col">Subtotal</th> <!-- Nueva columna para las acciones -->
+                                    <th scope="col">Acciones</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                      <!-- Itera sobre la lista de entradas, asumiendo que se llama listentradaDetalle_DTO -->
+                                    @foreach (var item in listentradaDetalle_DTO)
+                                     {
+                                         var producto = listproducto_DTO.FirstOrDefault(p => p.Id == item.IdProducto);
+
+                                         <tr style="height: 40px;">
+                                                <td>@producto?.Nombre</td>
+                                                <td>@item.Cantidad</td>
+                                                <td>@item.Costo.ToString("C")</td> <!-- Formato de moneda -->
+                                                <td>@item.SubMontoTotal</td> <!-- Formato de moneda -->
+                                                <td>
+                                                    <!-- Botón de eliminar en rojo -->
+                                                    <button type="button" @onclick="() => EliminarEntrada(item.IdProducto)"
+                                                            class="btn btn-danger btn-sm">
+                                                        Eliminar
+                                                    </button>
+                                                </td>
+                                         </tr>
+                                    }
+                             </tbody>
+                        </table>
+                    </div>
+
+
+
+                    <div class="d-flex justify-content-end mt-2">
+                        <h5>Total: @entrada_DTO.MontoTotal</h5>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-center gap-2 mt-4 mb-2">
+                    <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Secondary" Click=" Cancel" />
+                    <RadzenButton Text="Guardar" ButtonType="Radzen.ButtonType.Submit" ButtonStyle="ButtonStyle.Primary"  />
+                </div>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public Entrada_DTO entrada_DTO { get; set; } = new Entrada_DTO();
+
+
+    public Producto_DTO producto_DTO { get; set; } = new Producto_DTO();
+    public EntradaDetalle_DTO entradaDetalle_DTO { get; set; } = new EntradaDetalle_DTO();
+    private DateTime fecha = DateTime.Now;
+    private decimal total;
+    private List<Producto_DTO> listproducto_DTO = new List<Producto_DTO>();
+    private List<EntradaDetalle_DTO> listentradaDetalle_DTO = new List<EntradaDetalle_DTO>();
+    private bool estado = false;
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await Http.GetAsync($"api/producto/getproductos");
+        listproducto_DTO = await response.Content.ReadFromJsonAsync<List<Producto_DTO>>();
+
+        if (entrada_DTO.entradaDetalle_DTO.Count > 0)
+        {
+            estado = true;
+            listentradaDetalle_DTO.AddRange(entrada_DTO.entradaDetalle_DTO);
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            // Asigna los detalles a la DTO principal
+            entrada_DTO.entradaDetalle_DTO = listentradaDetalle_DTO;
+
+            // Realiza las solicitudes HTTP
+            var response = await Http.PostAsJsonAsync("api/entrada", entrada_DTO);
+            var response2 = await Http.PutAsJsonAsync("api/entrada/modificarproducto", listentradaDetalle_DTO);
+
+            // Verifica si la respuesta fue exitosa
+            if (response.IsSuccessStatusCode)
+            {
+                await ShowAlert("Éxito", entrada_DTO.Id == 0 ? "¡Entrada creada con éxito!" : "¡Entrada actualizada con éxito!", SweetAlertIcon.Success);
+
+                // Resetea los datos
+                entrada_DTO = new Entrada_DTO();
+                listentradaDetalle_DTO = new List<EntradaDetalle_DTO>();
+                total = 0;
+                DialogService.Close(entrada_DTO);
+                StateHasChanged();
+
+
+            }
+            else
+            {
+                await ShowAlert("Error", "No se pudo enviar el dato correctamente.", SweetAlertIcon.Error);
+            }
+            navi.NavigateTo("/ListaEntrada");
+
+        }
+        catch (Exception ex)
+        {
+            // Manejo del error
+            await ShowAlert("Error", $"Ocurrió un error: {ex.Message}", SweetAlertIcon.Error);
+        }
+    }
+
+
+    private void AgregarEntrada()
+    {
+
+        if (entradaDetalle_DTO.IdProducto > 0 && entradaDetalle_DTO.Cantidad > 0 && entradaDetalle_DTO.Costo > 0)
+        {
+            var item = listentradaDetalle_DTO.FirstOrDefault(p => p.IdProducto == entradaDetalle_DTO.IdProducto);
+            if (item == null)
+            {
+                entradaDetalle_DTO.SubMontoTotal = entradaDetalle_DTO.Cantidad * entradaDetalle_DTO.Costo;
+                listentradaDetalle_DTO.Add(entradaDetalle_DTO);
+
+                entrada_DTO.MontoTotal += entradaDetalle_DTO.Cantidad * entradaDetalle_DTO.Costo;
+                entradaDetalle_DTO = new EntradaDetalle_DTO();
+
+                
+                StateHasChanged();
+            }
+
+        }
+        else
+        { 
+            if (entradaDetalle_DTO.IdProducto <= 0 && entradaDetalle_DTO.Cantidad <= 0 && entradaDetalle_DTO.Costo <= 0)
+            {
+                ShowAlert("Informacion", "Tiene que llenar todo los datos para agregar una entrada ", SweetAlertIcon.Info);
+            }
+            else if (entradaDetalle_DTO.IdProducto <= 0 )
+            {
+                ShowAlert("Informacion", "Tieene que selecionar un producto ", SweetAlertIcon.Info);
+            }
+            else if (entradaDetalle_DTO.Cantidad <= 0)
+            {
+                ShowAlert("Informacion", "Tiene que colocar la cantidad ", SweetAlertIcon.Info);
+            }
+            else if (entradaDetalle_DTO.Costo <= 0)
+            {
+                ShowAlert("Informacion", "Tiene que colocar el precio ", SweetAlertIcon.Info);
+            }
+        }
+
+    }
+
+   
+    private void EliminarEntrada(int id)
+    {
+        var item = listentradaDetalle_DTO.FirstOrDefault(p => p.IdProducto == id);
+        if (item != null)
+        {
+            entrada_DTO.MontoTotal -= item.SubMontoTotal ?? 0;
+        }
+
+        listentradaDetalle_DTO = listentradaDetalle_DTO.Where(p => p.IdProducto != id).ToList();
+        StateHasChanged();
+
+    }
+    private async Task ShowAlert(string title, string text, SweetAlertIcon icon)
+    {
+        await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = title,
+                Text = text,
+                Icon = icon,
+                ConfirmButtonText = "OK"
+            });
+    }
+    private void Cancel()
+    {
+
+    
+        DialogService.Close(null);
+    }
+}

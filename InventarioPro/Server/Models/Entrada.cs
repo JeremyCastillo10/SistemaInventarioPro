@@ -9,6 +9,7 @@ namespace InventarioPro.Server.Models
                 public decimal? MontoTotal { get; set; }
                 public bool? Eliminado { get; set; }
                 public DateTime FechaActualizacion { get; set; }
+
                 public virtual ICollection<EntradaDetalle> entradaDetalle { get; set; } = new List<EntradaDetalle>();
         }
 }

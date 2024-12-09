@@ -1,4 +1,6 @@
-﻿using InventarioPro.Shared.DTOs;
+﻿using InventarioPro.Server.Models;
+using InventarioPro.Shared.DTOs;
+using InventarioPro.Shared.DTOS.Cuenta;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -29,31 +31,39 @@ namespace InventarioPro.Server.Controllers
 
         // Registrar usuario
         [HttpPost("registrar")]
-        public async Task<ActionResult<RespuestaAuthenticacion>> Registrar(CredencialesUsuario credencialesUsuario)
+        public async Task<ActionResult<RespuestaAuthenticacion>> Registrar(UserRegister userRegister)
         {
-            var usuario = new IdentityUser
+            var usuario = new ApplicationUser
             {
-                UserName = credencialesUsuario.Email,
-                Email = credencialesUsuario.Email
+                UserName = userRegister.Email,
+                Email = userRegister.Email,
+                FirstName = userRegister.FirstName,
+                LastName = userRegister.LastName,
             };
 
-            var resultado = await userManager.CreateAsync(usuario, credencialesUsuario.Password);
+            var resultado = await userManager.CreateAsync(usuario, userRegister.Password);
 
             if (resultado.Succeeded)
             {
-                // Crear un rol "User" por defecto si no existe
-                var roleExists = await roleManager.RoleExistsAsync("User");
+                // Verificar si el rol existe
+                var roleExists = await roleManager.RoleExistsAsync(userRegister.RolId);
                 if (!roleExists)
                 {
-                    var role = new IdentityRole("User");
-                    await roleManager.CreateAsync(role);
+                    return BadRequest($"El rol '{userRegister.RolId}' no existe.");
                 }
 
-                // Asignar rol "User" al usuario
-                await userManager.AddToRoleAsync(usuario, "User");
+                // Asignar el rol al usuario
+                await userManager.AddToRoleAsync(usuario, userRegister.RolId);
+
+                // Crear el objeto UsuarioAutenticado para pasar a la función ConstruirToken
+                var usuarioAutenticado = new UsuarioAutenticado
+                {
+                    Email = userRegister.Email,
+                    Password = userRegister.Password
+                };
 
                 // Retornar el token JWT
-                return await ConstruirToken(credencialesUsuario);
+                return await ConstruirToken(usuarioAutenticado);
             }
             else
             {
@@ -72,7 +82,14 @@ namespace InventarioPro.Server.Controllers
 
             if (resultado.Succeeded)
             {
-                return await ConstruirToken(credencialesUsuario);
+                // Usar un objeto UsuarioAutenticado para construir el token
+                var usuarioAutenticado = new UsuarioAutenticado
+                {
+                    Email = credencialesUsuario.Email,
+                    Password = credencialesUsuario.Password
+                };
+
+                return await ConstruirToken(usuarioAutenticado);
             }
             else
             {
@@ -80,20 +97,20 @@ namespace InventarioPro.Server.Controllers
             }
         }
 
-     
-      
-    
+
         // Generar el token JWT
-        private async Task<RespuestaAuthenticacion> ConstruirToken(CredencialesUsuario credencialesUsuario)
+        private async Task<RespuestaAuthenticacion> ConstruirToken(UsuarioAutenticado usuarioAutenticado)
         {
+           
+
+            var usuario = await userManager.FindByEmailAsync(usuarioAutenticado.Email);
+            var roles = await userManager.GetRolesAsync(usuario);
             var claims = new List<Claim>
             {
-                new Claim("email", credencialesUsuario.Email)
+                new Claim("email", usuarioAutenticado.Email),
+                new Claim(ClaimTypes.NameIdentifier, usuario.Id) // userId aquí
+
             };
-
-            var usuario = await userManager.FindByEmailAsync(credencialesUsuario.Email);
-            var roles = await userManager.GetRolesAsync(usuario);
-
             // Agregar roles como claims
             foreach (var role in roles)
             {
@@ -103,7 +120,7 @@ namespace InventarioPro.Server.Controllers
             // Crear el token JWT
             var llave = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JwtKey"]));
             var creds = new SigningCredentials(llave, SecurityAlgorithms.HmacSha256);
-            var expiracion = DateTime.UtcNow.AddDays(1);
+            var expiracion = DateTime.UtcNow.AddMinutes(1);
 
             var securityToken = new JwtSecurityToken(
                 issuer: null,
@@ -117,6 +134,40 @@ namespace InventarioPro.Server.Controllers
                 Token = new JwtSecurityTokenHandler().WriteToken(securityToken),
                 FechaExpiracion = expiracion
             };
+        }
+
+        // Listar todos los usuarios
+        [HttpGet("listar")]
+        public async Task<ActionResult<List<CredencialesUsuario>>> ListarUsuarios()
+        {
+            var usuarios = userManager.Users.ToList();
+
+            var usuariosDTO = usuarios.Select(u => new CredencialesUsuario
+            {
+                Email = u.Email,
+            }).ToList();
+
+            return Ok(usuariosDTO);
+        }
+
+        // Obtener todos los roles
+        [HttpGet("roles")]
+        public async Task<ActionResult<List<DropdownOption>>> GetRoles()
+        {
+            var roles = roleManager.Roles.Select(r => new DropdownOption
+            {
+                Value = r.Name,
+                Text = r.Name
+            }).ToList();
+
+            return Ok(roles);
+        }
+
+        // Clase para representar las opciones de rol
+        public class DropdownOption
+        {
+            public string Value { get; set; } = string.Empty;
+            public string Text { get; set; } = string.Empty;
         }
     }
 }

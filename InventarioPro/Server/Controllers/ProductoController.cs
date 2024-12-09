@@ -230,22 +230,74 @@ namespace InventarioPro.Server.Controllers
             var totalProducts = await _db.Productos.CountAsync(p => p.Eliminado != true);
             var inStock = await _db.Productos.CountAsync(p => p.Eliminado != true && p.Existencia > 0);
             var outOfStock = totalProducts - inStock;
-
             var totalValue = await _db.Productos
                 .Where(p => p.Eliminado != true)
                 .SumAsync(p => p.Costo * p.Existencia);
-
             var averagePrice = totalProducts > 0
                 ? await _db.Productos
                     .Where(p => p.Eliminado != true)
                     .AverageAsync(p => p.Costo)
                 : 0;
+            var totalCategories = await _db.Categorias.CountAsync();
             var ultimoProducto = await _db.Productos
                 .OrderByDescending(p => p.FechaCreacion)
                 .Select(p => p.Nombre)
                 .FirstOrDefaultAsync();
 
-            var totalCategories = await _db.Categorias.CountAsync();
+            // Nuevas propiedades:
+            var productoMayorExistencia = await _db.Productos
+                .Where(p => p.Eliminado != true)
+                .OrderByDescending(p => p.Existencia)
+                .Select(p => p.Nombre)
+                .FirstOrDefaultAsync();
+
+            var productosBajoCostoCount = await _db.Productos
+                .Where(p => p.Eliminado != true && p.Costo < 10) // Costo menor a 10
+                .CountAsync();
+
+            var valorPromedioStock = inStock > 0
+                ? await _db.Productos
+                    .Where(p => p.Eliminado != true && p.Existencia > 0)
+                    .AverageAsync(p => p.Costo * p.Existencia)
+                : 0;
+
+            var productosNuevosCount = await _db.Productos
+                .Where(p => p.Eliminado != true && p.FechaCreacion > DateTime.Now.AddMonths(-1))
+                .CountAsync();
+
+            var productoMasCaro = await _db.Productos
+                .Where(p => p.Eliminado != true)
+                .OrderByDescending(p => p.Costo)
+                .Select(p => p.Nombre)
+                .FirstOrDefaultAsync();
+
+            // Métricas Predictivas:
+            var prediccionInventarioRiesgo = await _db.Productos
+                .Where(p => p.Eliminado != true && p.Existencia <= 5) // Predicción de productos con bajo stock
+                .CountAsync();
+
+            var prediccionDemandaProductos = await _db.Productos
+                .Where(p => p.Eliminado != true)
+                .OrderByDescending(p => p.FechaCreacion)
+                .Take(30) // Tomar los últimos 30 productos para estimar demanda
+                .AverageAsync(p => p.Existencia);
+
+            var tiempoReposicion = await _db.Productos
+                .Where(p => p.Eliminado != true)
+                .OrderByDescending(p => p.FechaCreacion)
+                .Select(p => p.FechaCreacion)
+                .Take(1)
+                .FirstOrDefaultAsync();
+
+            var valorTotalInventarioFuturo = await _db.Productos
+                .Where(p => p.Eliminado != true)
+                .SumAsync(p => p.Costo * p.Existencia);
+
+            var prediccionProductosBajoCosto = await _db.Productos
+                .Where(p => p.Eliminado != true && p.Costo < 10)
+                .OrderByDescending(p => p.Existencia)
+                .Take(5)
+                .CountAsync();
 
             var resumen = new ResumenInventarioDTO
             {
@@ -255,11 +307,24 @@ namespace InventarioPro.Server.Controllers
                 TotalInventoryValue = totalValue,
                 AveragePrice = averagePrice,
                 TotalCategories = totalCategories,
-                UltimoProducto = ultimoProducto
+                UltimoProducto = ultimoProducto,
+                ProductoMayorExistencia = productoMayorExistencia,
+                ProductosBajoCostoCount = productosBajoCostoCount,
+                ValorPromedioStock = valorPromedioStock,
+                ProductosNuevosCount = productosNuevosCount,
+                ProductoMasCaro = productoMasCaro,
+                // Nuevas métricas
+                PrediccionInventarioRiesgo = prediccionInventarioRiesgo,
+                PrediccionDemandaProductos = (decimal?)prediccionDemandaProductos,
+                TiempoReposicion = (DateTime.Now - tiempoReposicion).Days, // Ejemplo de cálculo de tiempo de reposición
+                ValorTotalInventarioFuturo = valorTotalInventarioFuturo,
+                PrediccionProductosBajoCosto = prediccionProductosBajoCosto
             };
 
             return Ok(resumen);
         }
+
+
 
         [HttpGet("GetProductosPorCategoria")]
         public async Task<ActionResult<IEnumerable<CuentaCategoriaDTO>>> GetProductosPorCategoria()
