@@ -21,129 +21,124 @@ namespace InventarioPro.Server.Controllers
         }
 
         [HttpPost("Guardar")]
-        public async Task<ActionResult<int>> Guardar(Venta_DTO ventaDto)
+        public async Task<ActionResult<int>> GuardarVenta([FromBody] Venta_DTO venta_DTO)
         {
-            if (ventaDto.Id == 0)
+            try
             {
-                // Crear nueva venta
-                var venta = new Venta
+                // Validar si es una venta existente o nueva
+                if (venta_DTO.Id != 0)
                 {
-                    FechaActualizacion = DateTime.Now,
-                    Fecha = DateTime.Now,
-                    MontoTotal = ventaDto.MontoTotal,
-                    Nombre = ventaDto.Nombre,
-                    Cedula = ventaDto.Cedula,
-                    Eliminado = false
-                };
+                    // Modificar venta existente
+                    var venta = await _db.Ventas
+                        .Include(v => v.ventaDetalle)
+                        .FirstOrDefaultAsync(v => v.Id == venta_DTO.Id);
 
-                _db.Ventas.Add(venta);
-                await _db.SaveChangesAsync();
-
-                int idVenta = venta.Id;
-
-                try
-                {
-                    if (ventaDto.VentaDetalle_DTOs != null && ventaDto.VentaDetalle_DTOs.Any())
+                    if (venta == null)
                     {
-                        foreach (var detalle in ventaDto.VentaDetalle_DTOs)
-                        {
-                            var ventaDetalle = new VentaDetalle
-                            {
-                                FechaCreacion = DateTime.Now,
-                                FechaActualizacion = DateTime.Now,
-                                IdProducto = detalle.IdProducto,
-                                Cantidad = detalle.Cantidad,
-                                Precio = detalle.Precio,
-                                IdVenta = idVenta,
-                                Eliminado = false
-
-                            };
-
-                            _db.VentaDetalles.Add(ventaDetalle);
-
-
-                            var producto = await _db.Productos.FindAsync(detalle.IdProducto);
-                            if (producto != null)
-                            {
-                                producto.Existencia -= detalle.Cantidad;
-                                _db.Productos.Update(producto);
-                            }
-                        }
-                        await _db.SaveChangesAsync();
+                        return NotFound("Venta no encontrada.");
                     }
+
+                    // Actualizar campos de la venta
+                    venta.Fecha = venta_DTO.Fecha;
+                    venta.MontoTotal = venta_DTO.MontoTotal;
+                    venta.Nombre = venta_DTO.Nombre;
+                    venta.Cedula = venta_DTO.Cedula;
+                    venta.FechaActualizacion = DateTime.Now;
+
+                    // Actualizar detalles de la venta
+                    List<VentaDetalle> listVentaDetalles = new List<VentaDetalle>();
+                    foreach (var item in venta_DTO.VentaDetalle_DTOs)
+                    {
+                        var presentacion = await _db.Presentaciones
+                            .Include(p => p.Producto)
+                            .FirstOrDefaultAsync(p => p.Id == item.IdPresentacion);
+
+                        if (presentacion == null || presentacion.Producto == null)
+                        {
+                            return BadRequest(new { error = $"Presentación con ID {item.IdPresentacion} no encontrada." });
+                        }
+
+                        // Cálculo correcto: Cantidad total en términos del producto base
+                        int cantidadTotal = (int)(item.Cantidad * presentacion.Cantidad);
+
+                        if (cantidadTotal > presentacion.Producto.Existencia)
+                        {
+                            return BadRequest(new { error = $"La cantidad total excede las existencias del producto." });
+                        }
+
+                        // Actualizar existencias
+                        presentacion.Producto.Existencia -= cantidadTotal;
+
+                        listVentaDetalles.Add(new VentaDetalle
+                        {
+                            Id = item.Id,
+                            IdPresentacion = item.IdPresentacion,
+                            Cantidad = item.Cantidad,
+                            Precio = item.Precio,
+                        });
+                    }
+
+                    venta.ventaDetalle = listVentaDetalles;
+                    await _db.SaveChangesAsync();
                 }
-                catch (DbUpdateException ex)
+                else
                 {
-                    var errorMessage = ex.InnerException?.Message ?? ex.Message;
-                    return BadRequest(new { error = errorMessage });
+                    // Crear nueva venta
+                    var venta = new Venta
+                    {
+                        Fecha = venta_DTO.Fecha,
+                        MontoTotal = venta_DTO.MontoTotal,
+                        Nombre = venta_DTO.Nombre,
+                        Cedula = venta_DTO.Cedula,
+                        FechaActualizacion = DateTime.Now
+                    };
+
+                    List<VentaDetalle> listVentaDetalles = new List<VentaDetalle>();
+                    foreach (var item in venta_DTO.VentaDetalle_DTOs)
+                    {
+                        var presentacion = await _db.Presentaciones
+                            .Include(p => p.Producto)
+                            .FirstOrDefaultAsync(p => p.Id == item.IdPresentacion);
+
+                        if (presentacion == null || presentacion.Producto == null)
+                        {
+                            return BadRequest(new { error = $"Presentación con ID {item.IdPresentacion} no encontrada." });
+                        }
+
+                        // Cálculo correcto: Cantidad total en términos del producto base
+                        int cantidadTotal = (int)(item.Cantidad * presentacion.Cantidad);
+
+                        if (cantidadTotal > presentacion.Producto.Existencia)
+                        {
+                            return BadRequest(new { error = $"La cantidad total excede las existencias del producto." });
+                        }
+
+                        presentacion.Producto.Existencia -= cantidadTotal;
+
+                        listVentaDetalles.Add(new VentaDetalle
+                        {
+                            IdPresentacion = item.IdPresentacion,
+                            Cantidad = item.Cantidad,
+                            Precio = item.Precio,
+                            Eliminado = false,
+                        });
+                    }
+
+                    venta.ventaDetalle = listVentaDetalles;
+                    _db.Ventas.Add(venta);
+                    await _db.SaveChangesAsync();
                 }
 
-                return CreatedAtAction(nameof(Guardar), new { id = idVenta }, new { id = idVenta, message = "Venta creada exitosamente." });
+                return Ok(new { message = "Venta guardada exitosamente." });
             }
-            else
+            catch (Exception ex)
             {
-                var venta = await _db.Ventas.FindAsync(ventaDto.Id);
-                if (venta == null)
-                {
-                    return NotFound("Venta no encontrada.");
-                }
-
-                venta.Fecha = ventaDto.Fecha;
-                venta.MontoTotal = ventaDto.MontoTotal;
-                venta.Nombre = ventaDto.Nombre;
-                venta.Cedula = ventaDto.Cedula;
-                venta.FechaActualizacion = DateTime.Now;
-
-                foreach (var detalle in ventaDto.VentaDetalle_DTOs)
-                {
-                    var ventaDetalle = await _db.VentaDetalles
-                        .Where(d => d.IdVenta == venta.Id && d.IdProducto == detalle.IdProducto)
-                        .FirstOrDefaultAsync();
-
-                    if (ventaDetalle != null)
-                    {
-                        ventaDetalle.Cantidad = detalle.Cantidad;
-                        ventaDetalle.Precio = detalle.Precio;
-                        ventaDetalle.FechaActualizacion = DateTime.Now;
-                        ventaDetalle.Eliminado = venta.Eliminado;
-
-                        var producto = await _db.Productos.FindAsync(detalle.IdProducto);
-                        if (producto != null)
-                        {
-                            producto.Existencia -= (detalle.Cantidad - ventaDetalle.Cantidad);
-                            _db.Productos.Update(producto);
-                        }
-                    }
-                    else
-                    {
-
-                        ventaDetalle = new VentaDetalle
-                        {
-                            IdProducto = detalle.IdProducto,
-                            Cantidad = detalle.Cantidad,
-                            Precio = detalle.Precio,
-                            IdVenta = venta.Id,
-                            FechaActualizacion = DateTime.Now,
-                            Eliminado = venta.Eliminado
-
-                        };
-
-                        _db.VentaDetalles.Add(ventaDetalle);
-
-
-                        var producto = await _db.Productos.FindAsync(detalle.IdProducto);
-                        if (producto != null)
-                        {
-                            producto.Existencia -= detalle.Cantidad;
-                            _db.Productos.Update(producto);
-                        }
-                    }
-                }
-
-                await _db.SaveChangesAsync();
-                return Ok("Venta modificada con éxito.");
+                Console.WriteLine(ex.Message);
+                return StatusCode(500, new { error = "Ocurrió un error inesperado." });
             }
         }
+
+
         [HttpGet("GetResumenVentas")]
         public async Task<ActionResult<ResumenVentasDTO>> GetResumenVentas()
         {
@@ -189,7 +184,7 @@ namespace InventarioPro.Server.Controllers
             // Producto más vendido (ID del producto más vendido)
             var productoMasVendidoId = await _db.VentaDetalles
                 .Where(vd => vd.Eliminado != true)
-                .GroupBy(vd => vd.IdProducto)
+                .GroupBy(vd => vd.IdPresentacion)
                 .OrderByDescending(g => g.Count())
                 .Select(g => g.Key)
                 .FirstOrDefaultAsync();
@@ -226,37 +221,23 @@ namespace InventarioPro.Server.Controllers
         {
             var ventas = await _db.Ventas
                 .Where(v => v.Eliminado != true)
+                .Include(v => v.ventaDetalle.Where(d => d.Eliminado != true)) // Incluir los detalles de la venta
                 .ToListAsync();
 
-            var ventasDto = new List<Venta_DTO>();
-
-            foreach (var v in ventas)
+            var ventasDto = ventas.Select(v => new Venta_DTO
             {
-                var ventaDto = new Venta_DTO
+                Id = v.Id,
+                Fecha = v.Fecha,
+                MontoTotal = Convert.ToDecimal(v.MontoTotal),
+                Nombre = v.Nombre,
+                Cedula = v.Cedula,
+                VentaDetalle_DTOs = v.ventaDetalle.Select(d => new VentaDetalle_DTO
                 {
-                    Id = v.Id,
-                    Fecha = v.Fecha,
-                    MontoTotal = Convert.ToDecimal(v.MontoTotal),
-                    Nombre = v.Nombre,
-                    Cedula = v.Cedula
-                };
-
-                var detalles = await _db.VentaDetalles
-                    .Where(d => d.IdVenta == v.Id && d.Eliminado != true)
-                    .ToListAsync();
-
-                foreach (var detalle in detalles)
-                {
-                    ventaDto.VentaDetalle_DTOs.Add(new VentaDetalle_DTO
-                    {
-                        IdProducto = detalle.IdProducto,
-                        Cantidad = detalle.Cantidad,
-                        Precio = Convert.ToDecimal(detalle.Precio)
-                    });
-                }
-
-                ventasDto.Add(ventaDto);
-            }
+                    IdPresentacion = d.IdPresentacion,
+                    Cantidad = d.Cantidad,
+                    Precio = Convert.ToDecimal(d.Precio)
+                }).ToList()
+            }).ToList();
 
             if (ventasDto != null && ventasDto.Count > 0)
             {
@@ -265,43 +246,44 @@ namespace InventarioPro.Server.Controllers
             return NotFound("No se encontraron ventas.");
         }
 
+
         [HttpGet("GetVentaById/{id}")]
         public async Task<ActionResult<Venta_DTO>> GetVentaById(int id)
         {
-            var venta = await (from v in _db.Ventas
-                               where v.Id == id && v.Eliminado != true
-                               select new Venta_DTO
-                               {
-                                   Id = v.Id,
-                                   Fecha = v.Fecha,
-                                   MontoTotal = Convert.ToDecimal(v.MontoTotal),
-                                   Nombre = v.Nombre,
-                                   Cedula = v.Cedula,
-                                   FechaCreacion = v.FechaCreacion,
-                                   FechaActualizacion = v.FechaActualizacion,
-
-                                   VentaDetalle_DTOs = (from d in _db.VentaDetalles
-                                                        where d.IdVenta == v.Id && d.Eliminado != true
-                                                        select new VentaDetalle_DTO
-                                                        {
-                                                            Id = d.Id,
-                                                            IdProducto = d.IdProducto,
-                                                            Cantidad = d.Cantidad,
-                                                            Precio = Convert.ToDecimal(d.Precio),
-                                                            IdVenta = d.IdVenta,
-                                                            FechaCreacion = d.FechaCreacion,
-                                                            FechaActualizacion = d.FechaActualizacion
-
-                                                        }).ToList()
-                               }).FirstOrDefaultAsync();
+            var venta = await _db.Ventas
+                .Where(v => v.Id == id && v.Eliminado != true)
+                .Include(v => v.ventaDetalle.Where(d => d.Eliminado != true)) // Incluir VentaDetalles
+                .FirstOrDefaultAsync();
 
             if (venta == null)
             {
                 return NotFound(new { error = "Venta no encontrada." });
             }
 
-            return Ok(venta);
+            // Proyección de los datos a Venta_DTO
+            var ventaDto = new Venta_DTO
+            {
+                Id = venta.Id,
+                Fecha = venta.Fecha,
+                MontoTotal = Convert.ToDecimal(venta.MontoTotal),
+                Nombre = venta.Nombre,
+                Cedula = venta.Cedula,
+                FechaCreacion = venta.FechaCreacion,
+                FechaActualizacion = venta.FechaActualizacion,
+                VentaDetalle_DTOs = venta.ventaDetalle.Select(d => new VentaDetalle_DTO
+                {
+                    Id = d.Id,
+                    IdPresentacion = d.IdPresentacion,
+                    Cantidad = d.Cantidad,
+                    Precio = Convert.ToDecimal(d.Precio),
+                    FechaCreacion = d.FechaCreacion,
+                    FechaActualizacion = d.FechaActualizacion
+                }).ToList()
+            };
+
+            return Ok(ventaDto);
         }
+
         [HttpPut("EliminarDetalle/{id}")]
         public async Task<IActionResult> EliminarDetalle(int id, [FromBody] bool eliminado)
         {

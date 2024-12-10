@@ -44,12 +44,7 @@ namespace InventarioPro.Server.Controllers
                             Costo = item.Costo,
 
                         });
-                        //decimal costoPonderado = (decimal)(((productoExistente.Costo * productoExistente.Existencia) +
-                        //                              (item.Costo * item.Cantidad)) /
-                        //                             (productoExistente.Existencia + item.Cantidad));
 
-                        //// Actualizar el producto con el nuevo costo ponderado
-                        //productoExistente.Costo = costoPonderado;
                     }
 
                     entrada.entradaDetalle = listEntradadestalle;

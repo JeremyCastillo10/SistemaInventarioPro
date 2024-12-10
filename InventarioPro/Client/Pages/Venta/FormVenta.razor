@@ -15,7 +15,6 @@
 @inject SweetAlertService swal
 @inject IJSRuntime jsruntime;
 
-
 <EditForm Model="@venta" OnValidSubmit="HandleValidSubmit">
     <DataAnnotationsValidator />
     <div class="modal show d-block pad" style="background-color: rgba(0, 0, 0, 0.5);">
@@ -49,30 +48,36 @@
 
                     <div class="row mb-3">
                         <div class="col-md-3 col-sm-6">
-                            <label>Producto</label>
-                            <RadzenDropDownDataGrid Placeholder="Producto"
+                            <label>Presentación de Producto</label>
+                            <RadzenDropDownDataGrid Placeholder="Presentación"
                                                     TextProperty="Nombre"
                                                     ValueProperty="Id"
-                                                    Data="@productos"
-                                                    @bind-Value="nuevoDetalle.IdProducto"
+                                                    Data="@presentaciones"
+                                                    @bind-Value="nuevoDetalle.IdPresentacion"
                                                     Class="form-select form-control-lg"
                                                     Style="border-radius: .375rem; font-size: 14px; padding: .5rem; background-color: #f8f9fa;"
                                                     Filterable="true"
                                                     AllowClear="true"
-                                                    AriaLabel="Buscar producto"
+                                                    AriaLabel="Buscar presentación"
                                                     FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                                                    Change="OnProductoChange" />
-
+                                                    Change="OnPresentacionChange" />
                         </div>
 
                         <div class="col-md-3 col-sm-6">
                             <label>Cantidad</label>
-                            <RadzenNumeric @bind-Value="nuevoDetalle.Cantidad" Placeholder="Cantidad" Class="form-control" />
+                            <RadzenNumeric @bind-Value="nuevoDetalle.Cantidad"
+                                           Placeholder="Cantidad"
+                                           Class="form-control"
+                                           Min="1" />
                         </div>
 
                         <div class="col-md-3 col-sm-6">
                             <label>Precio</label>
-                            <RadzenNumeric @bind-Value="nuevoDetalle.Precio" Placeholder="Precio" Class="form-control" Decimal="true" />
+                            <RadzenNumeric @bind-Value="nuevoDetalle.Precio"
+                                           Placeholder="Precio"
+                                           Class="form-control"
+                                           Decimal="true"
+                                           Min="0" />
                         </div>
 
                         <div class="col-md-3 col-sm-6 d-flex align-items-end">
@@ -80,32 +85,31 @@
                         </div>
                     </div>
 
-                    <!-- Tabla para mostrar los detalles de la venta -->
                     <div class="table-responsive">
                         <table class="table table-striped table-hover"
                                style="width: 100%; border-collapse: separate; border-spacing: 0 10px;">
                             <thead class="table-dark">
                                 <tr>
-                                    <th scope="col">Producto</th>
+                                    <th scope="col">Presentación</th>
                                     <th scope="col">Cantidad</th>
                                     <th scope="col">Precio</th>
+                                    <th scope="col">Subtotal</th>
                                     <th scope="col">Acciones</th>
                                 </tr>
                             </thead>
 
                             <tbody>
-                                <!-- Itera sobre la lista de detalles de la venta -->
                                 @foreach (var item in detalles)
                                 {
-                                    var producto = productos.FirstOrDefault(p => p.Id == item.IdProducto);
+                                    var presentacion = presentaciones.FirstOrDefault(p => p.Id == item.IdPresentacion);
 
                                     <tr style="height: 40px;">
-                                        <td>@producto?.Nombre</td>
+                                        <td>@presentacion?.Nombre</td>
                                         <td>@item.Cantidad</td>
-                                        <td>@item.Precio.ToString("C")</td> <!-- Formato de moneda -->
+                                        <td>@item.Precio.ToString("C")</td>
+                                        <td>@(item.Cantidad * item.Precio)</td>
                                         <td>
-                                            <!-- Botón de eliminar en rojo -->
-                                            <button type="button" @onclick="() => RemoveDetalle(item)"
+                                            <button type="button" @onclick="() => RemoveDetalle(item.IdPresentacion)"
                                                     class="btn btn-danger btn-sm">
                                                 Eliminar
                                             </button>
@@ -130,15 +134,14 @@
     </div>
 </EditForm>
 
-
-
 @code {
     [Parameter]
     public Venta_DTO venta { get; set; } = new Venta_DTO();
     private List<VentaDetalle_DTO> detalles = new List<VentaDetalle_DTO>();
     private VentaDetalle_DTO nuevoDetalle = new VentaDetalle_DTO();
-    private List<Producto_DTO> productos = new List<Producto_DTO>();
+    private List<Presentacion_DTO> presentaciones = new List<Presentacion_DTO>();
     private Empresa_DTO empresa;
+    private List<Producto_DTO> productos { get; set; } = new List<Producto_DTO>();
 
 
 
@@ -146,13 +149,157 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadProductos();
+        await LoadPresentaciones();
+        productos = await Http.GetFromJsonAsync<List<Producto_DTO>>("api/producto/GetProductos");
         if (venta.Id > 0) // Si se está editando una venta existente
         {
             await LoadVentaDetalles(venta.Id);
         }
         empresa = await Http.GetFromJsonAsync<Empresa_DTO>("api/empresa/1");
+    }
+    private async Task LoadPresentaciones()
+    {
+        try
+        {
+            var response = await Http.GetAsync("api/producto/GetPresentaciones");
+            if (response.IsSuccessStatusCode)
+            {
+                presentaciones = await response.Content.ReadFromJsonAsync<List<Presentacion_DTO>>();
 
+                // Fetch products for each presentation
+                foreach (var presentacion in presentaciones)
+                {
+                    if (presentacion.ProductoId > 0)
+                    {
+                        await ObtenerPresentacion(presentacion.ProductoId);
+                    }
+                }
+            }
+            else
+            {
+                await swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Error",
+                        Text = "No se pudieron cargar las presentaciones.",
+                        Icon = SweetAlertIcon.Error
+                    });
+            }
+        }
+        catch (Exception ex)
+        {
+            await swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Error",
+                    Text = $"Error al cargar presentaciones: {ex.Message}",
+                    Icon = SweetAlertIcon.Error
+                });
+        }
+    }
+
+    private async Task ObtenerPresentacion(int productoId)
+    {
+        var response = await Http.GetAsync($"api/producto/GetPresentacionById/{productoId}");
+        if (response.IsSuccessStatusCode)
+        {
+            var presentacion = await response.Content.ReadFromJsonAsync<Presentacion_DTO>();
+            // Retrieve associated product
+            var productoResponse = await Http.GetAsync($"api/producto/GetPorId/{presentacion.ProductoId}");
+            if (productoResponse.IsSuccessStatusCode)
+            {
+                var producto = await productoResponse.Content.ReadFromJsonAsync<Producto_DTO>();
+                // Store product details in Presentacion
+                presentacion.Producto = producto;
+            }
+        }
+    }
+
+
+    private async void AddDetalle()
+    {
+        try
+        {
+            // Verificar si se seleccionó una presentación válida
+            var presentacionSeleccionada = presentaciones.FirstOrDefault(p => p.Id == nuevoDetalle.IdPresentacion);
+
+            if (presentacionSeleccionada == null || presentacionSeleccionada.Producto == null)
+            {
+                await swal.FireAsync(new SweetAlertOptions
+                    {
+                        Title = "Error",
+                        Text = "Debe seleccionar una presentación válida con un producto asociado.",
+                        Icon = SweetAlertIcon.Error
+                    });
+                return;
+            }
+
+            var detalleVenta = new VentaDetalle_DTO
+                {
+                    IdPresentacion = nuevoDetalle.IdPresentacion,
+                    Cantidad = nuevoDetalle.Cantidad,
+                    Precio = nuevoDetalle.Precio
+                };
+
+            detalles.Add(detalleVenta);
+
+            nuevoDetalle = new VentaDetalle_DTO();
+
+        }
+        catch (Exception ex)
+        {
+            await swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "Error",
+                    Text = $"Hubo un error al agregar el detalle: {ex.Message}",
+                    Icon = SweetAlertIcon.Error
+                });
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        venta.MontoTotal = MontoTotal;
+
+        venta.VentaDetalle_DTOs = detalles;
+
+
+        var response = await Http.PostAsJsonAsync("api/venta/Guardar", venta);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await ShowAlert("Éxito", (venta.Id == 0) ? "Venta Creada Con Exito!" : "Venta Actualizada Con Exito", SweetAlertIcon.Success);
+
+            var result = await swal.FireAsync(new SweetAlertOptions
+                {
+                    Title = "¿Desea imprimir la factura?",
+                    Text = "¿Quiere generar el PDF de la factura ahora?",
+                    Icon = SweetAlertIcon.Question,
+                    ShowCancelButton = true,
+                    ConfirmButtonText = "Sí",
+                    CancelButtonText = "No"
+                });
+
+            if (result.IsConfirmed)
+            {
+                await ExportarFacturaComercialPDF();
+            }
+
+            DialogService.Close(true);
+        }
+        else
+        {
+            await ShowAlert("Error", "Ocurrió un error al guardar la venta", SweetAlertIcon.Error);
+        }
+    }
+
+    private async Task ShowAlert(string title, string message, SweetAlertIcon icon)
+    {
+        await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = title,
+                Text = message,
+                Icon = icon,
+                ConfirmButtonText = "OK"
+            });
     }
     private async Task LoadVentaDetalles(int ventaId)
     {
@@ -183,332 +330,27 @@
         }
     }
 
-    private async Task LoadProductos()
+   
+
+    private void RemoveDetalle(int id)
     {
-        var response = await Http.GetAsync("api/producto/GetProductos");
-        if (response.IsSuccessStatusCode)
-        {
-            productos = await response.Content.ReadFromJsonAsync<List<Producto_DTO>>();
-        }
-        else
-        {
-            // Manejar error al cargar productos
-        }
-    }
-    private async void AddDetalle()
-    {
-        if (nuevoDetalle.IdProducto > 0 && nuevoDetalle.Cantidad > 0 && nuevoDetalle.Precio >= 0)
-        {
-            var producto = productos.FirstOrDefault(p => p.Id == nuevoDetalle.IdProducto);
-
-            if (producto != null && producto.Existencia >= nuevoDetalle.Cantidad)
-            {
-                var newDetalles = new List<VentaDetalle_DTO>(detalles)
-            {
-                new VentaDetalle_DTO
-                {
-                    IdProducto = nuevoDetalle.IdProducto,
-                    Cantidad = nuevoDetalle.Cantidad,
-                    Precio = nuevoDetalle.Precio
-                }
-            };
-
-                detalles = newDetalles;
-
-                nuevoDetalle = new VentaDetalle_DTO();
-
-                StateHasChanged();
-            }
-            else
-            {
-                await swal.FireAsync(new SweetAlertOptions
-                    {
-                        Title = "Error",
-                        Text = $"No hay suficiente existencia para agregar este producto. Quedan {producto?.Existencia} unidades.",
-                        Icon = SweetAlertIcon.Warning,
-                        ConfirmButtonText = "OK"
-                    });
-            }
-        }
-    }
-
-
-    private async void RemoveDetalle(VentaDetalle_DTO detalle)
-    {
-        if (venta.Id == 0)
-        {
-            detalles.Remove(detalle);
-            detalles = detalles.ToList();
-            StateHasChanged();
-        }
-        else
-        {
-
-            await swal.FireAsync(new SweetAlertOptions
-                {
-                    Title = "Error",
-                    Text = "No se pudo eliminar el detalle. Inténtalo de nuevo.",
-                    Icon = SweetAlertIcon.Error,
-                    ConfirmButtonText = "OK"
-                });
-
-        }
-
+        detalles = detalles.Where(p => p.IdPresentacion != id).ToList();
+        StateHasChanged();
     }
 
     private decimal CalcularMontoTotal()
     {
-        decimal subtotal = detalles.Sum(d => d.Cantidad * d.Precio);
-        return subtotal;
+        return detalles.Sum(d => d.Cantidad * d.Precio);
     }
 
-    private async Task HandleValidSubmit()
+    private async void OnPresentacionChange(object value)
     {
-        venta.MontoTotal = MontoTotal;
-
-        venta.VentaDetalle_DTOs = detalles;
-
-
-        var response = await Http.PostAsJsonAsync("api/venta/Guardar", venta);
-
-        if (response.IsSuccessStatusCode)
+        var presentacion = presentaciones.FirstOrDefault(p => p.Id == (int)value);
+        if (presentacion != null)
         {
-            await ShowAlert("Éxito", (venta.Id == 0) ? "Venta Creada Con Exito!" : "Venta Actualizada Con Exito", SweetAlertIcon.Success);
-
-            var result = await swal.FireAsync(new SweetAlertOptions
-                {
-                    Title = "¿Desea imprimir la factura?",
-                    Text = "¿Quiere generar el PDF de la factura ahora?",
-                    Icon = SweetAlertIcon.Question,
-                    ShowCancelButton = true,
-                    ConfirmButtonText = "Sí",
-                    CancelButtonText = "No"
-                });
-
-            if (result.IsConfirmed)
-            {
-                ExportarFacturaComercialPDF();
-
-            }
-            Cancel();
-            DialogService.Close(venta);
-            StateHasChanged();
-        }
-        else
-        {
-
+            nuevoDetalle.Precio = (decimal)presentacion.Precio;
         }
     }
-
-    private void OnProductoChange(object value)
-    {
-        // Obtén el Id del producto seleccionado
-        int productoId = Convert.ToInt32(value);
-
-        // Busca el producto en la lista
-        var productoSeleccionado = productos.FirstOrDefault(p => p.Id == productoId);
-
-        if (productoSeleccionado != null)
-        {
-            // Asigna el precio del producto seleccionado
-            nuevoDetalle.Precio = productoSeleccionado.Precio;
-
-            // Si quieres asignar automáticamente una cantidad inicial, puedes hacerlo aquí
-            // nuevoDetalle.Cantidad = 1;
-        }
-
-        StateHasChanged(); // Refresca la interfaz para reflejar el cambio
-    }
-    // public async Task exportarVentaPDF()
-    // {
-    //     if (venta == null)
-    //     {
-    //         Console.WriteLine("No hay venta para exportar.");
-    //         return;
-    //     }
-
-    //     string empresaNombre = empresa.Nombre;
-    //     string empresaDireccion = empresa.Direccion;
-    //     string empresaTelefono = empresa.Telefono;
-    //     string empresaEmail = empresa.RNC;
-    //     string logoBase64 = empresa.Logo;
-
-    //     string[] cabecerasTabla = { "Producto", "Cantidad", "Precio Unitario", "Total" };
-
-    //     var cultura = new CultureInfo("es-DO");
-
-    //     using (MemoryStream ms = new MemoryStream())
-    //     {
-    //         PdfWriter writer = new PdfWriter(ms);
-    //         using (var pdfDoc = new PdfDocument(writer))
-    //         {
-    //             Document doc = new Document(pdfDoc, PageSize.A4);
-    //             doc.SetMargins(40, 40, 40, 40);
-
-    //             pdfDoc.AddNewPage();
-
-    //             if (!string.IsNullOrEmpty(logoBase64))
-    //             {
-    //                 try
-    //                 {
-    //                     byte[] logoBytes = Convert.FromBase64String(logoBase64);
-    //                     ImageData logoImage = ImageDataFactory.Create(logoBytes);
-    //                     Image logo = new Image(logoImage)
-    //                         .SetWidth(120)
-    //                         .SetHeight(60);
-    //                     logo.SetFixedPosition(30, 780);
-    //                     doc.Add(logo);
-    //                 }
-    //                 catch (Exception ex)
-    //                 {
-    //                     Console.WriteLine($"Error al cargar el logo: {ex.Message}");
-    //                 }
-    //             }
-
-    //             Paragraph espacio = new Paragraph().SetMarginBottom(20);
-    //             doc.Add(espacio);
-
-    //             Paragraph empresaInfo = new Paragraph()
-    //                 .Add(new Text(empresaNombre).SetBold().SetFontSize(16).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-    //                 .Add(new Text("\n" + empresaDireccion).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-    //                 .Add(new Text("\nTeléfono: " + empresaTelefono).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-    //                 .Add(new Text("\nEmail: " + empresaEmail).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-    //                 .Add(new Text("\nRNC: " + empresaEmail).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-    //                 .SetMarginBottom(30);
-    //             doc.Add(empresaInfo);
-
-    //             Paragraph p1 = new Paragraph("FACTURA DE VENTA")
-    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-    //                 .SetFontSize(22)
-    //                 .SetBold()
-    //                 .SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK)
-    //                 .SetMarginBottom(10);
-    //             doc.Add(p1);
-    //             string numeroFactura = $"00{venta.Id}-{DateTime.Now.Year}";
-
-    //             string fechaHora = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"); // dd/MM/yyyy para la fecha, HH:mm:ss para la hora
-    //             Paragraph facturaInfo = new Paragraph()
-    //                 .Add(new Text($"Número de factura: {numeroFactura}").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-    //             .Add(new Text($"\nFecha y hora: {fechaHora}").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-    //                 .SetMarginBottom(20);
-    //             doc.Add(facturaInfo);
-
-    //             Paragraph clienteInfo = new Paragraph()
-    //                 .Add(new Text("CLIENTE").SetBold().SetFontSize(14).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-    //                 .Add(new Text("\nNombre: " + venta.Nombre).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-    //                 .Add(new Text("\nCédula/RNC: " + venta.Cedula).SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-    //                 .SetMarginBottom(20);
-    //             doc.Add(clienteInfo);
-
-    //             Paragraph detalleTitulo = new Paragraph("DETALLE DE LA VENTA")
-    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-    //                 .SetFontSize(14)
-    //                 .SetBold()
-    //                 .SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK)
-    //                 .SetMarginBottom(10);
-    //             doc.Add(detalleTitulo);
-
-    //             Table table = new Table(cabecerasTabla.Length, true);
-    //             table.SetWidthPercent(100);
-    //             table.SetMarginBottom(30);
-
-    //             foreach (var cabecera in cabecerasTabla)
-    //             {
-    //                 var headerCell = new Cell().Add(new Paragraph(cabecera))
-    //                     .SetBackgroundColor(iText.Kernel.Colors.ColorConstants.LIGHT_GRAY)
-    //                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-    //                     .SetBold()
-    //                     .SetFontColor(iText.Kernel.Colors.ColorConstants.DARK_GRAY)
-    //                     .SetPadding(8)
-    //                     .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.DARK_GRAY, 1));
-    //                 table.AddHeaderCell(headerCell);
-    //             }
-
-    //             var detalles = venta.VentaDetalle_DTOs.Select(d =>
-    //             {
-    //                 var producto = productos.FirstOrDefault(p => p.Id == d.IdProducto);
-    //                 var nombreProducto = producto != null ? producto.Nombre : "Producto desconocido";
-    //                 decimal precioTotal = d.Cantidad * d.Precio;
-    //                 return new { Producto = nombreProducto, Cantidad = d.Cantidad, PrecioUnitario = d.Precio, Total = precioTotal };
-    //             }).ToArray();
-
-    //             foreach (var detalle in detalles)
-    //             {
-    //                 table.AddCell(new Cell().Add(new Paragraph(detalle.Producto))
-    //                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-    //                     .SetPadding(8)
-    //                     .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.GRAY, 1)));
-
-    //                 table.AddCell(new Cell().Add(new Paragraph(detalle.Cantidad.ToString()))
-    //                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-    //                     .SetPadding(8)
-    //                     .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.GRAY, 1)));
-
-    //                 table.AddCell(new Cell().Add(new Paragraph(detalle.PrecioUnitario.ToString("C", cultura)))
-    //                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
-    //                     .SetPadding(8)
-    //                     .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.GRAY, 1)));
-
-    //                 table.AddCell(new Cell().Add(new Paragraph(detalle.Total.ToString("C", cultura)))
-    //                     .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
-    //                     .SetPadding(8)
-    //                     .SetBorder(new SolidBorder(iText.Kernel.Colors.ColorConstants.GRAY, 1)));
-    //             }
-
-    //             int filasFaltantes = 10 - detalles.Length;
-    //             for (int i = 0; i < filasFaltantes; i++)
-    //             {
-    //                 table.AddCell(new Cell().SetBorder(iText.Layout.Borders.Border.NO_BORDER));
-    //                 table.AddCell(new Cell().SetBorder(iText.Layout.Borders.Border.NO_BORDER));
-    //                 table.AddCell(new Cell().SetBorder(iText.Layout.Borders.Border.NO_BORDER));
-    //                 table.AddCell(new Cell().SetBorder(iText.Layout.Borders.Border.NO_BORDER));
-    //             }
-
-    //             doc.Add(table);
-
-    //             decimal subtotal = venta.MontoTotal;
-    //             decimal impuestos = subtotal * 0.18m;
-    //             decimal totalConImpuestos = subtotal + impuestos;
-
-    //             Paragraph resumen = new Paragraph()
-    //                 .Add(new Text($"Subtotal:").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-    //                 .Add(new Text($" RD$ {subtotal.ToString("F2", cultura)}").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-    //                 .Add(new Text($"\nIVA (18%):").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-    //                 .Add(new Text($" RD$ {impuestos.ToString("F2", cultura)}").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-    //                 .Add(new Text($"\nTotal a Pagar:").SetFontSize(14).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK).SetBold())
-    //                 .Add(new Text($" RD$ {totalConImpuestos.ToString("F2", cultura)}").SetFontSize(14).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK).SetBold())
-    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.RIGHT)
-    //                 .SetMarginTop(20);
-    //             doc.Add(resumen);
-
-    //             // Notas
-    //             Paragraph notas = new Paragraph()
-    //                 .Add(new Text("Notas:").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-    //                 .Add(new Text("\n - Gracias por su compra.").SetFontSize(12).SetFontColor(iText.Kernel.Colors.ColorConstants.BLACK))
-    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT)
-    //                 .SetMarginTop(10);
-    //             doc.Add(notas);
-
-    //             // Pie de página
-    //             Paragraph piePagina = new Paragraph()
-    //                 .Add(new Text("Empresa XYZ S.A. | Todos los derechos reservados").SetFontSize(8).SetFontColor(iText.Kernel.Colors.ColorConstants.GRAY))
-    //                 .SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER)
-    //                 .SetMarginTop(30);
-    //             doc.Add(piePagina);
-
-    //             doc.Close();
-    //         }
-
-    //         byte[] buffer = ms.ToArray();
-    //         string base64 = Convert.ToBase64String(buffer);
-    //         string pdf = "data:application/pdf;base64," + base64;
-
-    //         await jsruntime.InvokeVoidAsync("descargarFactura", pdf);
-    //     }
-    // }
     public async Task ExportarFacturaComercialPDF()
     {
         if (venta == null)
@@ -567,7 +409,7 @@
                 // Agregar los productos a la tabla
                 foreach (var detalle in venta.VentaDetalle_DTOs)
                 {
-                    var producto = productos.FirstOrDefault(p => p.Id == detalle.IdProducto);
+                    var producto = presentaciones.FirstOrDefault(p => p.Id == detalle.IdPresentacion);
                     var nombreProducto = producto != null ? producto.Nombre : "Producto desconocido";
                     table.AddCell(new Cell().Add(new Paragraph(nombreProducto).SetFontSize(8)).SetTextAlignment(iText.Layout.Properties.TextAlignment.LEFT));
                     table.AddCell(new Cell().Add(new Paragraph(detalle.Cantidad.ToString()).SetFontSize(8)).SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER));
@@ -611,20 +453,11 @@
     }
 
 
-    private async Task ShowAlert(string title, string text, SweetAlertIcon icon)
-    {
-        await swal.FireAsync(new SweetAlertOptions
-            {
-                Title = title,
-                Text = text,
-                Icon = icon,
-                ConfirmButtonText = "OK"
-            });
-    }
 
     private void Cancel()
     {
-        DialogService.Close(null);
+        DialogService.Close(false);
     }
-
+    // The rest of the methods remain largely the same as in the original code
+    // (LoadVentaDetalles, HandleValidSubmit, Cancel, etc.)
 }

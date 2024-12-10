@@ -29,69 +29,113 @@ namespace InventarioPro.Server.Controllers
                 return BadRequest("El objeto Producto es nulo.");
             }
 
-            Console.WriteLine($"Producto recibido: {productoDto.Nombre}");
-
-            if (productoDto.Id == 0)
+            try
             {
-                var producto = new Producto
+                if (productoDto.Id == 0)
                 {
-                    FechaCreacion = DateTime.Now,
-                    FechaActualizacion = DateTime.Now,
-                    Nombre = productoDto.Nombre,
-                    Descripcion = productoDto.Descripcion,
-                    CategoriaId = productoDto.CategoriaId,
-                    Existencia = 0,
-                    Eliminado = false,
-                    Precio = productoDto.Precio,
-                    Costo = productoDto.Costo,
-                    Codigo = productoDto.Codigo,
-                    ImagenProducto = productoDto.ImagenProducto != null ? Convert.FromBase64String(productoDto.ImagenProducto) : null
-                };
+                    // Crear nuevo producto
+                    var producto = new Producto
+                    {
+                        FechaCreacion = DateTime.Now,
+                        FechaActualizacion = DateTime.Now,
+                        Nombre = productoDto.Nombre,
+                        Descripcion = productoDto.Descripcion,
+                        CategoriaId = productoDto.CategoriaId,
+                        Existencia = 0,
+                        Eliminado = false,
+                        Precio = productoDto.Precio,
+                        Costo = productoDto.Costo,
+                        Codigo = productoDto.Codigo,
+                        ImagenProducto = productoDto.ImagenProducto != null
+                            ? Convert.FromBase64String(productoDto.ImagenProducto)
+                            : null,
+                        // Inicializar lista de presentaciones
+                        Presentaciones = productoDto.Presentaciones?.Select(p => new Presentacion
+                        {
+                            Nombre = p.Nombre,
+                            Precio = p.Precio,
+                            Cantidad = p.Cantidad ?? 0,
+                            Volumen = p.Volumen,
+                            UnidadMedida = p.UnidadMedida,
+                            Descripcion = p.Descripcion,
+                            Eliminado = false,
+                            ProductoId = productoDto.Id,  // Asignar el ProductoId
+                            Producto = new Producto // Asignar un objeto Producto con solo el Id
+                            {
+                                Id = productoDto.Id
+                            }
+                        }).ToList() ?? new List<Presentacion>()
+                    };
 
-                try
-                {
                     _db.Productos.Add(producto);
                     await _db.SaveChangesAsync();
-                    return CreatedAtAction(nameof(GuardarProducto), new { id = producto.Id }, new { id = producto.Id, message = "Producto creado exitosamente." });
+
+                    return CreatedAtAction(
+                        nameof(GuardarProducto),
+                        new { id = producto.Id },
+                        new
+                        {
+                            id = producto.Id,
+                            message = "Producto creado exitosamente con sus presentaciones."
+                        }
+                    );
                 }
-                catch (DbUpdateException ex)
+                else
                 {
-                    var errorMessage = ex.InnerException?.Message ?? ex.Message;
-                    Console.WriteLine($"Error al guardar producto: {errorMessage}");
-                    return BadRequest(new { error = errorMessage });
+                    // Actualizar producto existente
+                    var productoExistente = await _db.Productos
+                        .Include(p => p.Presentaciones)
+                        .FirstOrDefaultAsync(p => p.Id == productoDto.Id);
+
+                    if (productoExistente == null)
+                    {
+                        return NotFound("Producto no encontrado.");
+                    }
+
+                    // Actualizar propiedades del producto
+                    productoExistente.FechaActualizacion = DateTime.Now;
+                    productoExistente.Nombre = productoDto.Nombre;
+                    productoExistente.Descripcion = productoDto.Descripcion;
+                    productoExistente.CategoriaId = productoDto.CategoriaId;
+                    productoExistente.Precio = productoDto.Precio;
+                    productoExistente.Costo = productoDto.Costo;
+                    productoExistente.Codigo = productoDto.Codigo;
+                    productoExistente.ImagenProducto = productoDto.ImagenProducto != null
+                        ? Convert.FromBase64String(productoDto.ImagenProducto)
+                        : null;
+
+                    if (productoDto.Presentaciones != null)
+                    {
+                        _db.Presentaciones.RemoveRange(productoExistente.Presentaciones);
+
+                        productoExistente.Presentaciones = productoDto.Presentaciones.Select(p => new Presentacion
+                        {
+                            Nombre = p.Nombre,
+                            Precio = p.Precio,
+                            Cantidad = p.Cantidad ?? 0,
+                            Volumen = p.Volumen,
+                            UnidadMedida = p.UnidadMedida,
+                            Descripcion = p.Descripcion,
+                            FechaActulizacion = DateTime.Now,
+                            ProductoId = productoDto.Id, // Asignar el ProductoId
+                            Producto = new Producto // Asignar un objeto Producto con solo el Id
+                            {
+                                Id = productoDto.Id
+                            }
+                        }).ToList();
+                    }
+
+                    await _db.SaveChangesAsync();
+                    return Ok("Producto y presentaciones modificados con éxito.");
                 }
             }
-            else
+            catch (DbUpdateException ex)
             {
-                var productoExistente = await _db.Productos.FirstOrDefaultAsync(p => p.Id == productoDto.Id);
-                if (productoExistente == null)
-                {
-                    return NotFound("Producto no encontrado.");
-                }
-
-                productoExistente.FechaActualizacion = DateTime.Now;
-                productoExistente.Nombre = productoDto.Nombre;
-                productoExistente.Existencia = productoDto.Existencia;
-                productoExistente.Descripcion = productoDto.Descripcion;
-                productoExistente.CategoriaId = productoDto.CategoriaId;
-                productoExistente.Precio = productoDto.Precio;
-                productoExistente.Costo = productoDto.Costo;
-                productoExistente.ImagenProducto = productoDto.ImagenProducto != null ? Convert.FromBase64String(productoDto.ImagenProducto) : null;
-
-                try
-                {
-                    await _db.SaveChangesAsync();
-                    return Ok("Producto modificado con éxito.");
-                }
-                catch (DbUpdateException ex)
-                {
-                    var errorMessage = ex.InnerException?.Message ?? ex.Message;
-                    Console.WriteLine($"Error al actualizar producto: {errorMessage}");
-                    return BadRequest(new { error = errorMessage });
-                }
+                var errorMessage = ex.InnerException?.Message ?? ex.Message;
+                Console.WriteLine($"Error al procesar producto: {errorMessage}");
+                return BadRequest(new { error = errorMessage });
             }
         }
-
 
         [HttpGet("GetProductos")]
         public async Task<ActionResult> getProductos()
@@ -116,6 +160,8 @@ namespace InventarioPro.Server.Controllers
                 return Ok(productos);
             return BadRequest("Error al obtener");
         }
+
+    
 
         [HttpGet("GetPorCategoria/{idCategoria}")]
         public async Task<ActionResult> GetPorCategoria(int idCategoria)
@@ -197,33 +243,99 @@ namespace InventarioPro.Server.Controllers
 
             return NotFound("No se encontraron productos en este rango de fechas.");
         }
+
+
+            [HttpGet("GetPresentacionById/{id}")]
+            public async Task<ActionResult<Presentacion_DTO>> GetPresentacionById(int id)
+            {
+                try
+                {
+                    // Buscar la presentación por su ID
+                    var presentacion = await _db.Presentaciones
+                        .Include(p => p.Producto) // Incluir el producto asociado
+                        .FirstOrDefaultAsync(p => p.Id == id);
+
+                    if (presentacion == null)
+                    {
+                        return NotFound(new { message = "Presentación no encontrada." });
+                    }
+
+                    // Devolver el DTO de la presentación con el producto
+                    var presentacionDTO = new Presentacion_DTO
+                    {
+                        Id = presentacion.Id,
+                        ProductoId = presentacion.ProductoId,
+                        Nombre = presentacion.Nombre,
+                        Precio = presentacion.Precio,
+                        Cantidad = presentacion.Cantidad,
+                        Volumen = presentacion.Volumen,
+                        UnidadMedida = presentacion.UnidadMedida,
+                        Descripcion = presentacion.Descripcion,
+                        Eliminado = presentacion.Eliminado,
+                        Producto = new Producto_DTO
+                        {
+                            Id = presentacion.Producto.Id,
+                            Nombre = presentacion.Producto.Nombre,
+                            Descripcion = presentacion.Producto.Descripcion,
+                          
+                            Codigo = presentacion.Producto.Codigo,
+                            FechaCreacion = presentacion.Producto.FechaCreacion,
+
+                        }
+                    };
+
+                    return Ok(presentacionDTO);
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new { error = "Ocurrió un error inesperado.", details = ex.Message });
+                }
+            
+        }
+   
+
         [HttpGet("GetProductoId/{id}")]
         public async Task<ActionResult> GetPorId(int id)
         {
-            var pro = await (from listaproductos in _db.Productos
-                             join cate in _db.Categorias on listaproductos.CategoriaId equals cate.Id
-                             where listaproductos.Id == id && listaproductos.Eliminado != true
-                             select new Producto_DTO
-                             {
-                                 Id = listaproductos.Id,
-                                 Nombre = listaproductos.Nombre,
-                                 Descripcion = listaproductos.Descripcion,
-                                 Precio = Convert.ToDecimal(listaproductos.Precio),
-                                 Costo = Convert.ToDecimal(listaproductos.Precio),
-                                 CategoriaId = listaproductos.CategoriaId ?? 0,
-                                 Existencia = listaproductos.Existencia ?? 0,
-                                 Codigo = listaproductos.Codigo,
-                                 ImagenProducto = listaproductos.ImagenProducto != null ?
-                                     Convert.ToBase64String(listaproductos.ImagenProducto) : null,
-                                 FechaCreacion = listaproductos.FechaCreacion,
-                                 FechaActulizacion = listaproductos.FechaActualizacion,
-                             }).FirstOrDefaultAsync();
+            var producto = await (from p in _db.Productos
+                                  join c in _db.Categorias on p.CategoriaId equals c.Id
+                                  where p.Id == id && p.Eliminado != true
+                                  select new Producto_DTO
+                                  {
+                                      Id = p.Id,
+                                      Nombre = p.Nombre,
+                                      Descripcion = p.Descripcion,
+                                      Precio = Convert.ToDecimal(p.Precio),
+                                      Costo = Convert.ToDecimal(p.Costo),
+                                      CategoriaId = p.CategoriaId ?? 0,
+                                      Existencia = p.Existencia ?? 0,
+                                      Codigo = p.Codigo,
+                                      ImagenProducto = p.ImagenProducto != null ?
+                                          Convert.ToBase64String(p.ImagenProducto) : null,
+                                      FechaCreacion = p.FechaCreacion,
+                                      FechaActulizacion = p.FechaActualizacion,
 
-            if (pro != null)
-                return Ok(pro);
+                                      // Agregar las presentaciones del producto
+                                      Presentaciones = p.Presentaciones
+                                          .Where(pr => pr.Eliminado != true) // Filtrar las presentaciones eliminadas si existe esa propiedad
+                                          .Select(pr => new Presentacion_DTO
+                                          {
+                                              Id = pr.Id,
+                                              Nombre = pr.Nombre,
+                                              Precio = Convert.ToDecimal(pr.Precio),
+                                              Volumen = pr.Volumen,
+                                              UnidadMedida = pr.UnidadMedida,
+                                              Descripcion = pr.Descripcion,
+                                              Cantidad = pr.Cantidad
+                                          }).ToList()
+                                  }).FirstOrDefaultAsync();
 
-            return NotFound("No se encontraron productos en esta categoría.");
+            if (producto != null)
+                return Ok(producto);
+
+            return NotFound("No se encontró el producto.");
         }
+       
         [HttpGet("GetResumenInventario")]
         public async Task<ActionResult<ResumenInventarioDTO>> GetResumenInventario()
         {
@@ -324,6 +436,43 @@ namespace InventarioPro.Server.Controllers
             return Ok(resumen);
         }
 
+
+        [HttpGet("GetPresentaciones")]
+        public async Task<ActionResult<IEnumerable<Presentacion_DTO>>> GetPresentaciones()
+        {
+            var presentaciones = await _db.Presentaciones
+                .Where(p => p.Eliminado != true) // Filtrar presentaciones no eliminadas
+                .Select(p => new Presentacion_DTO
+                {
+                    Id = p.Id,
+                    Nombre = p.Nombre,
+                    Precio = p.Precio.HasValue ? Convert.ToDecimal(p.Precio) : 0,  // Validar null antes de convertir
+                    Cantidad = p.Cantidad ?? 0,  // Usar 0 si es null
+                    Volumen = p.Volumen ?? 0,  // Usar 0 si es null
+                    UnidadMedida = p.UnidadMedida ?? "N/A",  // Usar valor por defecto si es null
+                    Descripcion = p.Descripcion,
+                    Eliminado = p.Eliminado,
+
+                    // Incluir la información del Producto
+                    Producto = new Producto_DTO
+                    {
+                        Id = p.ProductoId, // Asumir que Presentacion tiene una referencia a Producto
+                        Nombre = p.Producto.Nombre,
+                        Descripcion = p.Producto.Descripcion,
+                        Precio = (decimal)p.Producto.Precio,
+                        Costo = (decimal)p.Producto.Costo,
+                        Existencia = (int)p.Producto.Existencia,
+                        Codigo = p.Producto.Codigo,
+                        FechaCreacion = p.Producto.FechaCreacion,
+                    }
+                })
+                .ToListAsync();
+
+            if (presentaciones != null && presentaciones.Count > 0)
+                return Ok(presentaciones);
+
+            return NotFound("No se encontraron presentaciones activas.");
+        }
 
 
         [HttpGet("GetProductosPorCategoria")]

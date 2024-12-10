@@ -20,6 +20,7 @@ namespace InventarioPro.Server.DAL
 
         public DbSet<Permiso> Permisos { get; set; }
         public DbSet<ApplicationUser> Usuarios { get; set; }
+        public DbSet<Presentacion> Presentaciones { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

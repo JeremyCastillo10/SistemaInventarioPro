@@ -6,18 +6,12 @@
 @inject Radzen.DialogService DialogService
 @inject NavigationManager nav
 
-<style>
-    .custom-dialog {
-        max-width: 900px;
-        width: 100%;
-    }
-</style>
-
 <EditForm Model="@Product" OnValidSubmit="HandleValidSubmit">
     <DataAnnotationsValidator />
-    <div class="custom-dialog" style="margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: white;">
+    <div class="custom-dialog" style="margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: white; width: 100%; max-width: 1100px;">
         <h3 class="text-center">@((Product.Id == 0) ? "Agregar Nuevo Producto" : "Modificar Producto")</h3>
 
+        <!-- Información principal del producto -->
         <div class="row">
             <div class="col-12 col-md-8">
                 <RadzenTextBox @bind-Value="Product.Nombre" Id="nombre" Placeholder="Nombre del Producto" class="form-control mb-3" />
@@ -31,38 +25,79 @@
 
                 <label for="precio">Precio</label>
                 <RadzenNumeric @bind-Value="Product.Precio" Id="precio" Placeholder="Precio" class="form-control mb-3" />
-                <ValidationMessage For="@(() => Product.Precio)" />   
+                <ValidationMessage For="@(() => Product.Precio)" />
 
                 <RadzenTextBox @bind-Value="Product.Codigo" Id="codigo" Placeholder="Código del Producto" class="form-control mb-3" />
                 <ValidationMessage For="@(() => Product.Codigo)" />
-                <ValidationSummary></ValidationSummary>
-            </div>
 
-            <div class="col-12 col-md-4 d-flex flex-column align-items-center">
-                @if (string.IsNullOrEmpty(base64Image))
-                {
-                    <MudIcon Icon=@Icons.Material.Filled.Inventory Style="font-size: 250px; color: #4a4848; margin-bottom: 8px;" />
-                }
-                else
-                {
-                    <img src="data:image/jpeg;base64,@base64Image" alt="Imagen del Producto" style="max-width: 250px; margin-bottom: 8px;" />
-                }
+                <div class="col-12 col-md-4 d-flex flex-column align-items-center">
+                    @if (string.IsNullOrEmpty(base64Image))
+                    {
+                        <MudIcon Icon=@Icons.Material.Filled.Inventory Style="font-size: 250px; color: #4a4848; margin-bottom: 8px;" />
+                    }
+                    else
+                    {
+                        <img src="data:image/jpeg;base64,@base64Image" alt="Imagen del Producto" style="max-width: 250px; margin-bottom: 8px;" />
+                    }
 
-                <InputFile OnChange="HandleFileSelected" accept="image/*" class="form-control mb-3" />
+                    <InputFile OnChange="HandleFileSelected" accept="image/*" class="form-control mb-3" />
 
-                @if (!string.IsNullOrEmpty(invalidFileMessage))
-                {
-                    <MudText Color="Color.Error">@invalidFileMessage</MudText>
-                }
+                    @if (!string.IsNullOrEmpty(invalidFileMessage))
+                    {
+                        <MudText Color="Color.Error">@invalidFileMessage</MudText>
+                    }
+                </div>
             </div>
         </div>
 
+        <h4 class="mt-4">Presentaciones</h4>
+        <div class="table-container" style="overflow-x: auto;">
+            <table class="table table-bordered" style="min-width: 100%; table-layout: fixed;">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Nombre</th>
+                        <th style="width: 10%;">Precio</th>
+                        <th style="width: 10%;">Volumen</th>
+                        <th style="width: 15%;">Unidad de Medida</th>
+                        <th style="width: 25%;">Descripción</th>
+                        <th style="width: 10%;">Cantidad</th> <!-- Nueva columna para cantidad -->
+                        <th style="width: 15%;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var presentacion in Product.Presentaciones)
+                    {
+                        <tr>
+                            <td><RadzenTextBox @bind-Value="presentacion.Nombre" /></td>
+                            <td><RadzenNumeric @bind-Value="presentacion.Precio" /></td>
+                            <td><RadzenNumeric @bind-Value="presentacion.Volumen" /></td>
+                            <td><RadzenTextBox @bind-Value="presentacion.UnidadMedida" /></td>
+                            <td><RadzenTextBox @bind-Value="presentacion.Descripcion" TextMode="TextMode.MultiLine" Rows="2" /></td>
+
+                            <!-- Campo de cantidad usando RadzenNumeric -->
+                            <td><RadzenNumeric @bind-Value="presentacion.Cantidad" Min="0" Step="1" /></td>
+
+                            <td>
+                                <MudButton Color="Color.Error" OnClick="() => RemovePresentacion(presentacion)">Eliminar</MudButton>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Botón para agregar nuevas presentaciones -->
+        <MudButton Color="Color.Primary" OnClick="AddPresentacion">Agregar Presentación</MudButton>
+
+        <!-- Botones de acción -->
         <div class="d-flex justify-content-between mt-4">
             <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" class="w-48">@((Product.Id == 0) ? "Guardar Producto" : "Actualizar Producto")</MudButton>
             <MudButton Color="Color.Secondary" OnClick="Cancel" class="w-48">Cancelar</MudButton>
         </div>
     </div>
 </EditForm>
+
+
 
 @code {
     [Parameter]
@@ -184,7 +219,16 @@
 
         return (true, null);
     }
+    private void AddPresentacion()
+    {
+        Product.Presentaciones ??= new List<Presentacion_DTO>();
+        Product.Presentaciones.Add(new Presentacion_DTO());
+    }
 
+    private void RemovePresentacion(Presentacion_DTO presentacion)
+    {
+        Product.Presentaciones?.Remove(presentacion);
+    }
     private async Task ShowAlert(string title, string text, SweetAlertIcon icon)
     {
         await swal.FireAsync(new SweetAlertOptions

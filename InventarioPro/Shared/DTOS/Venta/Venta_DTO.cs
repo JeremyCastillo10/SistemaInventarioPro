@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InventarioPro.Shared.DTOS.Entrada;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -10,7 +11,7 @@ namespace InventarioPro.Shared.DTOS.Venta
         public class Venta_DTO
         {
                 public int Id { get; set; }
-                public DateTime Fecha { get; set; }
+        public DateTime Fecha { get; set; } = DateTime.Now;
                 public decimal MontoTotal { get; set; }
         [Required(ErrorMessage = "El nombre del cliente es obligatorio.")]
         [StringLength(100, ErrorMessage = "El nombre no puede tener más de 100 caracteres.")]
@@ -23,8 +24,9 @@ namespace InventarioPro.Shared.DTOS.Venta
                 public List<VentaDetalle_DTO> VentaDetalle_DTOs { get; set; } = new List<VentaDetalle_DTO>();
                 public bool Eliminado { get; set; } = false;
 
+        public virtual ICollection<VentaDetalle_DTO> ventaDetalle_DTO { get; set; } = new List<VentaDetalle_DTO>();
 
 
 
-        }
+    }
 }

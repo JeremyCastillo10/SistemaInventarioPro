@@ -48,7 +48,10 @@ namespace InventarioPro.Shared.DTOS.Producto
 
                 public bool Eliminado { get; set; } = false;
 
+               public virtual ICollection<Presentacion_DTO> Presentaciones { get; set; } = new List<Presentacion_DTO>();
 
-        }
+
+
+    }
 
 }

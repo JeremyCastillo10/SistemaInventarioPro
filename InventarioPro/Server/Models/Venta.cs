@@ -10,5 +10,7 @@
         public bool? Eliminado { get; set; }
         public DateTime FechaCreacion { get; set; }
         public DateTime FechaActualizacion { get; set; }
+        public virtual ICollection<VentaDetalle> ventaDetalle { get; set; } = new List<VentaDetalle>();
+
     }
 }

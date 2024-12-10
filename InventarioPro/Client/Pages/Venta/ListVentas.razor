@@ -222,7 +222,7 @@ catch (HttpRequestException ex)
                         col++;
                     }
 
-                    var detalles = venta.VentaDetalle_DTOs.Select(d => $"{d.IdProducto} x {d.Cantidad} a {d.Precio:C}").ToArray();
+                    var detalles = venta.VentaDetalle_DTOs.Select(d => $"{d.IdPresentacion} x {d.Cantidad} a {d.Precio:C}").ToArray();
                     worksheet.Cells[fila, col].Value = string.Join(", ", detalles);
 
                     fila++;
@@ -378,7 +378,7 @@ catch (HttpRequestException ex)
                     // Detalles de los productos vendidos
                     var detalles = venta.VentaDetalle_DTOs.Select(d =>
                     {
-                        Producto_DTO producto = productos.FirstOrDefault(p => p.Id == d.IdProducto);
+                        Producto_DTO producto = productos.FirstOrDefault(p => p.Id == d.IdPresentacion);
                         string nombreProducto = producto?.Nombre ?? "Producto no encontrado";
                         string precio = producto?.Precio.ToString("C", new CultureInfo("es-DO")) ?? "Precio no disponible";
                         return $"{nombreProducto} x {d.Cantidad} a {precio}";

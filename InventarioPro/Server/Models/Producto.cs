@@ -14,5 +14,8 @@
         public DateTime FechaCreacion { get; set; }
         public DateTime FechaActualizacion { get; set; }
         public bool? Eliminado { get; set; }
+
+        public virtual ICollection<Presentacion> Presentaciones { get; set; } = new List<Presentacion>();
+
     }
 }
