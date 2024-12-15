@@ -59,5 +59,13 @@ namespace InventarioPro.Server.Models
         public bool VerEmpresa { get; set; }
         public bool CrearEmpresa { get; set; }
         public bool EditarEmpresa { get; set; }
+
+        //Presentacion
+        public bool VerPresentacion { get; set; }
+        public bool CrearPresentacion { get; set; }
+        public bool EditarPresentacion { get; set; }
+        public bool EliminarPresentacion { get; set; }
+
+
     }
 }

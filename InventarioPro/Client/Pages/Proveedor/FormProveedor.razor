@@ -1,0 +1,87 @@
+﻿@page "/FormProveedor"
+@using CurrieTechnologies.Razor.SweetAlert2
+@using InventarioPro.Shared.DTOS.Proveedor
+@inject SweetAlertService swal
+@inject HttpClient Http
+@inject Radzen.DialogService DialogService
+@inject NavigationManager Navigation
+
+<EditForm Model="@proveedorDTO" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <label for="nombre" class="form-label font-weight-bold">Nombre</label>
+        <RadzenTextBox id="nombre" @bind-Value="proveedorDTO.Nombre" Placeholder="Nombre del proveedor" class="form-control" />
+        <ValidationMessage For="@(() => proveedorDTO.Nombre)" class="text-danger" />
+    </div>
+    <div class="mb-3">
+        <label for="apellido" class="form-label font-weight-bold">Apellido</label>
+        <RadzenTextBox id="apellido" @bind-Value="proveedorDTO.Apellido" Placeholder="Apellido del proveedor" class="form-control" />
+        <ValidationMessage For="@(() => proveedorDTO.Apellido)" class="text-danger" />
+    </div>
+    <div class="mb-3">
+        <label for="direccion" class="form-label font-weight-bold">Dirección</label>
+        <RadzenTextBox id="direccion" @bind-Value="proveedorDTO.Direccion" Placeholder="Dirección del proveedor" class="form-control" />
+        <ValidationMessage For="@(() => proveedorDTO.Direccion)" class="text-danger" />
+    </div>
+    <div class="mb-3">
+        <label for="telefono" class="form-label font-weight-bold">Teléfono</label>
+        <RadzenTextBox id="telefono" @bind-Value="proveedorDTO.Telefono" Placeholder="Teléfono del proveedor" class="form-control" />
+        <ValidationMessage For="@(() => proveedorDTO.Telefono)" class="text-danger" />
+    </div>
+    <div class="mb-3">
+        <label for="celular" class="form-label font-weight-bold">Celular</label>
+        <RadzenTextBox id="celular" @bind-Value="proveedorDTO.Celular" Placeholder="Celular del proveedor" class="form-control" />
+        <ValidationMessage For="@(() => proveedorDTO.Celular)" class="text-danger" />
+    </div>
+    <div class="mb-3">
+        <label for="email" class="form-label font-weight-bold">Correo Electrónico</label>
+        <RadzenTextBox id="email" @bind-Value="proveedorDTO.Email" Placeholder="Correo electrónico del proveedor" class="form-control" />
+        <ValidationMessage For="@(() => proveedorDTO.Email)" class="text-danger" />
+    </div>
+    <div class="d-flex justify-content-between mt-4">
+        <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Guardar" Icon="save" class="btn btn-primary" />
+        <RadzenButton Text="Cancelar" Icon="cancel" Click="@Cancelar" class="btn btn-secondary" />
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public Proveedor_DTO proveedorDTO { get; set; } = new Proveedor_DTO();
+
+
+
+    private async Task Guardar()
+    {
+
+        var response = await Http.PostAsJsonAsync("api/proveedor/guardar", proveedorDTO);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await ShowAlert("Éxito", (proveedorDTO.Id == 0) ? "proveedor creado con éxito!" : "proveedor actualizado con éxito!", SweetAlertIcon.Success);
+            DialogService.Close(proveedorDTO);
+            StateHasChanged();
+        }
+        else
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Error: {errorContent}");
+            await ShowAlert("Error", "No se pudo crear el proveedor.", SweetAlertIcon.Error);
+        }
+    }
+
+    private async Task ShowAlert(string title, string text, SweetAlertIcon icon)
+    {
+        await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = title,
+                Text = text,
+                Icon = icon,
+                ConfirmButtonText = "OK"
+            });
+    }
+
+    private void Cancelar()
+    {
+        DialogService.Close(null);
+    }
+}

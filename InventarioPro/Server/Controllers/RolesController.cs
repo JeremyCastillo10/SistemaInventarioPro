@@ -76,7 +76,11 @@ namespace InventarioPro.Server.Controllers
                         EliminarRoles = permiso_DTO.EliminarRoles,
                         VerEmpresa = permiso_DTO.VerEmpresa,
                         CrearEmpresa = permiso_DTO.CrearEmpresa,
-                        EditarEmpresa = permiso_DTO.EditarEmpresa
+                        EditarEmpresa = permiso_DTO.EditarEmpresa,
+                        CrearPresentacion = permiso_DTO.CrearPresentacion,
+                        VerPresentacion = permiso_DTO.VerPresentacion,
+                        EliminarPresentacion = permiso_DTO.EliminarPresentacion,
+                        EditarPresentacion = permiso_DTO.EditarPresentacion,
                     };
 
                     _db.Permisos.Add(permiso);

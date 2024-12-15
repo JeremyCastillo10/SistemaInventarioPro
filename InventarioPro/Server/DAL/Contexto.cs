@@ -17,10 +17,10 @@ namespace InventarioPro.Server.DAL
         public DbSet<EntradaDetalle> EntradaDetalles { get; set; }
         public DbSet<Categoria> Categorias { get; set; }
         public DbSet<Empresa> Empresas { get; set; }
-
         public DbSet<Permiso> Permisos { get; set; }
         public DbSet<ApplicationUser> Usuarios { get; set; }
         public DbSet<Presentacion> Presentaciones { get; set; }
+        public DbSet<Proveedor> Proveedores { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -106,7 +106,11 @@ namespace InventarioPro.Server.DAL
                     EliminarRoles = true,
                     VerEmpresa = true,
                     CrearEmpresa = true,
-                    EditarEmpresa = true
+                    EditarEmpresa = true,
+                    CrearPresentacion = true,
+                    EditarPresentacion = true,
+                    EliminarPresentacion = true,
+                    VerPresentacion = true,
                 });
         }
 

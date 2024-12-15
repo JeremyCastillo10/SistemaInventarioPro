@@ -1,0 +1,111 @@
+﻿@page "/ListProveedor"
+@using InventarioPro.Shared.DTOS.Proveedor
+@using Microsoft.AspNetCore.Components
+@using Radzen
+@using System.Collections.Generic
+@using System.Linq
+@inject SweetAlertService swal
+@inject HttpClient Http
+@inject Radzen.DialogService DialogService
+<PageTitle>Lista de Proveedores</PageTitle>
+
+<div class="header">
+    <h2>Proveedores Registrados</h2>
+    <RadzenButton Text="Agregar Proveedor" Click="OpenAddProveedorDialog" Style="margin-bottom: 10px;" />
+</div>
+
+<RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="true"
+                AllowSorting="true" PageSize="5" AllowPaging="true" Data="@listProveedores" ShowPagingSummary="true">
+    <Columns>
+        <RadzenDataGridColumn Property="@nameof(Proveedor_DTO.Nombre)" Title="Nombre" />
+        <RadzenDataGridColumn Property="@nameof(Proveedor_DTO.Apellido)" Title="Apellido" />
+        <RadzenDataGridColumn Property="@nameof(Proveedor_DTO.Email)" Title="Correo Electrónico" />
+        <RadzenDataGridColumn Width="200px" Title="Acciones">
+            <Template Context="proveedor">
+                <button class="btn btn-warning btn-sm" @onclick="() => EditarProveedor(proveedor.Email)" style="margin-right: 10px;">
+                    <i class="bi bi-pencil"></i> Editar
+                </button>
+                <button class="btn btn-danger btn-sm" @onclick="() => EliminarProveedor(proveedor.Id)">
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    private List<Proveedor_DTO> listProveedores = new List<Proveedor_DTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await Http.GetAsync("api/proveedor");
+        if (response.IsSuccessStatusCode)
+        {
+            listProveedores = await response.Content.ReadFromJsonAsync<List<Proveedor_DTO>>();
+        }
+        else
+        {
+            await ShowAlert("Error", "No se pudieron cargar los proveedores.", SweetAlertIcon.Error);
+        }
+    }
+
+    private async Task OpenAddProveedorDialog()
+    {
+        var result = await DialogService.OpenAsync<FormProveedor>("Registro Proveedor");
+        if (result != null) { 
+            listProveedores.Add((Proveedor_DTO)result);
+            listProveedores = listProveedores.ToList();
+            StateHasChanged();
+        }
+    }
+
+    private async Task EditarProveedor(string email)
+    {
+        var proveedor = listProveedores.FirstOrDefault(p => p.Email == email);
+        if (proveedor != null)
+        {
+            await DialogService.OpenAsync<FormProveedor>(
+                null,
+                new Dictionary<string, object> { { "proveedorDTO", proveedor } }
+            );
+        }
+    }
+
+    private async Task EliminarProveedor(int id)
+    {
+        var confirm = await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "¿Estás seguro?",
+                Text = "Esta acción eliminará al proveedor permanentemente.",
+                Icon = SweetAlertIcon.Warning,
+                ShowCancelButton = true,
+                ConfirmButtonText = "Eliminar",
+                CancelButtonText = "Cancelar"
+            });
+
+        if (confirm.IsConfirmed)
+        {
+            var response = await Http.DeleteAsync($"api/proveedor/eliminar/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                await ShowAlert("Éxito", "Proveedor eliminado correctamente.", SweetAlertIcon.Success);
+                listProveedores = await response.Content.ReadFromJsonAsync<List<Proveedor_DTO>>();
+            }
+            else
+            {
+                await ShowAlert("Error", "Hubo un error al eliminar el proveedor.", SweetAlertIcon.Error);
+            }
+        }
+    }
+
+    private async Task ShowAlert(string title, string text, SweetAlertIcon icon)
+    {
+        await swal.FireAsync(new SweetAlertOptions
+            {
+                Title = title,
+                Text = text,
+                Icon = icon,
+                ConfirmButtonText = "OK"
+            });
+    }
+}
