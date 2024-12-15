@@ -44,7 +44,11 @@
     private async Task OpenAddUsuarioDialog()
     {
         var result = await DialogService.OpenAsync<FormUsuarios>("Registro Usuarios");
-        if (result != null) { }
+        if (result != null) {
+            listUsuarios.Add((UserRegister)result);
+            listUsuarios = listUsuarios.ToList();
+            StateHasChanged();
+        }
     }
 
     private async Task EditarUsuario(string email)

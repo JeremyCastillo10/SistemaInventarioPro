@@ -47,9 +47,9 @@
     else
     {
         <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowSorting="true" PageSize="8" AllowPaging="true"
-                        Data="@filteredVentas" ColumnWidth="300px" ShowPagingSummary="true" @bind-Value="@selectedVentas">
+        Data="@filteredVentas" ColumnWidth="300px" ShowPagingSummary="true" @bind-Value="@selectedVentas">
             <Columns>
-                <RadzenDataGridColumn Property="@nameof(Venta_DTO.Fecha)" Title="Fecha" FormatString="{0:dd/MM/yyyy}" />
+                <RadzenDataGridColumn Property="Fecha" Title="Fecha" Width="160px" />
                 <RadzenDataGridColumn Title="Monto Total">
                     <Template Context="venta">
                         @String.Format("RD$ {0:N2}", venta.MontoTotal) <!-- Formato de peso dominicano -->
@@ -92,16 +92,16 @@
         filteredVentas = ventas;  
         isLoading = false;  
         await ObtenerProductosDesdeApi();
-    try{
-        var empresaResponse = await Http.GetAsync("api/empresa/1");
+        try{
+            var empresaResponse = await Http.GetAsync("api/empresa/1");
 
-        if (empresaResponse.IsSuccessStatusCode)
-        {
-            empresa = await empresaResponse.Content.ReadFromJsonAsync<Empresa_DTO>();
-        }
-        else
-        {
-            empresa = new Empresa_DTO
+            if (empresaResponse.IsSuccessStatusCode)
+            {
+                empresa = await empresaResponse.Content.ReadFromJsonAsync<Empresa_DTO>();
+            }
+            else
+            {
+                empresa = new Empresa_DTO
                 {
                     Id = 0,
                     RNC = "Desconocido",
@@ -111,14 +111,14 @@
                     Logo = string.Empty,
                     PermitirCargaData = false
                 };
-            Console.WriteLine($"Error al obtener la empresa: {empresaResponse.StatusCode}");
+                Console.WriteLine($"Error al obtener la empresa: {empresaResponse.StatusCode}");
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Error en la solicitud HTTP: {ex.Message}");
         }
     }
-catch (HttpRequestException ex)
-{
-    Console.WriteLine($"Error en la solicitud HTTP: {ex.Message}");
-}
-}
 
     private async Task LoadVentas()
     {
@@ -166,7 +166,9 @@ catch (HttpRequestException ex)
 
         if (result != null)
         {
-            await LoadVentas(); 
+            filteredVentas.Add((Venta_DTO)result);
+            filteredVentas = filteredVentas.ToList();
+            StateHasChanged();
         }
     }
 

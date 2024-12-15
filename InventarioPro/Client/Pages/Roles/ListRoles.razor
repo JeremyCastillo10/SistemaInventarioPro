@@ -26,11 +26,9 @@
         <RadzenDataGridColumn Property="@nameof(Roles_DTO.Nombre)" Title="Nombre" Width="160px" />
         <RadzenDataGridColumn Width="200px" Title="Acciones">
             <Template Context="roles_DTO">
-                <!-- Botón Editar -->
                 <button class="btn btn-warning btn-sm" @onclick="() => EditarCategoria(roles_DTO.Id)" style="margin-right: 10px;">
                     <i class="bi bi-pencil"></i> Editar
                 </button>
-                <!-- Botón Eliminar -->
                 <button class="btn btn-danger btn-sm">
                     <i class="bi bi-trash"></i> Eliminar
                 </button>
@@ -95,7 +93,6 @@
         if (item != null)
         {
             await DialogService.OpenAsync<FormRoles>("Editar Rol", new Dictionary<string, object> { { "roles_DTO", item } });
-            // Reload roles after editing a role
             await LoadRoles();
         }
     }

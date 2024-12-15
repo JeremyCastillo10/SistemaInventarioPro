@@ -277,13 +277,14 @@
                     ConfirmButtonText = "Sí",
                     CancelButtonText = "No"
                 });
-
+            DialogService.Close(venta);
+            StateHasChanged();
             if (result.IsConfirmed)
             {
                 await ExportarFacturaComercialPDF();
             }
 
-            DialogService.Close(true);
+           
         }
         else
         {

@@ -34,15 +34,24 @@
 
     private async void Guardar()
     {
-        var response = await Http.PostAsJsonAsync("api/categoria/savecategoria", categoria_DTO);
 
 
+            var response = await Http.PostAsJsonAsync("api/categoria/savecategoria", categoria_DTO);
 
-
-        if (response.IsSuccessStatusCode)
-        {
-            await ShowAlert("Éxito", categoria_DTO.Id == 0 ? "La categoria se ha creado con éxito!" : "La categoria se actualizado con éxito!", SweetAlertIcon.Success);
-        }
+            if (response.IsSuccessStatusCode)
+            {
+            await ShowAlert("Éxito", (categoria_DTO.Id == 0) ? "categoria creada con éxito!" : "categoria actualizada con éxito!", SweetAlertIcon.Success);
+                DialogService.Close(categoria_DTO);
+                StateHasChanged();
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error: {errorContent}");
+                await ShowAlert("Error", "No se pudo crear la categoria.", SweetAlertIcon.Error);
+            }
+        
+      
     }
 
     private async Task ShowAlert(string title, string text, SweetAlertIcon icon)

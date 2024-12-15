@@ -152,12 +152,9 @@
             // Verifica si la respuesta fue exitosa
             if (response.IsSuccessStatusCode)
             {
-                await ShowAlert("Éxito", entrada_DTO.Id == 0 ? "¡Entrada creada con éxito!" : "¡Entrada actualizada con éxito!", SweetAlertIcon.Success);
 
                 // Resetea los datos
-                entrada_DTO = new Entrada_DTO();
-                listentradaDetalle_DTO = new List<EntradaDetalle_DTO>();
-                total = 0;
+                await ShowAlert("Éxito", (entrada_DTO.Id == 0) ? "categoria creada con éxito!" : "categoria actualizada con éxito!", SweetAlertIcon.Success);
                 DialogService.Close(entrada_DTO);
                 StateHasChanged();
 

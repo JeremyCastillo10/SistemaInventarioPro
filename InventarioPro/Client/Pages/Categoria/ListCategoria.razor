@@ -96,7 +96,9 @@
 
         if (result != null)
         {
-
+            listcategoria_DTO.Add((Categoria_DTO)result);
+            listcategoria_DTO2 = listcategoria_DTO.ToList();
+            StateHasChanged();
 
         }
 
@@ -120,8 +122,6 @@
         listcategoria_DTO2 = listcategoria_DTO
       .Where(e => e.Nombre.Contains(Nombre, StringComparison.OrdinalIgnoreCase))
       .ToList();
-
-
 
     }
   }
