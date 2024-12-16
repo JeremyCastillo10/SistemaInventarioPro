@@ -32,6 +32,9 @@ namespace InventarioPro.Server.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Discriminator = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FirstName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -117,6 +120,10 @@ namespace InventarioPro.Server.Migrations
                     EditarEntrada = table.Column<bool>(type: "bit", nullable: false),
                     VerEntrada = table.Column<bool>(type: "bit", nullable: false),
                     EliminarEntrada = table.Column<bool>(type: "bit", nullable: false),
+                    CrearVenta = table.Column<bool>(type: "bit", nullable: false),
+                    EditarVenta = table.Column<bool>(type: "bit", nullable: false),
+                    VerVenta = table.Column<bool>(type: "bit", nullable: false),
+                    EliminarVenta = table.Column<bool>(type: "bit", nullable: false),
                     CrearProducto = table.Column<bool>(type: "bit", nullable: false),
                     VerProducto = table.Column<bool>(type: "bit", nullable: false),
                     EditarProducto = table.Column<bool>(type: "bit", nullable: false),
@@ -128,7 +135,18 @@ namespace InventarioPro.Server.Migrations
                     CrearUsuario = table.Column<bool>(type: "bit", nullable: false),
                     VerUsuario = table.Column<bool>(type: "bit", nullable: false),
                     EditarUsuario = table.Column<bool>(type: "bit", nullable: false),
-                    EliminarUsuario = table.Column<bool>(type: "bit", nullable: false)
+                    EliminarUsuario = table.Column<bool>(type: "bit", nullable: false),
+                    CrearSuplidor = table.Column<bool>(type: "bit", nullable: false),
+                    VerSuplidor = table.Column<bool>(type: "bit", nullable: false),
+                    EditarSuplidor = table.Column<bool>(type: "bit", nullable: false),
+                    EliminarSuplidor = table.Column<bool>(type: "bit", nullable: false),
+                    VerRoles = table.Column<bool>(type: "bit", nullable: false),
+                    CrearRoles = table.Column<bool>(type: "bit", nullable: false),
+                    EditarRoles = table.Column<bool>(type: "bit", nullable: false),
+                    EliminarRoles = table.Column<bool>(type: "bit", nullable: false),
+                    VerEmpresa = table.Column<bool>(type: "bit", nullable: false),
+                    CrearEmpresa = table.Column<bool>(type: "bit", nullable: false),
+                    EditarEmpresa = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -156,25 +174,6 @@ namespace InventarioPro.Server.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Productos", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "VentaDetalles",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    IdVenta = table.Column<int>(type: "int", nullable: true),
-                    IdProducto = table.Column<int>(type: "int", nullable: false),
-                    Cantidad = table.Column<int>(type: "int", nullable: false),
-                    Precio = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    Eliminado = table.Column<bool>(type: "bit", nullable: true),
-                    FechaCreacion = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    FechaActualizacion = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_VentaDetalles", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -311,7 +310,7 @@ namespace InventarioPro.Server.Migrations
                     EntradaId = table.Column<int>(type: "int", nullable: false),
                     IdProducto = table.Column<int>(type: "int", nullable: false),
                     Cantidad = table.Column<int>(type: "int", nullable: false),
-                    Precio = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Costo = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Eliminado = table.Column<bool>(type: "bit", nullable: true),
                     FechaCreacion = table.Column<DateTime>(type: "datetime2", nullable: false),
                     FechaActualizacion = table.Column<DateTime>(type: "datetime2", nullable: false)
@@ -327,6 +326,68 @@ namespace InventarioPro.Server.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Presentaciones",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductoId = table.Column<int>(type: "int", nullable: false),
+                    Nombre = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Precio = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Cantidad = table.Column<int>(type: "int", nullable: true),
+                    Volumen = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    UnidadMedida = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Descripcion = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Eliminado = table.Column<bool>(type: "bit", nullable: false),
+                    FechaCreacion = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    FechaActulizacion = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Presentaciones", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Presentaciones_Productos_ProductoId",
+                        column: x => x.ProductoId,
+                        principalTable: "Productos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "VentaDetalles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    IdPresentacion = table.Column<int>(type: "int", nullable: false),
+                    Cantidad = table.Column<int>(type: "int", nullable: false),
+                    Precio = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    Eliminado = table.Column<bool>(type: "bit", nullable: true),
+                    FechaCreacion = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    FechaActualizacion = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    VentaId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VentaDetalles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_VentaDetalles_Ventas_VentaId",
+                        column: x => x.VentaId,
+                        principalTable: "Ventas",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetRoles",
+                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
+                values: new object[] { "76ae54f3-ea8c-446c-ae71-e2654396c2d7", null, "Administrador", "ADMINISTRADOR" });
+
+            migrationBuilder.InsertData(
+                table: "AspNetUsers",
+                columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Discriminator", "Email", "EmailConfirmed", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
+                values: new object[] { "d0bb8f67-4dfa-4185-bdfd-f101a3eb5e0b", 0, "e1495d00-78c2-4256-abcb-a8023aac018f", "IdentityUser", "admin@inventario.com", true, false, null, "ADMIN@INVENTARIO.COM", "ADMIN@INVENTARIO.COM", "AQAAAAIAAYagAAAAEJfwe/R4vXd88FKlAbFslyuFZS2D5PnLbSnUDAZUDUOB5Oydk5oshJR1eKmtII3tqQ==", null, false, "6e147d5f-1c57-489a-80e4-a95a28e4e6ee", false, "admin@inventario.com" });
+
             migrationBuilder.InsertData(
                 table: "Categorias",
                 columns: new[] { "Id", "Eliminado", "FechaActualizacion", "FechaCreacion", "Nombre" },
@@ -336,6 +397,16 @@ namespace InventarioPro.Server.Migrations
                     { 2, false, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Ropa" },
                     { 3, false, new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Lacteos" }
                 });
+
+            migrationBuilder.InsertData(
+                table: "Permisos",
+                columns: new[] { "Id", "CrearCategoria", "CrearEmpresa", "CrearEntrada", "CrearProducto", "CrearRoles", "CrearSuplidor", "CrearUsuario", "CrearVenta", "EditarCategoria", "EditarEmpresa", "EditarEntrada", "EditarProducto", "EditarRoles", "EditarSuplidor", "EditarUsuario", "EditarVenta", "EliminarCategoria", "EliminarEntrada", "EliminarProducto", "EliminarRoles", "EliminarSuplidor", "EliminarUsuario", "EliminarVenta", "ExportalExcel", "ExportalPdf", "IdRol", "VerCategoria", "VerEmpresa", "VerEntrada", "VerEstadistica", "VerProducto", "VerReportes", "VerRoles", "VerSuplidor", "VerUsuario", "VerVenta" },
+                values: new object[] { 1, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, "76ae54f3-ea8c-446c-ae71-e2654396c2d7", true, true, true, true, true, true, true, true, true, true });
+
+            migrationBuilder.InsertData(
+                table: "AspNetUserRoles",
+                columns: new[] { "RoleId", "UserId" },
+                values: new object[] { "76ae54f3-ea8c-446c-ae71-e2654396c2d7", "d0bb8f67-4dfa-4185-bdfd-f101a3eb5e0b" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -380,6 +451,16 @@ namespace InventarioPro.Server.Migrations
                 name: "IX_EntradaDetalles_EntradaId",
                 table: "EntradaDetalles",
                 column: "EntradaId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Presentaciones_ProductoId",
+                table: "Presentaciones",
+                column: "ProductoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VentaDetalles_VentaId",
+                table: "VentaDetalles",
+                column: "VentaId");
         }
 
         /// <inheritdoc />
@@ -413,13 +494,10 @@ namespace InventarioPro.Server.Migrations
                 name: "Permisos");
 
             migrationBuilder.DropTable(
-                name: "Productos");
+                name: "Presentaciones");
 
             migrationBuilder.DropTable(
                 name: "VentaDetalles");
-
-            migrationBuilder.DropTable(
-                name: "Ventas");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
@@ -429,6 +507,12 @@ namespace InventarioPro.Server.Migrations
 
             migrationBuilder.DropTable(
                 name: "Entradas");
+
+            migrationBuilder.DropTable(
+                name: "Productos");
+
+            migrationBuilder.DropTable(
+                name: "Ventas");
         }
     }
 }

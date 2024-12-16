@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventarioPro.Server.Migrations
 {
     [DbContext(typeof(Contexto))]
-    [Migration("20241130020205_inicial")]
+    [Migration("20241212003806_inicial")]
     partial class inicial
     {
         /// <inheritdoc />
@@ -143,6 +143,9 @@ namespace InventarioPro.Server.Migrations
                     b.Property<int>("Cantidad")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("Costo")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<bool?>("Eliminado")
                         .HasColumnType("bit");
 
@@ -157,9 +160,6 @@ namespace InventarioPro.Server.Migrations
 
                     b.Property<int>("IdProducto")
                         .HasColumnType("int");
-
-                    b.Property<decimal>("Precio")
-                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -179,16 +179,31 @@ namespace InventarioPro.Server.Migrations
                     b.Property<bool>("CrearCategoria")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("CrearEmpresa")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("CrearEntrada")
                         .HasColumnType("bit");
 
                     b.Property<bool>("CrearProducto")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("CrearRoles")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CrearSuplidor")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("CrearUsuario")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("CrearVenta")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("EditarCategoria")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EditarEmpresa")
                         .HasColumnType("bit");
 
                     b.Property<bool>("EditarEntrada")
@@ -197,7 +212,16 @@ namespace InventarioPro.Server.Migrations
                     b.Property<bool>("EditarProducto")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("EditarRoles")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EditarSuplidor")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("EditarUsuario")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EditarVenta")
                         .HasColumnType("bit");
 
                     b.Property<bool>("EliminarCategoria")
@@ -209,7 +233,16 @@ namespace InventarioPro.Server.Migrations
                     b.Property<bool>("EliminarProducto")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("EliminarRoles")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EliminarSuplidor")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("EliminarUsuario")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EliminarVenta")
                         .HasColumnType("bit");
 
                     b.Property<bool>("ExportalExcel")
@@ -225,6 +258,9 @@ namespace InventarioPro.Server.Migrations
                     b.Property<bool>("VerCategoria")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("VerEmpresa")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("VerEntrada")
                         .HasColumnType("bit");
 
@@ -237,12 +273,109 @@ namespace InventarioPro.Server.Migrations
                     b.Property<bool>("VerReportes")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("VerRoles")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("VerSuplidor")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("VerUsuario")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("VerVenta")
                         .HasColumnType("bit");
 
                     b.HasKey("Id");
 
                     b.ToTable("Permisos");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CrearCategoria = true,
+                            CrearEmpresa = true,
+                            CrearEntrada = true,
+                            CrearProducto = true,
+                            CrearRoles = true,
+                            CrearSuplidor = true,
+                            CrearUsuario = true,
+                            CrearVenta = true,
+                            EditarCategoria = true,
+                            EditarEmpresa = true,
+                            EditarEntrada = true,
+                            EditarProducto = true,
+                            EditarRoles = true,
+                            EditarSuplidor = true,
+                            EditarUsuario = true,
+                            EditarVenta = true,
+                            EliminarCategoria = true,
+                            EliminarEntrada = true,
+                            EliminarProducto = true,
+                            EliminarRoles = true,
+                            EliminarSuplidor = true,
+                            EliminarUsuario = true,
+                            EliminarVenta = true,
+                            ExportalExcel = true,
+                            ExportalPdf = true,
+                            IdRol = "76ae54f3-ea8c-446c-ae71-e2654396c2d7",
+                            VerCategoria = true,
+                            VerEmpresa = true,
+                            VerEntrada = true,
+                            VerEstadistica = true,
+                            VerProducto = true,
+                            VerReportes = true,
+                            VerRoles = true,
+                            VerSuplidor = true,
+                            VerUsuario = true,
+                            VerVenta = true
+                        });
+                });
+
+            modelBuilder.Entity("InventarioPro.Server.Models.Presentacion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("Cantidad")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Descripcion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("FechaActulizacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Precio")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UnidadMedida")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("Volumen")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductoId");
+
+                    b.ToTable("Presentaciones");
                 });
 
             modelBuilder.Entity("InventarioPro.Server.Models.Producto", b =>
@@ -345,16 +478,18 @@ namespace InventarioPro.Server.Migrations
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("IdProducto")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("IdVenta")
+                    b.Property<int>("IdPresentacion")
                         .HasColumnType("int");
 
                     b.Property<decimal?>("Precio")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("VentaId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("VentaId");
 
                     b.ToTable("VentaDetalles");
                 });
@@ -384,6 +519,14 @@ namespace InventarioPro.Server.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "76ae54f3-ea8c-446c-ae71-e2654396c2d7",
+                            Name = "Administrador",
+                            NormalizedName = "ADMINISTRADOR"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -421,6 +564,10 @@ namespace InventarioPro.Server.Migrations
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
@@ -474,6 +621,28 @@ namespace InventarioPro.Server.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
+
+                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityUser");
+
+                    b.UseTphMappingStrategy();
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "d0bb8f67-4dfa-4185-bdfd-f101a3eb5e0b",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "e1495d00-78c2-4256-abcb-a8023aac018f",
+                            Email = "admin@inventario.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "ADMIN@INVENTARIO.COM",
+                            NormalizedUserName = "ADMIN@INVENTARIO.COM",
+                            PasswordHash = "AQAAAAIAAYagAAAAEJfwe/R4vXd88FKlAbFslyuFZS2D5PnLbSnUDAZUDUOB5Oydk5oshJR1eKmtII3tqQ==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "6e147d5f-1c57-489a-80e4-a95a28e4e6ee",
+                            TwoFactorEnabled = false,
+                            UserName = "admin@inventario.com"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -536,6 +705,13 @@ namespace InventarioPro.Server.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = "d0bb8f67-4dfa-4185-bdfd-f101a3eb5e0b",
+                            RoleId = "76ae54f3-ea8c-446c-ae71-e2654396c2d7"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -557,6 +733,21 @@ namespace InventarioPro.Server.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("InventarioPro.Server.Models.ApplicationUser", b =>
+                {
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasDiscriminator().HasValue("ApplicationUser");
+                });
+
             modelBuilder.Entity("InventarioPro.Server.Models.EntradaDetalle", b =>
                 {
                     b.HasOne("InventarioPro.Server.Models.Entrada", null)
@@ -564,6 +755,24 @@ namespace InventarioPro.Server.Migrations
                         .HasForeignKey("EntradaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("InventarioPro.Server.Models.Presentacion", b =>
+                {
+                    b.HasOne("InventarioPro.Server.Models.Producto", "Producto")
+                        .WithMany("Presentaciones")
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Producto");
+                });
+
+            modelBuilder.Entity("InventarioPro.Server.Models.VentaDetalle", b =>
+                {
+                    b.HasOne("InventarioPro.Server.Models.Venta", null)
+                        .WithMany("ventaDetalle")
+                        .HasForeignKey("VentaId");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -620,6 +829,16 @@ namespace InventarioPro.Server.Migrations
             modelBuilder.Entity("InventarioPro.Server.Models.Entrada", b =>
                 {
                     b.Navigation("entradaDetalle");
+                });
+
+            modelBuilder.Entity("InventarioPro.Server.Models.Producto", b =>
+                {
+                    b.Navigation("Presentaciones");
+                });
+
+            modelBuilder.Entity("InventarioPro.Server.Models.Venta", b =>
+                {
+                    b.Navigation("ventaDetalle");
                 });
 #pragma warning restore 612, 618
         }

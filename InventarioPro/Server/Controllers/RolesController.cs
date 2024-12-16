@@ -82,6 +82,70 @@ namespace InventarioPro.Server.Controllers
                     _db.Permisos.Add(permiso);
                     await _db.SaveChangesAsync();
                 }
+
+            }
+            else
+            {
+                var rol = await _roleManager.FindByNameAsync(permiso_DTO.Nombre);
+                if (rol == null)
+                {
+                    throw new Exception("El rol especificado no existe.");
+                }
+
+                // Verificar si ya existe un permiso asociado a este rol
+                var permisos = await _db.Permisos.FirstOrDefaultAsync(p => p.IdRol == rol.Id);
+
+                if (permisos == null)
+                {
+                    // Si no existe, crear uno nuevo
+                    permisos = new Permiso
+                    {
+                        IdRol = rol.Id
+                    };
+                    _db.Permisos.Add(permisos); // Agregar nuevo permiso
+                }
+
+                // Actualizar las propiedades del permiso
+                permisos.Id = permiso_DTO.Id; // Solo si `Id` no es autogenerado
+                permisos.VerEstadistica = permiso_DTO.VerEstadistica;
+                permisos.VerReportes = permiso_DTO.VerReportes;
+                permisos.ExportalExcel = permiso_DTO.ExportalExcel;
+                permisos.ExportalPdf = permiso_DTO.ExportalPdf;
+                permisos.CrearEntrada = permiso_DTO.CrearEntrada;
+                permisos.EditarEntrada = permiso_DTO.EditarEntrada;
+                permisos.VerEntrada = permiso_DTO.VerEntrada;
+                permisos.EliminarEntrada = permiso_DTO.EliminarEntrada;
+                permisos.CrearProducto = permiso_DTO.CrearProducto;
+                permisos.VerProducto = permiso_DTO.VerProducto;
+                permisos.EditarProducto = permiso_DTO.EditarProducto;
+                permisos.EliminarProducto = permiso_DTO.EliminarProducto;
+                permisos.CrearCategoria = permiso_DTO.CrearCategoria;
+                permisos.VerCategoria = permiso_DTO.VerCategoria;
+                permisos.EditarCategoria = permiso_DTO.EditarCategoria;
+                permisos.EliminarCategoria = permiso_DTO.EliminarCategoria;
+                permisos.CrearUsuario = permiso_DTO.CrearUsuario;
+                permisos.VerUsuario = permiso_DTO.VerUsuario;
+                permisos.EditarUsuario = permiso_DTO.EditarUsuario;
+                permisos.EliminarUsuario = permiso_DTO.EliminarUsuario;
+                permisos.CrearVenta = permiso_DTO.CrearVenta;
+                permisos.EditarVenta = permiso_DTO.EditarVenta;
+                permisos.VerVenta = permiso_DTO.VerVenta;
+                permisos.EliminarVenta = permiso_DTO.EliminarVenta;
+                permisos.CrearSuplidor = permiso_DTO.CrearSuplidor;
+                permisos.VerSuplidor = permiso_DTO.VerSuplidor;
+                permisos.EditarSuplidor = permiso_DTO.EditarSuplidor;
+                permisos.EliminarSuplidor = permiso_DTO.EliminarSuplidor;
+                permisos.VerRoles = permiso_DTO.VerRoles;
+                permisos.CrearRoles = permiso_DTO.CrearRoles;
+                permisos.EditarRoles = permiso_DTO.EditarRoles;
+                permisos.EliminarRoles = permiso_DTO.EliminarRoles;
+                permisos.VerEmpresa = permiso_DTO.VerEmpresa;
+                permisos.CrearEmpresa = permiso_DTO.CrearEmpresa;
+                permisos.EditarEmpresa = permiso_DTO.EditarEmpresa;
+
+                // Guardar cambios en la base de datos
+                await _db.SaveChangesAsync();
+
             }
 
             return Ok("Rol creado exitosamente.");
@@ -142,6 +206,55 @@ namespace InventarioPro.Server.Controllers
 
             return Ok(listroles_DTO);
         }
+
+        [HttpGet("getPermisosEditar/{idpermiso}")]
+        public async Task<ActionResult<Permiso_DTO>> GetPermisos(string idpermiso)
+        {
+            var permisos = await _db.Permisos.FirstOrDefaultAsync(p => p.IdRol == idpermiso);
+            var permisosDto = new Permiso_DTO
+            {
+                Id = permisos.Id,
+                IdRol = permisos.IdRol,
+                VerEstadistica = permisos.VerEstadistica,
+                VerReportes = permisos.VerReportes,
+                ExportalExcel = permisos.ExportalExcel,
+                ExportalPdf = permisos.ExportalPdf,
+                CrearEntrada = permisos.CrearEntrada,
+                EditarEntrada = permisos.EditarEntrada,
+                VerEntrada = permisos.VerEntrada,
+                EliminarEntrada = permisos.EliminarEntrada,
+                CrearVenta = permisos.CrearVenta,
+                EditarVenta = permisos.EditarVenta,
+                VerVenta = permisos.VerVenta,
+                EliminarVenta = permisos.EliminarVenta,
+                CrearProducto = permisos.CrearProducto,
+                VerProducto = permisos.VerProducto,
+                EditarProducto = permisos.EditarProducto,
+                EliminarProducto = permisos.EliminarProducto,
+                CrearCategoria = permisos.CrearCategoria,
+                VerCategoria = permisos.VerCategoria,
+                EditarCategoria = permisos.EditarCategoria,
+                EliminarCategoria = permisos.EliminarCategoria,
+                CrearUsuario = permisos.CrearUsuario,
+                VerUsuario = permisos.VerUsuario,
+                EditarUsuario = permisos.EditarUsuario,
+                EliminarUsuario = permisos.EliminarUsuario,
+                CrearSuplidor = permisos.CrearSuplidor,
+                VerSuplidor = permisos.VerSuplidor,
+                EditarSuplidor = permisos.EditarSuplidor,
+                EliminarSuplidor = permisos.EliminarSuplidor,
+                VerRoles = permisos.VerRoles,
+                CrearRoles = permisos.CrearRoles,
+                EditarRoles = permisos.EditarRoles,
+                EliminarRoles = permisos.EliminarRoles,
+                VerEmpresa = permisos.VerEmpresa,
+                CrearEmpresa = permisos.CrearEmpresa,
+                EditarEmpresa = permisos.EditarEmpresa
+            };
+            return permisosDto;
+        }
+
+
         [HttpGet("getPermisos/{userId}")]
         public async Task<ActionResult<Permiso_DTO>> GetPermisosPorUsuario(string userId)
         {

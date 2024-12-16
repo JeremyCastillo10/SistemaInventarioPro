@@ -15,7 +15,7 @@
 
     <div class="mb-3">
         <label for="nombre" class="form-label font-weight-bold">Nombre</label>
-        <RadzenTextBox id="nombre" @bind-Value="permiso_DTO.Nombre" Placeholder="Nombre" class="form-control" />
+        <RadzenTextBox id="nombre" @bind-Value="permiso_DTO.Nombre" Placeholder="Nombre" Disabled="@estado"  class="form-control" />
         <ValidationMessage For="@(() => permiso_DTO.Nombre)" class="text-danger" />
     </div>
     <!-- Permisos -->
@@ -289,34 +289,41 @@
     public Roles_DTO roles_DTO { get; set; }= new Roles_DTO();
     public List<Roles_DTO> listroles_DTO { get; set; }  = new List<Roles_DTO>();
     public Permiso_DTO permiso_DTO { get; set; } = new Permiso_DTO();
-
+    private bool estado { get; set; }
     protected override async Task OnInitializedAsync()
     {
-        if(roles_DTO!=null)
+        if (!string.IsNullOrEmpty(roles_DTO.Id))
+        {
+            var response2 = await Http.GetAsync($"/api/roles/getPermisosEditar/{roles_DTO.Id}");
+
+            permiso_DTO = await response2.Content.ReadFromJsonAsync<Permiso_DTO>();
+
+            permiso_DTO.Nombre = roles_DTO.Nombre;
+            estado = true;
+
+
+        }
+        else
+        if (roles_DTO != null)
         {
             permiso_DTO.Nombre = roles_DTO.Nombre;
 
         }
         var response = await Http.GetAsync("/api/roles/GetAllRoles");
-        listroles_DTO= await response.Content.ReadFromJsonAsync<List<Roles_DTO>>();
-
-
+        listroles_DTO = await response.Content.ReadFromJsonAsync<List<Roles_DTO>>();
 
     }
 
 
-
     private async void Guardar()
     {
-        var rolEncontrado = listroles_DTO.FirstOrDefault(p => p.Nombre.Contains(permiso_DTO.Nombre, StringComparison.OrdinalIgnoreCase));
-
-        if (rolEncontrado == null)
-        {
+      
+        
             var response = await Http.PostAsJsonAsync("api/roles/createRole", permiso_DTO);
 
             if (response.IsSuccessStatusCode)
             {
-                await ShowAlert("Éxito", (permiso_DTO.Id == 0) ? "Producto creado con éxito!" : "Producto actualizado con éxito!", SweetAlertIcon.Success);
+                await ShowAlert("Éxito", (permiso_DTO.Id == 0) ? "Rol creado con éxito!" : "Rol actualizado con éxito!", SweetAlertIcon.Success);
                 DialogService.Close(roles_DTO);
                 StateHasChanged();
             }
@@ -326,11 +333,7 @@
                 Console.WriteLine($"Error: {errorContent}");
                 await ShowAlert("Error", "No se pudo crear el rol.", SweetAlertIcon.Error);
             }
-        }
-        else
-        {
-            await ShowAlert("Advertencia", "El rol existe!", SweetAlertIcon.Warning);
-        }
+       
     }
 
 
